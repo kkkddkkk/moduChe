@@ -7,6 +7,8 @@ const CommonTable = lazy(() => import("../pages/Test/CommonTable"));
 const CommonTextField = lazy(() => import("../pages/Test/CommonTextField"));
 const CommonLoading = lazy(() => import("../pages/Test/CommonLoading"));
 const CommonModals = lazy(() => import("../pages/Test/CommonModals"));
+const CommonPaper = lazy(() => import("../pages/Test/CommonPaper"));
+
 export default function testCommonRouter() {
     return [
         {
@@ -51,6 +53,13 @@ export default function testCommonRouter() {
                     <CommonModals></CommonModals>
                 </Suspense>
             ),
-        }
+        }, {
+            path: "paper",
+            element: (
+                <Suspense fallback={Loading}>
+                    <CommonPaper></CommonPaper>
+                </Suspense>
+            ),
+        },
     ]
 }
