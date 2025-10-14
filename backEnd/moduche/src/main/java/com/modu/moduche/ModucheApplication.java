@@ -1,4 +1,4 @@
-package com.moduche;
+package com.modu.moduche;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
