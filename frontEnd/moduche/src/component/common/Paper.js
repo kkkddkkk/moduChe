@@ -1,5 +1,3 @@
-// src/component/common/Paper.js
-// ❌ import { useTheme } from '@emotion/react';
 import { useTheme } from '@mui/material/styles';
 import MuiPaper from '@mui/material/Paper';
 

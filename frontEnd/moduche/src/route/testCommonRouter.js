@@ -1,4 +1,7 @@
 import { lazy, Suspense } from "react";
+import CommonTheme from "../pages/Test/CommonTheme";
+import CommonButtonDemo from "../pages/Test/CommonButton";
+import CommonButton from "../pages/Test/CommonButton";
 
 const Loading = <div>Loading...</div>
 const Test = lazy(() => import("../pages/Test/Test"));
@@ -25,7 +28,7 @@ export default function testCommonRouter() {
                     <CommonLayout></CommonLayout>
                 </Suspense>
             ),
-        },{
+        }, {
             path: "table",
             element: (
                 <Suspense fallback={Loading}>
@@ -58,6 +61,22 @@ export default function testCommonRouter() {
             element: (
                 <Suspense fallback={Loading}>
                     <CommonPaper></CommonPaper>
+                </Suspense>
+            ),
+        },
+        {
+            path: "theme",
+            element: (
+                <Suspense fallback={Loading}>
+                    <CommonTheme></CommonTheme>
+                </Suspense>
+            ),
+        },
+        {
+            path: "button",
+            element: (
+                <Suspense fallback={Loading}>
+                    <CommonButton></CommonButton>
                 </Suspense>
             ),
         },

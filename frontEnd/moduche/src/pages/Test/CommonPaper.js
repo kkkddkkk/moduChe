@@ -1,12 +1,8 @@
-// pages/Test/CommonPaper.js
-// 이 문서는 CommonLoading 페이지와 동일한 흐름으로 작성되었으며 먼저 이 페이지의 성격과 props 설명을 간단하고도 충분히 이해될 수 있도록 문장으로 안내하고, 이어서 실제 Paper 컴포넌트를 다양한 케이스로 렌더링하여 시각적으로 동작을 확인할 수 있게 구성했습니다.
-
 import { Box, Grid } from "@mui/material";
 import Layout from "../../component/common/Layout";
-import Paper from "../../component/common/Paper"; // 커스텀 Paper를 사용한다고 가정합니다.
+import Paper from "../../component/common/Paper"; 
 
 const CommonPaper = () => {
-    // 이 예시 페이지는 컨텐츠를 감싸는 컨테이너 역할을 하는 Paper 컴포넌트를 테스트하기 위한 용도로 작성되었으며, elevation과 padding으로 기본 스타일을 확인하고, hoverable과 onClick을 통해 상호작용 가능한 카드처럼 동작시키는 방법을 한눈에 보여주려는 목적을 가지고 있습니다.
     const handleClick = (label) => {
         alert(`${label} 박스를 클릭했습니다.`);
     };
