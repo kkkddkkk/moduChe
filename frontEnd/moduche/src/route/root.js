@@ -2,9 +2,12 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { ScrollShell } from "../component/common/ScrollToTop";
 import testCommonRouter from "./testCommonRouter";
+import accountRouter from "./accountRouter";
 
 const Loading = <div>Loading...</div>
-const CommonMain = lazy(() => import("../pages/Test/CommonMain"));
+const Test = lazy(() => import("../pages/Test/CommonMain"));
+const Main = lazy(() => import("../pages/Main"));
+const Account = lazy(() => import("../pages/Account/AccountLayout"));
 
 const root = createBrowserRouter([
     {
@@ -15,11 +18,28 @@ const root = createBrowserRouter([
                 path: "test",
                 element: (
                     <Suspense fallback={Loading}>
-                        <CommonMain></CommonMain>
+                        <Test></Test>
                     </Suspense>
                 ),
                 children: testCommonRouter()
-            }
+            },
+            {
+                path: "",
+                element: (
+                    <Suspense fallback={Loading}>
+                        <Main></Main>
+                    </Suspense>
+                ),
+            },
+            {
+                path: "account",
+                element: (
+                    <Suspense fallback={Loading}>
+                        <Account/>
+                    </Suspense>
+                ),
+                children: accountRouter()
+            },
         ],
     },
 ]);

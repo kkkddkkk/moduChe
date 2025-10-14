@@ -4,12 +4,15 @@ import Footer from '../main/Footer';
 import ScrollTopButton from './ScrollTopButton';
 const Layout = ({ space, padding, children, outer }) => {
     return (
-        <Grid container spacing={space} padding={padding}>
+        <>
             {outer ? <Header /> : <></>}
-            {children}
+            <Grid container spacing={space} padding={padding} minHeight={outer?'100vh':false}>
+                {children}
+            </Grid>
             {outer ? <ScrollTopButton /> : <></>}
             {outer ? <Footer /> : <></>}
-        </Grid>
+        </>
+
     )
 }
 export default Layout;

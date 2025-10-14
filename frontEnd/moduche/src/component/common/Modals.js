@@ -30,7 +30,7 @@ export const NormalModal = ({ open, close, title, children }) => {
   )
 };
 
-export const SlideModal = ({ open, close, title, children, position, height = "40", width = "30" }) => {
+export const SlideModal = ({ open, close, title, children, position, height = "40", width = "30", headerHeight = 0 }) => {
 
   const slideDirection = (position) => {
     switch (position) {
@@ -50,12 +50,12 @@ export const SlideModal = ({ open, close, title, children, position, height = "4
           position: "fixed",
           left: position === "left" ? 0 : "",
           right: position === "right" ? 0 : "",
-          top: position === "top" ? 0 : "",
+          top: position === "top" ? (headerHeight !== 0 ? `${headerHeight}px` : 0) : "",
           bottom: position === "bottom" ? 0 : "",
           bgcolor: "background.paper",
           display: "flex",
           justifyContent: "-moz-initial",
-          alignItems: "center",
+          alignItems: "stretch",
           flexDirection: "column",
           flexWrap: "wrap",
         }}>
@@ -69,6 +69,21 @@ export const SlideModal = ({ open, close, title, children, position, height = "4
               </Layout>
             </Grid>
           </Layout>
+          <DialogActions>
+            <IconButton
+              aria-label="close"
+              onClick={close}
+              sx={{
+                position: "absolute",
+                right: position!=="right"?8:false,
+                top: position!=="top"?8:false,
+                left: position==="right"?8:false,
+                bottom: position==="top"?8:false
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogActions>
 
         </Box>
       </Slide>
