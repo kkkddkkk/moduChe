@@ -1,4 +1,4 @@
-import { Box, Button, DialogContent, Grid } from "@mui/material";
+import { Box, Button, Grid } from "@mui/material";
 import Layout from "../../component/common/Layout";
 import { useState } from "react";
 import { NormalModal, SlideModal } from "../../component/common/Modals";

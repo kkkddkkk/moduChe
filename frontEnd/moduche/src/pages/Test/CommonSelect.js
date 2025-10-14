@@ -1,7 +1,7 @@
 import { Box, Button, Grid } from "@mui/material";
 import Layout from "../../component/common/Layout";
 import { useState } from "react";
-import { FilledSelect, OutlinedSelect, StandardSelect } from "../../component/common/CustomSelect";
+import { OutlinedSelect, StandardSelect } from "../../component/common/CustomSelect";
 
 
 const CommonSelect = () => {

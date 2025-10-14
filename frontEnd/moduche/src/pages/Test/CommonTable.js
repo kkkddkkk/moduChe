@@ -52,6 +52,17 @@ const CommonTable = () => {
                     - clickEvent: hover에서 설정한 컬럼만을 대상으로 클릭 이벤트를 지정합니다. props를 활용하여 (id, column, data) 값을 얻을 수 있습니다.(문서 참고)<br />
                     - id: 데이터 중 id에 속하는 컬럼명을 문자열로 넣어주세요(지금은 "tempId")<br />
                     - padding: 설명 생략
+                    <Paper>
+                        <pre>
+                            {`<OriginTable
+    datas={tempData}
+    hover={["tempColumn1", "tempColumn3"]}
+    clickEvent={clickedOriginTable}
+    id={"tempId"}
+    padding={2}
+/>`}
+                        </pre>
+                    </Paper>
                 </Box>
             </Grid>
             <Grid size={1} />
@@ -77,6 +88,24 @@ const CommonTable = () => {
                     - formatter: 객체 배열 형태로 {`([{컬럼명: 포맷메서드}])`} 입력하시면 됩니다. 포맷 메서드는 props 하나(data로 치환됨)를 활용해서 작성합니다.(문서 참고)<br />
                     (지금은 {`[{ "tempColumn1": format1 },{ "tempColumn3": format3 },{ "tempColumn4": format4 }]`})<br />
                     - hover, clickEvent, id, padding: 동일기능입니다.<br />
+                    <Paper>
+                        <pre>
+                            {`<CustomTable
+    datas={tempData}
+    columns={["tempColumn5", "tempColumn1", "tempColumn3", "tempColumn4"]}
+    widths={["10", "20", "40", "30"]}
+    formatter={[
+        { "tempColumn1": format1 },
+        { "tempColumn3": format3 },
+        { "tempColumn4": format4 },
+    ]}
+    hover={["tempColumn1", "tempColumn5"]}
+    clickEvent={clickedOriginTable}
+    id={"tempId"}
+    padding={1}
+/>`}
+                        </pre>
+                    </Paper>
                 </Box>
             </Grid>
             <Grid size={2} />

@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import CommonTheme from "../pages/Test/CommonTheme";
-import CommonButtonDemo from "../pages/Test/CommonButton";
 import CommonButton from "../pages/Test/CommonButton";
 
 const Loading = <div>Loading...</div>
@@ -13,6 +12,8 @@ const CommonModals = lazy(() => import("../pages/Test/CommonModals"));
 const CommonPaper = lazy(() => import("../pages/Test/CommonPaper"));
 const CommonSelect = lazy(() => import("../pages/Test/CommonSelect"));
 const CommonText = lazy(() => import("../pages/Test/CommonText"));
+const CommonVariables = lazy(() => import("../pages/Test/CommonVariables"));
+const CommonFunctions = lazy(() => import("../pages/Test/CommonFunctions"));
 
 
 export default function testCommonRouter() {
@@ -83,14 +84,14 @@ export default function testCommonRouter() {
                 </Suspense>
             ),
         },
-         {
+        {
             path: "select",
             element: (
                 <Suspense fallback={Loading}>
                     <CommonSelect></CommonSelect>
                 </Suspense>
             ),
-        }, 
+        },
         {
             path: "text",
             element: (
@@ -98,6 +99,24 @@ export default function testCommonRouter() {
                     <CommonText></CommonText>
                 </Suspense>
             ),
-        }
+        },
+        {
+            path: "variables",
+            element: (
+                <Suspense fallback={Loading}>
+                    <CommonVariables></CommonVariables>
+                </Suspense>
+            ), 
+        },
+        {
+            path: "functions",
+            element: (
+                <Suspense fallback={Loading}>
+                    <CommonFunctions></CommonFunctions>
+                </Suspense>
+            ), 
+        },
+
+
     ]
 }

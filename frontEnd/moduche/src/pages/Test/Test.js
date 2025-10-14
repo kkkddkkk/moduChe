@@ -31,6 +31,8 @@ const Test = () => {
             <TestButton item={"button"} />
             <TestButton item={"select"} />
             <TestButton item={"text"} />
+            <TestButton item={"variables"} />
+            <TestButton item={"functions"} />
         </Layout>
     );
 }

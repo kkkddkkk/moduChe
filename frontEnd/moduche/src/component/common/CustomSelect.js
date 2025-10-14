@@ -1,4 +1,4 @@
-import { colors, FormControl, FormHelperText, InputLabel, lighten, MenuItem, Select, styled } from "@mui/material";
+import { FormControl, FormHelperText, lighten, MenuItem, Select, styled } from "@mui/material";
 const SelectController = styled(Select)(({ ownerState }) => ({
   "& .MuiSelect-select": {
     padding: ownerState.padding, // 선택 영역 padding
@@ -14,7 +14,6 @@ const SelectController = styled(Select)(({ ownerState }) => ({
 
 const CustomSelect = ({ padding, size, data, format = d => d,
   selected, setSelected, placeholder, variant, disabled, error, helperText }) => {
-  const fontSize = `${size}px`;
   const black = "black";
   const gray = "gray";
   const mainColor = "#1976d2";
