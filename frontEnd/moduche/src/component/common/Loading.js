@@ -1,8 +1,9 @@
-import { Backdrop, CircularProgress, Box, Typography } from '@mui/material';
+import { Backdrop, CircularProgress, Box, Typography, useTheme } from '@mui/material';
 
 export default function Loading({ open, text = '로딩중...' }) {
 
-    const mainColor = "#1976d2";
+  const theme = useTheme();
+    const mainColor = theme.palette.primary.main;
   return (
     <Backdrop
       sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.modal + 1 }}

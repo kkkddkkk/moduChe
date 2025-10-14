@@ -3,6 +3,7 @@ import { Box, Grid } from "@mui/material";
 import Layout from "../../component/common/Layout";
 import OriginTable from "../../component/common/OriginTable";
 import CustomTable from "../../component/common/CustomTable";
+import Paper from "../../component/common/Paper";
 
 const CommonTable = () => {
     const tempData = [
@@ -53,8 +54,8 @@ const CommonTable = () => {
                     - padding: 설명 생략
                 </Box>
             </Grid>
-            <Grid size={2} />
-            <Grid size={8}>
+            <Grid size={1} />
+            <Grid size={10}>
                 <OriginTable
                     datas={tempData}
                     hover={["tempColumn1", "tempColumn3"]}
@@ -63,7 +64,7 @@ const CommonTable = () => {
                     padding={2}
                 />
             </Grid>
-            <Grid size={2} />
+            <Grid size={1} />
 
             <Grid size={12}>
                 <Box>
@@ -74,7 +75,7 @@ const CommonTable = () => {
                     - columns(필수): 배열 형태로 필요한 컬럼만 순서대로 넣으시면 됩니다(지금은 ["tempColumn5", "tempColumn1", "tempColumn3", "tempColumn4"])<br />
                     - widths: 배열 형태로 모든 값의 합이 100이 되도록 분배하면 됩니다(지금은 ["10", "20", "40", "30"])<br />
                     - formatter: 객체 배열 형태로 {`([{컬럼명: 포맷메서드}])`} 입력하시면 됩니다. 포맷 메서드는 props 하나(data로 치환됨)를 활용해서 작성합니다.(문서 참고)<br />
-                    (지금은 {`[{ "tempColumn1": format1 },{ "tempColumn3": format3 },{ "tempColumn4": format4 }]`})<br/>
+                    (지금은 {`[{ "tempColumn1": format1 },{ "tempColumn3": format3 },{ "tempColumn4": format4 }]`})<br />
                     - hover, clickEvent, id, padding: 동일기능입니다.<br />
                 </Box>
             </Grid>

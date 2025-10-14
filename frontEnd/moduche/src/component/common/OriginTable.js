@@ -1,11 +1,12 @@
-import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { lighten, Table, TableBody, TableCell, TableHead, TableRow, useTheme } from "@mui/material";
 
 const OriginTable = ({ datas, hover = [], clickEvent, id, padding }) => {
 
     const columns = Object.keys(datas[0]).filter(col => col !== id);
-    const mainColor = "#1976d2";
-    const cellBackGround = "#d0e4ff";
-    const secondaryText = "#f5f5f5"
+    const theme = useTheme();
+    const mainColor = theme.palette.secondary.main;
+    const cellBackGround = lighten(mainColor, 0.8);
+    const secondaryText = lighten(theme.palette.text.secondary, 0.9);
     return (
         <Table sx={{
             border: `1px solid ${secondaryText}`,
@@ -16,7 +17,6 @@ const OriginTable = ({ datas, hover = [], clickEvent, id, padding }) => {
             <TableHead>
                 <TableRow sx={{
                     backgroundColor: secondaryText, // 연한 회색 배경
-                    // borderBottom: `2px solid ${mainColor}`, // 강조선
                 }}>
                     {columns.map((column, idx) => {
                         return (

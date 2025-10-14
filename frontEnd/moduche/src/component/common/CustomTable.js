@@ -1,4 +1,4 @@
-import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { lighten, Table, TableBody, TableCell, TableHead, TableRow, useTheme } from "@mui/material";
 
 const CustomTable = ({ datas, hover = [], columns = [], widths = [], formatter = [], padding, clickEvent, id }) => {
 
@@ -8,10 +8,10 @@ const CustomTable = ({ datas, hover = [], columns = [], widths = [], formatter =
             formatValue ? formatValue[column](data) : data
         );
     }
-
-    const mainColor = "#1976d2";
-    const cellBackGround = "#d0e4ff";
-    const secondaryText = "#f5f5f5"
+    const theme = useTheme();
+    const mainColor = theme.palette.secondary.main;
+    const cellBackGround = lighten(mainColor,0.8);
+    const secondaryText = lighten(theme.palette.text.secondary,0.9);
     return (
         <Table sx={{
             border: `1px solid ${secondaryText}`,
@@ -22,7 +22,6 @@ const CustomTable = ({ datas, hover = [], columns = [], widths = [], formatter =
             <TableHead>
                 <TableRow sx={{
                     backgroundColor: secondaryText, // 연한 회색 배경
-                    // borderBottom: `2px solid ${mainColor}`, // 강조선
                 }}>
                     {columns.map((column, idx) => {
                         return (

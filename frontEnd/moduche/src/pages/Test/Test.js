@@ -29,6 +29,8 @@ const Test = () => {
             <TestButton item={"paper"} />
             <TestButton item={"theme"} />
             <TestButton item={"button"} />
+            <TestButton item={"select"} />
+            <TestButton item={"text"} />
         </Layout>
     );
 }
