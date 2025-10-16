@@ -73,7 +73,8 @@ export function SmallerSubTitle({ color, children, margin = "0", italic, hover, 
     )
 }
 
-export function Contents100({ color, children, margin = "0", fontSize = 16, italic, bold, hover, onClick }) {
+export function Contents100({ color, children, margin = "0", fontSize = 16, 
+    italic, bold, hover, onClick, sx }) {
     const black = "black"
     return (
         <Typography
@@ -81,23 +82,27 @@ export function Contents100({ color, children, margin = "0", fontSize = 16, ital
             color={color ? color : black}
             width={"100%"}
             sx={{
+                ...sx,
                 margin: margin,
                 fontSize: `${fontSize}px`,
                 fontStyle: italic ? "italic" : "normal",
                 fontWeight: bold ? "bold" : ""
             }}
+            onClick={hover?onClick:()=>{}}
         >
             {children}
         </Typography>
     )
 }
-export function Contents({ color, children, margin = "0", fontSize = 16, italic, bold, hover, onClick }) {
+export function Contents({ color, children, margin = "0", fontSize = 16, 
+    italic, bold, hover, onClick, sx }) {
     const black = "black"
     return (
         <Typography
             variant="body2"
             color={color ? color : black}
             sx={{
+                ...sx,
                 margin: margin,
                 fontSize: `${fontSize}px`,
                 display: "inline-block",
