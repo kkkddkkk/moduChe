@@ -6,7 +6,7 @@ const Layout = ({ space, padding, children, outer }) => {
     return (
         <>
             {outer ? <Header /> : <></>}
-            <Grid container spacing={space} padding={padding} minHeight={outer?'100vh':false}>
+            <Grid container spacing={space} padding={padding} minHeight={outer ? '100vh' : false} width={"100%"}>
                 {children}
             </Grid>
             {outer ? <ScrollTopButton /> : <></>}

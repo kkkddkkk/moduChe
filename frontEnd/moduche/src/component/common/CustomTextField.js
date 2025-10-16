@@ -1,11 +1,12 @@
 import { styled, TextField } from "@mui/material";
+import React from "react";
 
 const PaddingControlTextField = styled(TextField)(({ padding, size }) => ({
     "& .MuiOutlinedInput-root": {
-    padding: 0,               // root 레벨 padding 초기화
-    boxSizing: "border-box",
-},
-    
+        padding: 0,               // root 레벨 padding 초기화
+        boxSizing: "border-box",
+    },
+
     // 1. multiline용 클래스 추가
     "& .MuiOutlinedInput-multiline": {
         padding: padding,
@@ -46,11 +47,11 @@ const PaddingControlTextField = styled(TextField)(({ padding, size }) => ({
 }));
 
 
-const CustomTextField = ({ data, setData, padding, disabled, placeholder,
-    fontSize = 16, helperText, error, rows }) => {
-    const size = `${fontSize}px`;
+const CustomTextField = React.memo(({ data, setData, padding, disabled, placeholder,
+    fontSize = 16, helperText, error, rows, name, margin }) => {
     return (
         <PaddingControlTextField
+            name={name}
             multiline={rows ? true : false}
             fullWidth
             variant="outlined"
@@ -59,11 +60,12 @@ const CustomTextField = ({ data, setData, padding, disabled, placeholder,
             padding={padding}
             disabled={disabled}
             placeholder={placeholder}
-            size={size}
+            size={fontSize+"px"}
             error={error}
             helperText={error ? helperText : ""}
             rows={rows}
+            margin={margin}
         />
     );
-}
+});
 export default CustomTextField;

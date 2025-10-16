@@ -28,8 +28,8 @@ const Header = () => {
         }
     }, []);
 
-    const moveTo = ({ item }) => {
-        return () => navigate(`/account/${item}`)
+    const moveTo = ( item ) => {
+        return navigate(`/account/${item}`);
     }
 
     const clickSearchButton = () => {
@@ -58,7 +58,7 @@ const Header = () => {
     }
 
     return (
-        <AppBar position="fixed" ref={headerRef} sx={{ zIndex: 1500 }}>
+        <AppBar position="sticky" ref={headerRef} sx={{ zIndex: 1500 }}>
             <Toolbar>
                 <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                     모두의 체육관 임시헤더
@@ -91,9 +91,9 @@ const Header = () => {
                             gap: 1, // 항목 간 간격
                         }}
                     >
-                        <HeaderMenu>로그인</HeaderMenu>
+                        <HeaderMenu onClick={()=>moveTo("login")}>로그인</HeaderMenu>
                         <MenuBar />
-                        <HeaderMenu>회원가입</HeaderMenu>
+                        <HeaderMenu onClick={()=>moveTo("joinUs")}>회원가입</HeaderMenu>
                     </Box>
                 }
 

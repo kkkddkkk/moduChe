@@ -4,7 +4,7 @@ import Paper from "../../component/common/Paper";
 
 const CommonLayout = () => {
     return (
-        <Layout space={2} padding={3} outer>
+        <Layout space={2} padding={3}>
             <Grid size={12} height={'150vh'}>
                 <Box>
                     <span style={{ fontWeight: "bold" }}>* pages/Test/CommonLayout.js 문서입니다.</span><br />
