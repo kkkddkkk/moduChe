@@ -4,10 +4,12 @@ import { ScrollShell } from "../component/common/ScrollToTop";
 import testCommonRouter from "./testCommonRouter";
 import accountRouter from "./accountRouter";
 
-const Loading = <div>Loading...</div>
-const Test = lazy(() => import("../pages/Test/CommonMain"));
-const Main = lazy(() => import("../pages/Main"));
-const Account = lazy(() => import("../pages/Account/AccountLayout"));
+const Loading = <div>Loading...</div>;
+const Main = lazy(() => import("../pages/Main/Main"));
+const LayoutForAll = lazy(() => import("../pages/LayoutForAll"));
+//root Router의 element는 LayoutForAll로 통일해도 될 것 같습니다~~(Main 제외 - 하위 페이지 없음.)
+//이견 있으시면 말씀 주세용 -김도경-
+
 
 const root = createBrowserRouter([
     {
@@ -18,7 +20,7 @@ const root = createBrowserRouter([
                 path: "test",
                 element: (
                     <Suspense fallback={Loading}>
-                        <Test></Test>
+                        <LayoutForAll/>
                     </Suspense>
                 ),
                 children: testCommonRouter()
@@ -27,7 +29,7 @@ const root = createBrowserRouter([
                 path: "",
                 element: (
                     <Suspense fallback={Loading}>
-                        <Main></Main>
+                        <Main/>
                     </Suspense>
                 ),
             },
@@ -35,7 +37,7 @@ const root = createBrowserRouter([
                 path: "account",
                 element: (
                     <Suspense fallback={Loading}>
-                        <Account/>
+                        <LayoutForAll/>
                     </Suspense>
                 ),
                 children: accountRouter()
