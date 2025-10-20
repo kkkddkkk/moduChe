@@ -2,27 +2,26 @@ package com.example.moduche.domain.promotion;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import com.example.moduche.domain.community.CommunityPost;
+import com.example.moduche.domain.course.Course;
+
 import lombok.*;
 
-@Entity
-@Table(name = "promotion")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Entity @Table(name="promotion")
+@Getter @Setter @NoArgsConstructor
 public class Promotion {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "promotion_Id", nullable = false)
-    private Long promotionId;
-    @Column(name = "course_id", nullable = false)
-    private Long courseId;
-    @Column(name = "post_id", nullable = false)
-    private Long postId;
-    @Column(name = "target_type", nullable = true)
-    private String targetType;
-    @Column(name = "start_date", nullable = true)
-    private LocalDateTime startDate;
-    @Column(name = "end_date", nullable = true)
-    private LocalDateTime endDate;
-    @Column(name = "created_at", nullable = true)
-    private LocalDateTime createdAt;
+  @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+  private Long promotionId;
+
+  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="course_id", foreignKey=@ForeignKey(name="fk_promo_course"))
+  private Course course;
+
+  @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="post_id", foreignKey=@ForeignKey(name="fk_promo_post"))
+  private CommunityPost post;
+
+  private String targetType; // COURSE/POST
+  private LocalDateTime startDate;
+  private LocalDateTime endDate;
+  private LocalDateTime createdAt;
 }
