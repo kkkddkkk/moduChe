@@ -4,17 +4,15 @@ import jakarta.persistence.*;
 
 import lombok.*;
 
-@Entity
-@Table(name = "communitypostphoto")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Entity @Table(name="community_post_photo")
+@Getter @Setter @NoArgsConstructor
 public class CommunityPostPhoto {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "post_id", nullable = false)
-    private Long postId;
-    @Column(name = "photo_id", nullable = false)
-    private Long photoId;
-    @Column(name = "photo_url", nullable = true)
-    private String photoUrl;
+  @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+  private Long photoId;
+
+  @ManyToOne(fetch=FetchType.LAZY, optional=false)
+  @JoinColumn(name="post_id", foreignKey=@ForeignKey(name="fk_photo_post"))
+  private CommunityPost post;
+
+  private String photoUrl;
 }

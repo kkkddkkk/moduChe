@@ -4,16 +4,16 @@ import jakarta.persistence.*;
 
 import lombok.*;
 
-@Entity
-@Table(name = "role")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Entity @Table(name="role")
+@Getter @Setter @NoArgsConstructor
 public class Role {
-    @Id
-    @Column(name = "role_id", nullable = false)
-    private String roleId;
-    @Column(name = "role_code", nullable = true)
-    private String roleCode;
-    @Column(name = "role_name", nullable = true)
-    private String roleName;
+  @Id
+  @Column(name = "role_id")       
+  private String roleId;            // 예: 'CENTER_USER','ADMIN'
+
+  @Column(name = "role_code")
+  private String roleCode;
+
+  @Column(name = "role_name")
+  private String roleName;
 }

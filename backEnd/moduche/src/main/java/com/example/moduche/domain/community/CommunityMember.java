@@ -2,23 +2,26 @@ package com.example.moduche.domain.community;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import com.example.moduche.domain.login.User;
+
 import lombok.*;
 
-@Entity
-@Table(name = "communitymember")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Entity @Table(name="community_member",
+uniqueConstraints=@UniqueConstraint(name="uk_comm_user", columnNames={"community_id","user_id"}))
+@Getter @Setter @NoArgsConstructor
 public class CommunityMember {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id", nullable = true)
-    private Long userId;
-    @Column(name = "community_id", nullable = false)
-    private Long communityId;
-    @Column(name = "member_id", nullable = false)
-    private Long memberId;
-    @Column(name = "role", nullable = true)
-    private String role;
-    @Column(name = "joined_at", nullable = false)
-    private LocalDateTime joinedAt;
+@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+private Long id;
+
+@ManyToOne(fetch=FetchType.LAZY, optional=false)
+@JoinColumn(name="community_id", foreignKey=@ForeignKey(name="fk_commmember_comm"))
+private Community community;
+
+@ManyToOne(fetch=FetchType.LAZY, optional=false)
+@JoinColumn(name="user_id", foreignKey=@ForeignKey(name="fk_commmember_user"))
+private User user;
+
+private String role;   // LEADER/MEMBER
+private LocalDateTime joinedAt;
 }
