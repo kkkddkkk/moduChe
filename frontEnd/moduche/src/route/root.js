@@ -3,6 +3,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { ScrollShell } from "../component/common/ScrollToTop";
 import testCommonRouter from "./testCommonRouter";
 import accountRouter from "./accountRouter";
+import courseRouter from "./courseRouter"
 
 const Loading = <div>Loading...</div>;
 const Main = lazy(() => import("../pages/Main/Main"));
@@ -32,6 +33,7 @@ const root = createBrowserRouter([
                         <Main/>
                     </Suspense>
                 ),
+                
             },
             {
                 path: "account",
@@ -41,6 +43,15 @@ const root = createBrowserRouter([
                     </Suspense>
                 ),
                 children: accountRouter()
+            },
+             {
+                path: "course",
+                element: (
+                    <Suspense fallback={Loading}>
+                        <LayoutForAll/>
+                    </Suspense>
+                ),
+                children: courseRouter()
             },
         ],
     },
