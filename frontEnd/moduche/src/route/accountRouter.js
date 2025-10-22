@@ -7,36 +7,50 @@ const FindId = lazy(() => import("../pages/Account/FindId"));
 const FindPw = lazy(() => import("../pages/Account/FindPw"));
 
 
-export default function testCommonRouter() {
+export default function accoutRouter() {
     return [
-        {
-            path: "login",
-            element: (
-                <Suspense fallback={Loading}>
-                    <Login/>
-                </Suspense>
-            ),
-        }, {
-            path: "joinUs",
-            element: (
-                <Suspense fallback={Loading}>
-                    <JoinUs/>
-                </Suspense>
-            ),
-        }, {
-            path: "findId",
-            element: (
-                <Suspense fallback={Loading}>
-                    <FindId/>
-                </Suspense>
-            ),
-        }, {
-            path: "findPw",
-            element: (
-                <Suspense fallback={Loading}>
-                    <FindPw/>
-                </Suspense>
-            ),
-        },
+        // {
+        //     path: "login",
+        //     element: (
+        //         <Suspense fallback={Loading}>
+        //             <Login/>
+        //         </Suspense>
+        //     ),
+        // }, {
+        //     path: "joinUs",
+        //     element: (
+        //         <Suspense fallback={Loading}>
+        //             <JoinUs/>
+        //         </Suspense>
+        //     ),
+        // }, {
+        //     path: "joinUser",
+        //     element: (
+        //         <Suspense fallback={Loading}>
+        //             <JoinUs/>
+        //         </Suspense>
+        //     ),
+        // },{
+        //     path: "joinFacility",
+        //     element: (
+        //         <Suspense fallback={Loading}>
+        //             <JoinUs/>
+        //         </Suspense>
+        //     ),
+        // },{
+        //     path: "findId",
+        //     element: (
+        //         <Suspense fallback={Loading}>
+        //             <FindId/>
+        //         </Suspense>
+        //     ),
+        // }, {
+        //     path: "findPw",
+        //     element: (
+        //         <Suspense fallback={Loading}>
+        //             <FindPw/>
+        //         </Suspense>
+        //     ),
+        // },
     ]
 }
