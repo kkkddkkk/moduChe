@@ -1,5 +1,5 @@
 import Layout from "../../component/common/Layout";
-import { Toolbar, Typography, Grid, Stack, Box } from "@mui/material";
+import { Toolbar, Typography, Grid, Stack, Box, Container } from "@mui/material";
 import Paper from "../../component/common/Paper";
 import { OneAlignedButton } from "../../component/common/Button"
 import { MapPin } from "lucide-react";
@@ -22,8 +22,17 @@ export default function ClubDetail() {
   return (
     <Layout>
       <Toolbar />
-      <Grid container>
-        <Grid item xs={12}>
+      {/* 전체 컨텐츠를 감싸는 12컬럼 그리드 (1.5 : 9 : 1.5) */}
+      <Grid container columns={12} sx={{ px: { xs: 2, lg: 3 }, py: 2 }}>
+        {/* 좌측 배너 영역 (1.5) */}
+        <Grid item lg={1.5} sx={{ display: { xs: "none", lg: "block" } }}>
+          <Paper sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'sticky', top: 24 }}>
+            <Typography variant="caption" color="text.secondary">배너 광고</Typography>
+          </Paper>
+        </Grid>
+
+        {/* 중앙 컨텐츠 영역 (9) */}
+        <Grid item xs={12} lg={9}>
           <DetailShell
             cover="https://images.unsplash.com/photo-1521417531039-109ed1f3d0f2?q=80&w=1200&auto=format&fit=crop"
             title="Navi Athletics Club"
@@ -39,6 +48,13 @@ export default function ClubDetail() {
               <p>We host weekly runs and cross-training sessions open to all levels.</p>
             </Paper>
           </DetailShell>
+        </Grid>
+
+        {/* 우측 배너 영역 (1.5) */}
+        <Grid item lg={1.5} sx={{ display: { xs: "none", lg: "block" } }}>
+          <Paper sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'sticky', top: 24 }}>
+            <Typography variant="caption" color="text.secondary">배너 광고</Typography>
+          </Paper>
         </Grid>
       </Grid>
     </Layout>
