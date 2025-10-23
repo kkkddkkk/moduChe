@@ -13,11 +13,11 @@ export default function CourseHeader({
   setDate,
 }) {
   if (!hasHeader) {
-    return <SectionBox label="헤더 정보" minH={420} />;
+    return <SectionBox label="헤더 정보" />;
   }
 
   return (
-    <SectionBox minH={420}>
+    <SectionBox>
       <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5, height: '100%' }}>
         <Stack spacing={0.5}>
           <Typography variant="h5" fontWeight="bold">

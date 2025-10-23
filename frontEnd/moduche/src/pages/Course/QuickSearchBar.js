@@ -16,14 +16,11 @@ export default function QuickSearchBar() {
   const [what, setWhat] = useState("");
   const [where, setWhere] = useState("");
   const [when, setWhen] = useState({ from: "", to: "" });
-  const [a11y, setA11y] = useState([]);
-
-  const a11yOptions = ["시각", "청각", "지체", "보조인", "수어 통역"];
 
   return (
     <Paper sx={{ p: { xs: 2, md: 3 } }}>
       <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} md={4}>
           <TextField
             fullWidth
             size="medium"
@@ -40,7 +37,7 @@ export default function QuickSearchBar() {
             }}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} md={4}>
           <TextField
             fullWidth
             size="medium"
@@ -50,7 +47,7 @@ export default function QuickSearchBar() {
             onChange={(e) => setWhere(e.target.value)}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} md={4}>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <TextField
               fullWidth
@@ -72,13 +69,6 @@ export default function QuickSearchBar() {
             />
           </Stack>
         </Grid>
-        <Grid item xs={12} md={3}>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            {a11yOptions.map((t) => (
-              <Chip key={t} label={t} variant="outlined" onClick={() => {}} />
-            ))}
-          </Stack>
-        </Grid>
 
         <Grid item xs={12}>
           <Divider sx={{ my: 1 }} />
@@ -95,4 +85,3 @@ export default function QuickSearchBar() {
     </Paper>
   );
 }
-
