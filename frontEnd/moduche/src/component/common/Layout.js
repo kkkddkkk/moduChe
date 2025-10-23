@@ -1,8 +1,10 @@
-import { Grid } from '@mui/material';
+import { Grid, useMediaQuery, useTheme } from '@mui/material';
 import Header from '../main/Header';
 import Footer from '../main/Footer';
 import ScrollTopButton from './ScrollTopButton';
 const Layout = ({ space, padding, children, outer }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   return (
     <>
       {outer ? <Header /> : <></>}
@@ -17,7 +19,7 @@ const Layout = ({ space, padding, children, outer }) => {
         {children}
       </Grid>
       {outer ? <ScrollTopButton /> : <></>}
-      {outer ? <Footer /> : <></>}
+      {outer && !isMobile? <Footer /> : <></>}
     </>
   );
 };
