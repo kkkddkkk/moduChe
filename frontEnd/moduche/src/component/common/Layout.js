@@ -2,7 +2,7 @@ import { Grid, useMediaQuery, useTheme } from '@mui/material';
 import Header from '../main/Header';
 import Footer from '../main/Footer';
 import ScrollTopButton from './ScrollTopButton';
-const Layout = ({ space, padding, children, outer, layoutProps }) => {
+const Layout = ({ space, padding, children, outer, layoutProps, admin }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   return (
@@ -20,7 +20,7 @@ const Layout = ({ space, padding, children, outer, layoutProps }) => {
         {children}
       </Grid>
       {outer ? <ScrollTopButton /> : <></>}
-      {outer && !isMobile? <Footer /> : <></>}
+      {outer && !isMobile && !admin? <Footer /> : <></>}
     </>
   );
 };

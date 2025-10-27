@@ -11,6 +11,7 @@ import communityRouter from './communityRouter';
 const Loading = <div>Loading...</div>;
 const Main = lazy(() => import('../pages/Main/Main'));
 const LayoutForAll = lazy(() => import('../pages/LayoutForAll'));
+const LayoutForAdmin = lazy(() => import('../pages/LayoutForAdmin'));
 //root Router의 element는 LayoutForAll로 통일해도 될 것 같습니다~~(Main 제외 - 하위 페이지 없음.)
 //이견 있으시면 말씀 주세용 -김도경-
 
@@ -67,7 +68,7 @@ const root = createBrowserRouter([
         path: 'admin',
         element: (
           <Suspense fallback={Loading}>
-            <LayoutForAll />
+            <LayoutForAdmin />
           </Suspense>
         ),
         children: adminRouter(),
