@@ -2,7 +2,7 @@ import { Grid, useMediaQuery, useTheme } from '@mui/material';
 import Header from '../main/Header';
 import Footer from '../main/Footer';
 import ScrollTopButton from './ScrollTopButton';
-const Layout = ({ space, padding, children, outer }) => {
+const Layout = ({ space, padding, children, outer, layoutProps }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   return (
@@ -15,6 +15,7 @@ const Layout = ({ space, padding, children, outer }) => {
         minHeight={outer ? '100vh' : false}
         width={'100%'}
         rowGap={0}
+        {...layoutProps}
       >
         {children}
       </Grid>

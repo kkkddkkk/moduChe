@@ -16,7 +16,7 @@ const JoinUs = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
 
-  const SelectJoinButton = ({ role, children, icon, loca }) => {
+  const SelectJoinButton = ({ role, children, icon, joinRole }) => {
     return (
       <Grid
         size={isMobile || isTablet ? 12 : 6}
@@ -28,7 +28,7 @@ const JoinUs = () => {
           hoverable
           elevation={6}
           onClick={() => {
-            navigate(`/account/${loca}`);
+            navigate(`/account/signIn?role=${joinRole}`);
           }}
           sx={{
             cursor: 'pointer',
@@ -66,7 +66,7 @@ const JoinUs = () => {
           <SelectJoinButton
             role={'개인'}
             icon={<UserRoundPlus size={120} color={main} />}
-            loca={'joinIndividual'}
+            joinRole={'individual'}
           >
             <SmallerSubTitle sx={{ textAlign: 'center' }}>
               <span style={{ color: main }}>나에게 맞는 운동</span>을 추천받을
@@ -85,7 +85,7 @@ const JoinUs = () => {
           <SelectJoinButton
             role={'기관'}
             icon={<HousePlus size={120} color={theme.palette.primary.main} />}
-            loca={'joinAgency'}
+            joinRole={'agency'}
           >
             <SmallerSubTitle sx={{ textAlign: 'center' }}>
               장애인 체육 강좌를 등록할 수 있습니다.
