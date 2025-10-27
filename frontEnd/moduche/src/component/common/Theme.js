@@ -1,3 +1,4 @@
+// src/theme/Theme.js
 import { createTheme } from "@mui/material/styles";
 
 const Theme = createTheme({
@@ -8,6 +9,10 @@ const Theme = createTheme({
         primary: { main: "#004288ff" },   // main1
         secondary: { main: "#029cdeff" }, // main2
 
+        // 상태 색상 (success / error)
+        success: { main: "#2e7d32" }, // 초록색 (ACTIVE)
+        error: { main: "#d32f2f" },   // 빨간색 (SUSPENDED)
+
         // background1 / background2
         background: {
             default: "#FFFFFF", // background1
@@ -16,7 +21,7 @@ const Theme = createTheme({
 
         // text1 / text2
         text: {
-            primary: "#333333", // text1
+            primary: "#333333",  // text1
             secondary: "#6B6666", // text2
         },
 
@@ -32,6 +37,8 @@ const Theme = createTheme({
         text2: "#6B6666",       
         warning1: "#f38200ff",  
         warning2: "#f3a600ff",  
+        success: "#2e7d32",
+        error: "#d32f2f",
     },
 });
 

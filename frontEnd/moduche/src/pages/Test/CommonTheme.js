@@ -53,16 +53,26 @@ const CommonTheme = () => {
 
     return (
         <Layout>
-            <Grid size={12}>
+            {/* MUI v5 기준이면 Grid item xs={12} 형태로 써주는 게 안전해 */}
+            <Grid item xs={12}>
                 <Paper sx={{ p: 2, mb: 2 }}>
                     {/* Background 1/2/3 */}
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
                         • Background
                     </Typography>
                     <Row>
-                        <ColorChip name="background1" color={p.background?.default} />
-                        <ColorChip name="background2" color={p.background?.paper} />
-                        <ColorChip name="background3" color={c.background3} />
+                        <ColorChip
+                            name="background1"
+                            color={p.background?.default}
+                        />
+                        <ColorChip
+                            name="background2"
+                            color={p.background?.paper}
+                        />
+                        <ColorChip
+                            name="background3"
+                            color={c.background3}
+                        />
                     </Row>
 
                     {/* Main 1/2 */}
@@ -90,6 +100,29 @@ const CommonTheme = () => {
                     <Row>
                         <ColorChip name="warning1" color={c.warning1} />
                         <ColorChip name="warning2" color={p.warning?.main} />
+                    </Row>
+
+                    {/* ✅ Status (success / error) */}
+                    <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                        • Status
+                    </Typography>
+                    <Row>
+                        <ColorChip
+                            name="success (palette)"
+                            color={p.success?.main}
+                        />
+                        <ColorChip
+                            name="error (palette)"
+                            color={p.error?.main}
+                        />
+                        {/* <ColorChip
+                            name="success (custom)"
+                            color={c.success}
+                        />
+                        <ColorChip
+                            name="error (custom)"
+                            color={c.error}
+                        /> */}
                     </Row>
                 </Paper>
             </Grid>
