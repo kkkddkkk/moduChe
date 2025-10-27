@@ -2,6 +2,12 @@
 import { lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
 
+// 개별 페이지들
+
+const CalculatePage      = lazy(() => import("../pages/Admin/CalculatePage"));
+const BannersPage        = lazy(() => import("../pages/Admin/BannersPage"));
+
+
 const Loading = <div>Loading...</div>;
 
 // 공통 레이아웃
@@ -11,14 +17,9 @@ const AdminLayout = lazy(() => import("../pages/Admin/AdminLayout"));
 const DashboardPage      = lazy(() => import("../pages/Admin/DashboardPage"));
 const MembersPage        = lazy(() => import("../pages/Admin/MembersPage"));
 const AdministratorPage  = lazy(() => import("../pages/Admin/AdministratorPage"));
-const CalculatePage      = lazy(() => import("../pages/Admin/CalculatePage"));
-const BannersPage        = lazy(() => import("../pages/Admin/BannersPage"));
+//const CalculatePage      = lazy(() => import("../pages/Admin/CalculatePage"));
+//const BannersPage        = lazy(() => import("../pages/Admin/BannersPage"));
 // const FacilityPage       = lazy(() => import("../pages/Admin/FacilityPage"));
-// const ClubApprovalPage   = lazy(() => import("../pages/Admin/ClubApprovalPage"));
-// const InquirePage        = lazy(() => import("../pages/Admin/InquirePage"));
-// const NoticesPage        = lazy(() => import("../pages/Admin/NoticesPage"));
-// const ReportsPage        = lazy(() => import("../pages/Admin/ReportsPage"));
-
 export default function adminRouter() {
     return [
         {
@@ -31,10 +32,11 @@ export default function adminRouter() {
             children: [
                 // /admin -> /admin/dashboard
                 { index: true, element: <Navigate to="dashboard" replace /> },
-
                 // (옛날 /admin/main -> dashboard)
-                { path: "main", element: <Navigate to="../dashboard" replace /> },
-
+                {
+                    path: "main",
+                    element: <Navigate to="../dashboard" replace />,
+                },
                 // 관리자 메인(대시보드)
                 {
                     path: "dashboard",
@@ -64,26 +66,26 @@ export default function adminRouter() {
                         </Suspense>
                     ),
                 },
+        
+                // // 2. 정산 내역
+                // {
+                //     path: "calculate",
+                //     element: (
+                //         <Suspense fallback={Loading}>
+                //             <CalculatePage />
+                //         </Suspense>
+                //     ),
+                // },
 
-                // 2. 정산 내역
-                {
-                    path: "calculate",
-                    element: (
-                        <Suspense fallback={Loading}>
-                            <CalculatePage />
-                        </Suspense>
-                    ),
-                },
-
-                // 3. 배너
-                {
-                    path: "banners",
-                    element: (
-                        <Suspense fallback={Loading}>
-                            <BannersPage />
-                        </Suspense>
-                    ),
-                },
+                // // 3. 배너
+                // {
+                //     path: "banners",
+                //     element: (
+                //         <Suspense fallback={Loading}>
+                //             <BannersPage />
+                //         </Suspense>
+                //     ),
+                // },
 
                 // // 4. 시설 관리
                 // {

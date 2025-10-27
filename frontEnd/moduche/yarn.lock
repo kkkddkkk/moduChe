@@ -3444,6 +3444,11 @@ cjs-module-lexer@^1.0.0:
   resolved "https://registry.yarnpkg.com/cjs-module-lexer/-/cjs-module-lexer-1.4.3.tgz#0f79731eb8cfe1ec72acd4066efac9d61991b00d"
   integrity sha512-9z8TZaGM1pfswYeXrUpzPrkx8UnWYdhJclsiYMm6x/w5+nN+8Tf/LnAgfLGQCm59qAOxU8WwHEq2vNwF6i4j+Q==
 
+classnames@^2.2.5:
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.5.1.tgz#ba774c614be0f016da105c858e7159eae8e7687b"
+  integrity sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow==
+
 clean-css@^5.2.2:
   version "5.3.3"
   resolved "https://registry.yarnpkg.com/clean-css/-/clean-css-5.3.3.tgz#b330653cd3bd6b75009cc25c714cae7b93351ccd"
@@ -5583,9 +5588,15 @@ ignore@^5.2.0:
   integrity sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==
 
 immer@^10.0.3, immer@^10.1.1:
+<<<<<<< Updated upstream
   version "10.1.3"
   resolved "https://registry.yarnpkg.com/immer/-/immer-10.1.3.tgz#e38a0b97db59949d31d9b381b04c2e441b1c3747"
   integrity sha512-tmjF/k8QDKydUlm3mZU+tjM6zeq9/fFpPqH9SzWmBnVVKsPBg/V66qsMwb3/Bo90cgUN+ghdVBess+hPsxUyRw==
+=======
+  version "10.2.0"
+  resolved "https://registry.yarnpkg.com/immer/-/immer-10.2.0.tgz#88a4ce06a1af64172d254b70f7cb04df51c871b1"
+  integrity sha512-d/+XTN3zfODyjr89gM3mPq1WNX2B8pYsu7eORitdwyA2sBubnTl3laYlBk4sXY5FUa5qTZGBDPJICVbvqzjlbw==
+>>>>>>> Stashed changes
 
 immer@^9.0.7:
   version "9.0.21"
@@ -8081,7 +8092,7 @@ prompts@^2.0.1, prompts@^2.4.2:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-prop-types@^15.6.2, prop-types@^15.8.1:
+prop-types@^15.5.8, prop-types@^15.6.2, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
   integrity sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==
@@ -8210,6 +8221,13 @@ react-dom@^19.1.1:
   dependencies:
     scheduler "^0.26.0"
 
+react-easy-swipe@^0.0.21:
+  version "0.0.21"
+  resolved "https://registry.yarnpkg.com/react-easy-swipe/-/react-easy-swipe-0.0.21.tgz#ce9384d576f7a8529dc2ca377c1bf03920bac8eb"
+  integrity sha512-OeR2jAxdoqUMHIn/nS9fgreI5hSpgGoL5ezdal4+oO7YSSgJR8ga+PkYGJrSrJ9MKlPcQjMQXnketrD7WNmNsg==
+  dependencies:
+    prop-types "^15.5.8"
+
 react-error-overlay@^6.0.11:
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/react-error-overlay/-/react-error-overlay-6.1.0.tgz#22b86256beb1c5856f08a9a228adb8121dd985f2"
@@ -8247,6 +8265,15 @@ react-refresh@^0.11.0:
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.11.0.tgz#77198b944733f0f1f1a90e791de4541f9f074046"
   integrity sha512-F27qZr8uUqwhWZboondsPx8tnC3Ct3SxZA3V5WyEvujRyyNv0VYPhoBg1gZ8/MV5tubQp76Trw8lTv9hzRBa+A==
+
+react-responsive-carousel@^3.2.23:
+  version "3.2.23"
+  resolved "https://registry.yarnpkg.com/react-responsive-carousel/-/react-responsive-carousel-3.2.23.tgz#4c0016ff54603e604bb5c1f9e7ef2d1eda133f1d"
+  integrity sha512-pqJLsBaKHWJhw/ItODgbVoziR2z4lpcJg+YwmRlSk4rKH32VE633mAtZZ9kDXjy4wFO+pgUZmDKPsPe1fPmHCg==
+  dependencies:
+    classnames "^2.2.5"
+    prop-types "^15.5.8"
+    react-easy-swipe "^0.0.21"
 
 react-router-dom@^7.9.3:
   version "7.9.3"
