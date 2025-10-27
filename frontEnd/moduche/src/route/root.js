@@ -6,10 +6,9 @@ import accountRouter from './accountRouter';
 import courseRouter from './courseRouter';
 import myFitRouter from './myFitRouter';
 import adminRouter from './adminRouter';
-import Loading from '../component/common/Loading';
 import communityRouter from './communityRouter';
 
-// const Loading = <div>Loading...</div>;
+const Loading = <div>Loading...</div>;
 const Main = lazy(() => import('../pages/Main/Main'));
 const LayoutForAll = lazy(() => import('../pages/LayoutForAll'));
 //root Router의 element는 LayoutForAll로 통일해도 될 것 같습니다~~(Main 제외 - 하위 페이지 없음.)
@@ -23,7 +22,7 @@ const root = createBrowserRouter([
       {
         path: 'test',
         element: (
-          <Suspense fallback={<Loading/>}>
+          <Suspense fallback={Loading}>
             <LayoutForAll />
           </Suspense>
         ),

@@ -12,7 +12,7 @@ const SelectController = styled(Select)(({ ownerState }) => ({
   },
 }));
 
-const CustomSelect = ({ padding, size, data, format = d => d,
+export const CustomSelect = ({ padding, size, data, format = d => d,
   selected, setSelected, placeholder, variant, disabled, error, helperText }) => {
   const black = "black";
   const gray = "gray";
