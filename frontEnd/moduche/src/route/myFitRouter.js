@@ -1,18 +1,44 @@
 import { lazy, Suspense } from "react";
 
-const Loading = <div>Loading...</div>
-// const Login = lazy(() => import("../pages/Account/Login"));
-
+const Loading = <div>Loading...</div>;
+const Measure = lazy(() => import("../pages/MyFit/MyFitMeasure"));
+const Prescription = lazy(() => import("../pages/MyFit/MyFitPrescription"));
+const Recommend = lazy(() => import("../pages/MyFit/MyFitRecommend"));
+const Content = lazy(() => import("../pages/MyFit/MyFitContent"));
 
 export default function myFitRouter() {
     return [
-        // {예시입니다. 참고해서 작성하시면 됩니다.
-        //     path: "login",
-        //     element: (
-        //         <Suspense fallback={Loading}>
-        //             <Login/>
-        //         </Suspense>
-        //     ),
-        // }
-    ]
+        {
+            path: "measure",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Measure />
+                </Suspense>
+            ),
+        },
+        {
+            path: "prescription",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Prescription />
+                </Suspense>
+            ),
+        },
+        {
+            path: "recommend",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Recommend />
+                </Suspense>
+            ),
+        },
+        {
+            path: "content",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Content />
+                </Suspense>
+            ),
+        },
+    ];
 }
