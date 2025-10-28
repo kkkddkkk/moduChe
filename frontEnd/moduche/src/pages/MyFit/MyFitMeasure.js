@@ -1,14 +1,5 @@
-import React, { useState } from "react";
-import {
-    Container,
-    Grid,
-    Paper,
-    Toolbar,
-    MenuItem,
-    Select,
-    FormControl,
-    InputLabel,
-} from "@mui/material";
+import { useState } from "react";
+import { Container, Grid, Toolbar } from "@mui/material";
 import Layout from "../../component/common/Layout";
 import {
     CenterTitle,
@@ -17,8 +8,9 @@ import {
 } from "../../component/common/Text";
 import CustomTextField from "../../component/common/CustomTextField";
 import { TwoAlignedButtons } from "../../component/common/Button";
+import { OutlinedSelect } from "../../component/common/CustomSelect";
+import Paper from "../../component/common/Paper";
 
-// 📘 mock 기준: 실제 JSON에서 사용된 항목 (참고)
 const disabilityTypes = [
     "지체장애",
     "시각장애",
@@ -59,8 +51,8 @@ export default function MyFitMeasurePage() {
         },
     });
 
-    const handleSelectChange = (field) => (e) => {
-        setForm({ ...form, [field]: e.target.value });
+    const handleSelect = (field) => (newValue) => {
+        setForm({ ...form, [field]: newValue });
     };
 
     const handleResultChange = (key) => (e) => {
@@ -88,7 +80,6 @@ export default function MyFitMeasurePage() {
     const handleSubmit = () => {
         console.log("입력값:", form);
         alert("측정값이 저장되었습니다. (다음 단계: 처방 화면)");
-        // 이후 단계: navigate("/prescription") 등으로 이동
     };
 
     return (
@@ -97,8 +88,7 @@ export default function MyFitMeasurePage() {
             <Container maxWidth="md" sx={{ my: 4 }}>
                 <CenterTitle>체력 측정 입력</CenterTitle>
 
-                {/* 안내 */}
-                <Paper sx={{ p: 3, my: 2 }}>
+                <Paper>
                     <SubTitle>체력측정 안내</SubTitle>
                     <Contents100>
                         사용자 맞춤 운동 처방을 위해 체력 항목을 입력해주세요.
@@ -106,96 +96,55 @@ export default function MyFitMeasurePage() {
                     </Contents100>
                 </Paper>
 
-                {/* 사용자 기본 정보 */}
-                <Paper sx={{ p: 3, my: 2 }}>
+                <Paper>
                     <SubTitle>1. 기본 정보 입력</SubTitle>
 
                     <Grid container spacing={3} sx={{ mt: 1 }}>
-                        {/* 성별 */}
                         <Grid item xs={12} sm={6} md={4}>
-                            <FormControl fullWidth variant="outlined">
-                                <InputLabel id="sex-label">성별</InputLabel>
-                                <Select
-                                    labelId="sex-label"
-                                    label="성별"
-                                    value={form.sex}
-                                    onChange={handleSelectChange("sex")}
-                                    sx={{
-                                        minWidth: "100%",
-                                        height: 56, // 높이 맞춤
-                                    }}
-                                >
-                                    <MenuItem value="M">남성</MenuItem>
-                                    <MenuItem value="F">여성</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <OutlinedSelect
+                                placeholder="성별"
+                                data={["M", "F"]}
+                                format={(d) => (d === "M" ? "남성" : "여성")}
+                                selected={form.sex}
+                                setSelected={handleSelect("sex")}
+                            />
                         </Grid>
 
-                        {/* 연령대 */}
                         <Grid item xs={12} sm={6} md={4}>
-                            <FormControl fullWidth variant="outlined">
-                                <InputLabel id="age-label">연령대</InputLabel>
-                                <Select
-                                    labelId="age-label"
-                                    label="연령대"
-                                    value={form.age}
-                                    onChange={handleSelectChange("age")}
-                                    sx={{
-                                        minWidth: "100%",
-                                        height: 56,
-                                    }}
-                                >
-                                    {[
-                                        "10대",
-                                        "20대",
-                                        "30대",
-                                        "40대",
-                                        "50대",
-                                        "60대 이상",
-                                    ].map((age) => (
-                                        <MenuItem key={age} value={age}>
-                                            {age}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <OutlinedSelect
+                                placeholder="연령대"
+                                data={[
+                                    "10대",
+                                    "20대",
+                                    "30대",
+                                    "40대",
+                                    "50대",
+                                    "60대 이상",
+                                ]}
+                                selected={form.age}
+                                setSelected={handleSelect("age")}
+                            />
                         </Grid>
 
-                        {/* 장애 유형 */}
                         <Grid item xs={12} sm={12} md={4}>
-                            <FormControl fullWidth variant="outlined">
-                                <InputLabel id="dis-label">
-                                    장애 유형
-                                </InputLabel>
-                                <Select
-                                    labelId="dis-label"
-                                    label="장애 유형"
-                                    value={form.disability}
-                                    onChange={handleSelectChange("disability")}
-                                    sx={{
-                                        minWidth: "100%",
-                                        height: 56,
-                                    }}
-                                >
-                                    {disabilityTypes.map((d) => (
-                                        <MenuItem key={d} value={d}>
-                                            {d}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <OutlinedSelect
+                                placeholder="장애 유형"
+                                data={disabilityTypes}
+                                selected={form.disability}
+                                setSelected={handleSelect("disability")}
+                            />
                         </Grid>
                     </Grid>
                 </Paper>
 
-                {/* 측정 항목 입력 */}
-                <Paper sx={{ p: 3, my: 2 }}>
+                <Paper>
                     <SubTitle>2. 측정 항목 입력</SubTitle>
 
                     {measureItems.map((item) => (
                         <Paper
                             key={item.key}
-                            sx={{ p: 2, my: 1, backgroundColor: "#fafafa" }}
+                            padding={2}
+                            sx={{ my: 1, mx: 0, backgroundColor: "#fafafa" }}
                         >
                             <SubTitle>{item.label}</SubTitle>
                             <Contents100 sx={{ mb: 1 }}>
@@ -210,7 +159,6 @@ export default function MyFitMeasurePage() {
                     ))}
                 </Paper>
 
-                {/* 버튼 */}
                 <TwoAlignedButtons
                     containerSx={{ my: 3 }}
                     groupContainerSx={{ maxWidth: 400 }}

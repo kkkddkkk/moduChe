@@ -1,16 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-    Container,
-    Grid,
-    Paper,
-    Toolbar,
-    MenuItem,
-    Select,
-    FormControl,
-    InputLabel,
-    Typography,
-    Divider,
-} from "@mui/material";
+import { Container, Grid, Toolbar, Typography, Divider } from "@mui/material";
 import Layout from "../../component/common/Layout";
 import {
     CenterTitle,
@@ -18,6 +7,8 @@ import {
     SubTitle,
 } from "../../component/common/Text";
 import { TwoAlignedButtons } from "../../component/common/Button";
+import { OutlinedSelect } from "../../component/common/CustomSelect";
+import Paper from "../../component/common/Paper";
 
 import prescriptionData from "../MyFit/KS_DSPSN_FTNESS_MESURE_ACCTO_MVM_PRSCRPTN_LIST_202504.json";
 
@@ -40,11 +31,10 @@ export default function MyFitPrescriptionMock() {
     //      .then(setData);
     //  }, []);
 
-    const handleChange = (field) => (event) => {
-        setFilters({ ...filters, [field]: event.target.value });
+    const handleFilterChange = (field) => (newValue) => {
+        setFilters({ ...filters, [field]: newValue });
     };
 
-    // 필터 조건에 맞는 데이터 필터링
     const filteredData = data.filter((item) => {
         const sexMatch = filters.sex
             ? item.SEXDSTN_FLAG_CD === filters.sex
@@ -56,7 +46,6 @@ export default function MyFitPrescriptionMock() {
         return sexMatch && ageMatch && disMatch;
     });
 
-    // 운동처방 텍스트를 단계별로 분리하는 함수
     const parsePrescription = (text) => {
         if (!text) return [];
         const regex = /(사전운동|본운동|마무리운동)[:：]\s*([^\/]+)/g;
@@ -73,83 +62,53 @@ export default function MyFitPrescriptionMock() {
             <Container maxWidth="md" sx={{ my: 3 }}>
                 <CenterTitle>맞춤형 운동처방</CenterTitle>
 
-                {/* 필터 영역 */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper mb={3}>
                     <SubTitle>검색 조건</SubTitle>
                     <Grid container spacing={3} sx={{ mt: 1 }}>
-                        {/* 성별 */}
                         <Grid item xs={12} sm={6} md={4}>
-                            <FormControl fullWidth variant="outlined">
-                                <InputLabel id="filter-sex">성별</InputLabel>
-                                <Select
-                                    labelId="filter-sex"
-                                    label="성별"
-                                    value={filters.sex}
-                                    onChange={handleChange("sex")}
-                                    sx={{ height: 56 }}
-                                >
-                                    <MenuItem value="">전체</MenuItem>
-                                    <MenuItem value="M">남성</MenuItem>
-                                    <MenuItem value="F">여성</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <OutlinedSelect
+                                placeholder="성별"
+                                data={["", "M", "F"]}
+                                format={(d) =>
+                                    d === "M"
+                                        ? "남성"
+                                        : d === "F"
+                                        ? "여성"
+                                        : "전체"
+                                }
+                                selected={filters.sex}
+                                setSelected={handleFilterChange("sex")}
+                            />
                         </Grid>
 
-                        {/* 연령대 */}
                         <Grid item xs={12} sm={6} md={4}>
-                            <FormControl fullWidth variant="outlined">
-                                <InputLabel id="filter-age">연령대</InputLabel>
-                                <Select
-                                    labelId="filter-age"
-                                    label="연령대"
-                                    value={filters.age}
-                                    onChange={handleChange("age")}
-                                    sx={{ height: 56 }}
-                                >
-                                    <MenuItem value="">전체</MenuItem>
-                                    {[
-                                        ...new Set(
-                                            data.map((d) => d.AGE_FLAG_NM)
-                                        ),
-                                    ].map((age) => (
-                                        <MenuItem key={age} value={age}>
-                                            {age}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <OutlinedSelect
+                                placeholder="연령대"
+                                data={[
+                                    "",
+                                    ...new Set(data.map((d) => d.AGE_FLAG_NM)),
+                                ]}
+                                selected={filters.age}
+                                setSelected={handleFilterChange("age")}
+                                format={(d) => (d === "" ? "전체" : d)}
+                            />
                         </Grid>
 
-                        {/* 장애유형 */}
                         <Grid item xs={12} sm={12} md={4}>
-                            <FormControl fullWidth variant="outlined">
-                                <InputLabel id="filter-dis">
-                                    장애유형
-                                </InputLabel>
-                                <Select
-                                    labelId="filter-dis"
-                                    label="장애유형"
-                                    value={filters.disability}
-                                    onChange={handleChange("disability")}
-                                    sx={{ height: 56 }}
-                                >
-                                    <MenuItem value="">전체</MenuItem>
-                                    {[
-                                        ...new Set(
-                                            data.map((d) => d.TROBL_TY_NM)
-                                        ),
-                                    ].map((type) => (
-                                        <MenuItem key={type} value={type}>
-                                            {type}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <OutlinedSelect
+                                placeholder="장애유형"
+                                data={[
+                                    "",
+                                    ...new Set(data.map((d) => d.TROBL_TY_NM)),
+                                ]}
+                                selected={filters.disability}
+                                setSelected={handleFilterChange("disability")}
+                                format={(d) => (d === "" ? "전체" : d)}
+                            />
                         </Grid>
                     </Grid>
                 </Paper>
 
-                {/* 결과 영역 */}
                 {filteredData.length === 0 ? (
                     <Typography align="center" sx={{ mt: 5 }}>
                         조건에 맞는 처방 데이터가 없습니다.
@@ -158,7 +117,7 @@ export default function MyFitPrescriptionMock() {
                     filteredData.slice(0, 10).map((item, idx) => {
                         const steps = parsePrescription(item.MVM_PRSCRPTN_CN);
                         return (
-                            <Paper key={idx} sx={{ p: 3, my: 2 }}>
+                            <Paper key={idx} my={2}>
                                 <SubTitle>
                                     {item.TROBL_TY_NM} ({item.AGE_FLAG_NM},{" "}
                                     {item.SEXDSTN_FLAG_CD})
