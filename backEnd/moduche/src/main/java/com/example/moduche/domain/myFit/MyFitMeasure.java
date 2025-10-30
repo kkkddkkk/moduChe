@@ -1,6 +1,8 @@
 package com.example.moduche.domain.myFit;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.example.moduche.domain.login.User;
 
@@ -12,14 +14,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "my_fit_member_measure")
+@Table(name = "my_fit_measure")
 @Getter @Setter @NoArgsConstructor
 public class MyFitMeasure extends MyFitBaseEntity {
 
@@ -37,8 +39,8 @@ public class MyFitMeasure extends MyFitBaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToOne(mappedBy = "measure", cascade = CascadeType.ALL)
-    private MyFitMeasureResult result;
+    @OneToMany(mappedBy = "measure", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MyFitMeasureResult> results = new ArrayList<>();
 }
 
 

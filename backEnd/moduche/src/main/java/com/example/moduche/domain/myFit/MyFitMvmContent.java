@@ -25,8 +25,7 @@ public class MyFitMvmContent extends MyFitBaseEntity {
     private String sportsStepNm;
     private String videoUrl;
 
-    // FK
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recommend_id")
-    private MyFitSportsRecommend recommend;
+    private MyFitRecommend recommend;
 }
