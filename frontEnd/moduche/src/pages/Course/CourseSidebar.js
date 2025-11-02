@@ -13,7 +13,9 @@ export default function CourseSidebar({
 }) {
   if (!hasSidebar) {
     return (
-      <Box sx={{ position: { lg: "sticky" }, top: { lg: "88px" }, width: "100%" }}>
+      <Box
+        sx={{ position: { lg: "sticky" }, top: { lg: "88px" }, width: "100%" }}
+      >
         <SectionBox label="사이드바" />
       </Box>
     );
@@ -40,12 +42,24 @@ export default function CourseSidebar({
           }}
         >
           {/* 상단 가격/정원 요약 */}
-          <Grid container justifyContent="space-between" alignItems="flex-start">
+          <Grid
+            container
+            justifyContent="space-between"
+            alignItems="flex-start"
+          >
             <Grid item>
-              <Typography variant="h5" fontWeight="bold">
+              <Typography
+                variant="h5"
+                fontWeight="bold"
+                sx={{ fontSize: "2rem" }}
+              >
                 120,000 KRW
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: "1rem" }}
+              >
                 첫 수업 24시간 전 100% 환불
               </Typography>
             </Grid>
@@ -57,6 +71,7 @@ export default function CourseSidebar({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 0.5,
+                  fontSize: "2rem",
                 }}
               >
                 <Users style={{ width: 16, height: 16 }} /> 9/16
@@ -68,6 +83,7 @@ export default function CourseSidebar({
                   fontWeight: 600,
                   display: "block",
                   mt: 0.5,
+                  fontSize: "1rem",
                 }}
               >
                 {spotsLeft} spots left
@@ -83,22 +99,36 @@ export default function CourseSidebar({
               borderRadius: 2,
               bgcolor: "grey.50",
               mt: 0.5,
-              mb: 1.5, // ✅ 버튼과의 간격 확보
+              mb: 1.0, // ✅ 버튼과의 간격 확보
             }}
           >
             <Grid container justifyContent="space-between">
-              <Typography variant="body2" color="text.secondary">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontSize: "1.3rem" }}
+              >
                 Session
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, fontSize: "1.3rem" }}
+              >
                 {sessions.find((s) => s.id === sessionId)?.label}
               </Typography>
             </Grid>
             <Grid container justifyContent="space-between" sx={{ mt: 1 }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontSize: "1.3rem" }}
+              >
                 Date
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, fontSize: "1.3rem" }}
+              >
                 {date}
               </Typography>
             </Grid>
@@ -113,6 +143,9 @@ export default function CourseSidebar({
                 py: 1.3, // ✅ 버튼 세로 여유
                 fontWeight: 600,
               }}
+              buttonWrapperSx={{
+                width: "100%",
+              }}
             >
               수강 신청
             </OneAlignedButton>
@@ -121,7 +154,12 @@ export default function CourseSidebar({
               variant="caption"
               color="text.secondary"
               component="p"
-              sx={{ mt: 2, textAlign: "center" }} // ✅ 버튼 아래 간격 강화
+              sx={{
+                mt: 2,
+                textAlign: "center",
+                fontSize: "0.95rem",
+                lineHeight: 1.45,
+              }} // ✅ 버튼 아래 간격 강화
             >
               신청 시 정책에 동의하게 됩니다.
             </Typography>

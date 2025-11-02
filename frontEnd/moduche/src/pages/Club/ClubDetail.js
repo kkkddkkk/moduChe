@@ -6,6 +6,7 @@ import QuickSearchBar from "../Course/QuickSearchBar";
 import ClubHeader from "./ClubHeader"; // 새로 만든 컴포넌트
 import ClubSidebar from "./ClubSidebar";
 import ClubDescription from "./ClubDescription";
+import QuickSearchWithModal from "../Course/QuickSearchWithModal";
 
 export default function ClubDetail() {
   // 동호회 상세 페이지를 위한 Mock 데이터
@@ -18,7 +19,8 @@ export default function ClubDetail() {
       memberCount: 24,
       capacity: 50,
       tags: ["달리기", "초보 환영", "아침 운동", "서울숲", "건강"],
-      coverImage: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop",
+      coverImage:
+        "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop",
     }),
     []
   );
@@ -37,13 +39,13 @@ export default function ClubDetail() {
         sx={{
           px: { xs: 2, md: 3 },
           py: 3,
-          minHeight: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' },
+          minHeight: { xs: "calc(100vh - 56px)", sm: "calc(100vh - 64px)" },
           display: "flex",
           flexDirection: "column",
         }}
       >
         <Box sx={{ mb: 3 }}>
-          <QuickSearchBar />
+          <QuickSearchWithModal />
         </Box>
 
         {/* --- Flexbox 기반 레이아웃 --- */}
@@ -68,7 +70,13 @@ export default function ClubDetail() {
             }}
           >
             {/* 1-1. 상단 카드 영역 (이미지 + 헤더) */}
-            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                gap: 3,
+              }}
+            >
               {/* 이미지 영역 */}
               <Box sx={{ flex: { md: 1 }, minWidth: 0 }}>
                 <CourseImage hasImage={hasImage} src={clubData.coverImage} />
@@ -91,10 +99,7 @@ export default function ClubDetail() {
               minWidth: { lg: 320 },
             }}
           >
-            <ClubSidebar
-              hasSidebar={hasSidebar}
-              clubData={clubData}
-            />
+            <ClubSidebar hasSidebar={hasSidebar} clubData={clubData} />
           </Box>
         </Box>
       </Container>

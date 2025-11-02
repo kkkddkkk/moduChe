@@ -1,0 +1,20 @@
+/.metadata/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-*.log*
+.pnpm-store/
+
+#Java/Gradle
+.gradle
+build/
+bin/
+target/
+
+# IDE
+.classpath
+.project
+.settings/
+.idea/
+.vscode/ 
