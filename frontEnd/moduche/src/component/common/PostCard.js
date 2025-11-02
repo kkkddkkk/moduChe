@@ -75,7 +75,7 @@ export function PostCard({
                     />
 
                     {/* 동아리 설명 (고정 높이 + 자동 잘림 처리). */}
-                    <Contents children={postDesc} />
+                    <Contents children={postDesc} sx={{ whiteSpace: 'pre-wrap' }} />
 
                     {/* 등록일 / 회원 수 → 한 줄 양 끝 배치. */}
                     <Box

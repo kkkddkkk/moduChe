@@ -1,160 +1,148 @@
-import React, { useEffect, useState } from "react";
-import { Container, Grid, Toolbar, Typography, Divider } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Container, Toolbar, Typography, Divider } from "@mui/material";
 import Layout from "../../component/common/Layout";
+import Paper from "../../component/common/Paper";
 import {
     CenterTitle,
-    Contents100,
     SubTitle,
+    Contents100,
 } from "../../component/common/Text";
-import { TwoAlignedButtons } from "../../component/common/Button";
-import { OutlinedSelect } from "../../component/common/CustomSelect";
-import Paper from "../../component/common/Paper";
+import { OneAlignedButton } from "../../component/common/Button";
 
-import prescriptionData from "../MyFit/KS_DSPSN_FTNESS_MESURE_ACCTO_MVM_PRSCRPTN_LIST_202504.json";
+const generatePrescription = (measureData) => {
+    if (!measureData) return null;
 
-export default function MyFitPrescriptionMock() {
-    const [data, setData] = useState([]);
-    const [filters, setFilters] = useState({
-        sex: "",
-        age: "",
-        disability: "",
-    });
+    const { sex, age, disability, results } = measureData;
 
-    useEffect(() => {
-        setData(prescriptionData);
-    }, []);
+    const cardio = Number(results.cardio?.value || 0);
+    const strength = Number(results.strength?.value || 0);
 
-    //  백엔드 API 구현시 변경
-    //  useEffect(() => {
-    //      fetch("/api/prescription") // ← 백엔드 API
-    //      .then((res) => res.json())
-    //      .then(setData);
-    //  }, []);
+    let basePrescription = "사전운동: 가벼운 스트레칭 / 본운동: ";
+    let recommendations = [];
 
-    const handleFilterChange = (field) => (newValue) => {
-        setFilters({ ...filters, [field]: newValue });
+    if (cardio < 400) {
+        basePrescription += "걷기 20분 / 마무리운동: 정리 스트레칭";
+        recommendations.push("걷기", "스트레칭");
+    } else if (cardio < 600) {
+        basePrescription += "자전거 30분 / 마무리운동: 가벼운 요가";
+        recommendations.push("실내 자전거", "요가");
+    } else {
+        basePrescription += "수영 40분 / 마무리운동: 전신 스트레칭";
+        recommendations.push("수영", "아쿠아로빅");
+    }
+
+    if (disability === "지체장애") {
+        recommendations.push("휠체어 트레이닝");
+    } else if (disability === "시각장애") {
+        recommendations.push("밴드 체조");
+    }
+
+    return {
+        prescription: basePrescription,
+        recommendations,
     };
+};
 
-    const filteredData = data.filter((item) => {
-        const sexMatch = filters.sex
-            ? item.SEXDSTN_FLAG_CD === filters.sex
-            : true;
-        const ageMatch = filters.age ? item.AGE_FLAG_NM === filters.age : true;
-        const disMatch = filters.disability
-            ? item.TROBL_TY_NM === filters.disability
-            : true;
-        return sexMatch && ageMatch && disMatch;
-    });
+const parsePrescription = (text) => {
+    if (!text) return [];
+    const regex = /(사전운동|본운동|마무리운동)[:：]\s*([^\/]+)/g;
+    const matches = [...text.matchAll(regex)];
+    return matches.map((m) => ({
+        step: m[1],
+        content: m[2].trim(),
+    }));
+};
 
-    const parsePrescription = (text) => {
-        if (!text) return [];
-        const regex = /(사전운동|본운동|마무리운동)[:：]\s*([^\/]+)/g;
-        const matches = [...text.matchAll(regex)];
-        return matches.map((m) => ({
-            step: m[1],
-            content: m[2].trim(),
-        }));
-    };
+export default function MyFitPrescription() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const measureData = location.state?.form || null;
+
+    const resultData = generatePrescription(measureData);
+    const prescriptionSteps = parsePrescription(resultData?.prescription);
 
     return (
         <Layout>
             <Toolbar />
             <Container maxWidth="md" sx={{ my: 3 }}>
-                <CenterTitle>맞춤형 운동처방</CenterTitle>
+                <CenterTitle>개인 맞춤 운동 처방 결과</CenterTitle>
 
-                <Paper mb={3}>
-                    <SubTitle>검색 조건</SubTitle>
-                    <Grid container spacing={3} sx={{ mt: 1 }}>
-                        <Grid item xs={12} sm={6} md={4}>
-                            <OutlinedSelect
-                                placeholder="성별"
-                                data={["", "M", "F"]}
-                                format={(d) =>
-                                    d === "M"
-                                        ? "남성"
-                                        : d === "F"
-                                        ? "여성"
-                                        : "전체"
-                                }
-                                selected={filters.sex}
-                                setSelected={handleFilterChange("sex")}
-                            />
-                        </Grid>
+                {measureData ? (
+                    <>
+                        <Paper>
+                            <SubTitle>입력 정보</SubTitle>
+                            <Contents100>
+                                성별:{" "}
+                                {measureData.sex === "M" ? "남성" : "여성"} |{" "}
+                                연령대: {measureData.age} | 장애유형:{" "}
+                                {measureData.disability}
+                            </Contents100>
 
-                        <Grid item xs={12} sm={6} md={4}>
-                            <OutlinedSelect
-                                placeholder="연령대"
-                                data={[
-                                    "",
-                                    ...new Set(data.map((d) => d.AGE_FLAG_NM)),
-                                ]}
-                                selected={filters.age}
-                                setSelected={handleFilterChange("age")}
-                                format={(d) => (d === "" ? "전체" : d)}
-                            />
-                        </Grid>
+                            <Divider sx={{ my: 2 }} />
 
-                        <Grid item xs={12} sm={12} md={4}>
-                            <OutlinedSelect
-                                placeholder="장애유형"
-                                data={[
-                                    "",
-                                    ...new Set(data.map((d) => d.TROBL_TY_NM)),
-                                ]}
-                                selected={filters.disability}
-                                setSelected={handleFilterChange("disability")}
-                                format={(d) => (d === "" ? "전체" : d)}
-                            />
-                        </Grid>
-                    </Grid>
-                </Paper>
-
-                {filteredData.length === 0 ? (
-                    <Typography align="center" sx={{ mt: 5 }}>
-                        조건에 맞는 처방 데이터가 없습니다.
-                    </Typography>
-                ) : (
-                    filteredData.slice(0, 10).map((item, idx) => {
-                        const steps = parsePrescription(item.MVM_PRSCRPTN_CN);
-                        return (
-                            <Paper key={idx} my={2}>
-                                <SubTitle>
-                                    {item.TROBL_TY_NM} ({item.AGE_FLAG_NM},{" "}
-                                    {item.SEXDSTN_FLAG_CD})
-                                </SubTitle>
-
-                                <Contents100
-                                    sx={{ color: "text.secondary", mb: 1 }}
-                                >
-                                    장애상세: {item.TROBL_DETAIL_NM || " - "} /
-                                    등급: {item.TROBL_GRAD_NM || " - "}
-                                </Contents100>
-
-                                <Divider sx={{ my: 1 }} />
-
-                                {steps.length > 0 ? (
-                                    steps.map((s, i) => (
-                                        <Contents100 key={i}>
-                                            <strong>{s.step}:</strong>{" "}
-                                            {s.content}
-                                        </Contents100>
-                                    ))
-                                ) : (
-                                    <Contents100>
-                                        운동처방 내용이 없습니다.
+                            <SubTitle>측정 결과</SubTitle>
+                            {Object.entries(measureData.results).map(
+                                ([key, val]) => (
+                                    <Contents100 key={key}>
+                                        {`${key.toUpperCase()} — 측정방법: ${
+                                            val.type || "-"
+                                        } / 결과: ${val.value || "-"} `}
                                     </Contents100>
-                                )}
-                            </Paper>
-                        );
-                    })
+                                )
+                            )}
+                        </Paper>
+
+                        <Paper>
+                            <SubTitle>운동 처방</SubTitle>
+                            {prescriptionSteps &&
+                            prescriptionSteps.length > 0 ? (
+                                prescriptionSteps.map((s, i) => (
+                                    <Contents100 key={i}>
+                                        <strong>{s.step}:</strong> {s.content}
+                                    </Contents100>
+                                ))
+                            ) : (
+                                <Contents100>
+                                    운동 처방 내용을 불러오지 못했습니다.
+                                </Contents100>
+                            )}
+                        </Paper>
+
+                        <Paper>
+                            <SubTitle>추천 운동</SubTitle>
+                            {resultData?.recommendations?.length ? (
+                                resultData.recommendations.map((rec, i) => (
+                                    <Contents100 key={i}>- {rec}</Contents100>
+                                ))
+                            ) : (
+                                <Contents100>추천 운동이 없습니다.</Contents100>
+                            )}
+                        </Paper>
+                    </>
+                ) : (
+                    <Paper>
+                        <Typography align="center" sx={{ p: 3 }}>
+                            측정 데이터가 없습니다.
+                            <br />
+                            체력 측정 페이지에서 먼저 값을 입력해주세요.
+                        </Typography>
+                    </Paper>
                 )}
 
-                <TwoAlignedButtons
-                    containerSx={{ my: 4 }}
-                    groupContainerSx={{ maxWidth: 400 }}
-                    leftButton={{ children: "초기화", variant: "outlined" }}
-                    rightButton={{ children: "다시 검색" }}
-                />
+                <OneAlignedButton
+                    variant="contained"
+                    fullWidth
+                    sx={{ mt: 3 }}
+                    onClick={() =>
+                        navigate("/myfit/recommend", {
+                            state: {
+                                recommendations: resultData.recommendations,
+                            },
+                        })
+                    }
+                >
+                    추천 운동 보기
+                </OneAlignedButton>
             </Container>
         </Layout>
     );
