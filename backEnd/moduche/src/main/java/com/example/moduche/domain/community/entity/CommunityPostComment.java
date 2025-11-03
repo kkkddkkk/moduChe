@@ -1,4 +1,4 @@
-package com.example.moduche.domain.community;
+package com.example.moduche.domain.community.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

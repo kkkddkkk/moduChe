@@ -3,7 +3,7 @@ package com.example.moduche.domain.promotion;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-import com.example.moduche.domain.community.CommunityPost;
+import com.example.moduche.domain.community.entity.CommunityPost;
 import com.example.moduche.domain.course.Course;
 
 import lombok.*;

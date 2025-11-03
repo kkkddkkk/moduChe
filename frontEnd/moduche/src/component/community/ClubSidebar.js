@@ -2,7 +2,7 @@ import { Box, Grid, Typography } from "@mui/material";
 import { Users, CalendarHeart } from "lucide-react";
 import { OneAlignedButton } from "../../component/common/Button";
 import Paper from "../../component/common/Paper";
-import SectionBox from "../Course/SectionBox"; 
+import SectionBox from "../../pages/Course/SectionBox"; // 경로 유지(필요시 조정)
 
 export default function ClubSidebar({
   hasSidebar,
