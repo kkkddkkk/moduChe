@@ -81,13 +81,13 @@ export function SubTitle({
       color={color ? color : black}
       width={'100%'}
       sx={{
-        ...sx,
         fontWeight: 'bold',
         margin: margin,
         fontStyle: italic ? 'italic' : 'normal',
         '&:hover': {
           cursor: hover ? 'pointer' : 'auto',
         },
+        ...sx,
       }}
       onClick={hover ? onClick : () => {}}
     >

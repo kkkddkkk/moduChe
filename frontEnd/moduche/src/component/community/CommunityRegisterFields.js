@@ -1,33 +1,417 @@
-import { Typography, TextField } from "@mui/material";
+import {
+    Typography,
+    TextField,
+    FormControl,
+    FormLabel,
+    RadioGroup,
+    FormControlLabel,
+    Radio,
+    Checkbox,
+    Grid,
+    Box,
+    Button,
+    useTheme,
+    useMediaQuery,
+    alpha,
+} from "@mui/material";
+import { useEffect, useState } from "react";
+import { SubTitle } from "../common/Text";
+import Paper from "../common/Paper";
+import CustomTextField from "../common/CustomTextField";
+import { RegisterTitle } from "./RegisterTitle";
+import { OneAlignedButton } from "../common/Button";
+import { CalendarCheck, ClipboardList } from "lucide-react";
+import { PreviewRounded } from "@mui/icons-material";
 
-export const CommunityRegisterFields = ({ form, onChange }) => (
-  <>
-    <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-      설립자 이름
-    </Typography>
-    <TextField
-      name="founder"
-      fullWidth
-      required
-      sx={{ mb: 2 }}
-      placeholder="홍길동"
-      value={form.founder}
-      onChange={onChange}
-    />
+export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
 
-    <Typography variant="subtitle1" sx={{ mb: 1 }}>
-      설립 목적 / 활동 취지
-    </Typography>
-    <TextField
-      name="purpose"
-      fullWidth
-      multiline
-      minRows={3}
-      required
-      sx={{ mb: 3 }}
-      placeholder="예: 지역 주민 간 교류 및 건강 증진을 위해"
-      value={form.purpose}
-      onChange={onChange}
-    />
-  </>
-);
+    const [scheduleType, setScheduleType] = useState("비정기");
+    const [selectedDays, setSelectedDays] = useState([]);
+    const [selectedWeeks, setSelectedWeeks] = useState([]);
+    const [customDate, setCustomDate] = useState("");
+
+    useEffect(() => {
+        if (form) {
+            setScheduleType(form.scheduleType ?? "비정기");
+            setSelectedDays(form.selectedDays ?? []);
+            setSelectedWeeks(form.selectedWeeks ?? []);
+            setCustomDate(form.customDate ?? "");
+        }
+    }, []);
+
+    useEffect(() => {
+        setForm((prev) => {
+            // 같은 값이면 그대로 유지.
+            if (prev.scheduleType === scheduleType) return prev;
+
+            const updated = { ...prev, scheduleType };
+
+            if (scheduleType === "정기") {
+                // 정기일 때 customDate 초기화.
+                updated.customDate = "";
+            } else {
+                // 비정기일 때 selectedDays/Weeks 초기화.
+                updated.selectedDays = [];
+                updated.selectedWeeks = [];
+            }
+
+            return updated;
+        });
+    }, [scheduleType, setForm]);
+
+    const handleWeekToggle = (week) => {
+        const next = selectedWeeks.includes(week)
+            ? selectedWeeks.filter((w) => w !== week)
+            : [...selectedWeeks, week];
+        setSelectedWeeks(next);
+        setForm((prev) => ({ ...prev, selectedWeeks: next }));
+    };
+
+    const handleDayToggle = (day) => {
+        const next = selectedDays.includes(day)
+            ? selectedDays.filter((d) => d !== day)
+            : [...selectedDays, day];
+        setSelectedDays(next);
+        setForm((prev) => ({ ...prev, selectedDays: next }));
+    };
+
+    const handleCustomDateChange = (value) => {
+        setCustomDate(value);
+        setForm((prev) => ({ ...prev, customDate: value }));
+    };
+
+    return (
+        <>
+            <Grid size={isMobile || isTablet ? 12 : 6}>
+                <SubTitle
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        pl: 2,
+                    }}
+                >
+                    <ClipboardList color={theme.palette.primary.main} />
+                    기본 정보
+                </SubTitle>
+                <Paper
+                    sx={{
+                        p: 3,
+                        position: "relative",
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${alpha(
+                            theme.palette.primary.main,
+                            0.3
+                        )}`,
+                        "&::before": {
+                            content: '""',
+                            position: "absolute",
+                            left: 0,
+                            top: 0,
+                            width: 4,
+                            height: "100%",
+                            borderRadius: `100px 0 0 100px`,
+                            backgroundColor: theme.palette.primary.main,
+                        },
+                    }}
+                >
+                    {/* 설립자 이름 */}
+                    <Grid size={12} sx={{ mb: 3 }}>
+                        <RegisterTitle title={"설립자 이름"} />
+                        <CustomTextField
+                            data={form.founder || ""}
+                            setData={(value) =>
+                                setForm((prev) => ({ ...prev, founder: value }))
+                            }
+                            placeholder="이름"
+                            padding={10}
+                        />
+                    </Grid>
+                    {/* 동아리 이름 */}
+                    <Grid size={12} sx={{ mb: 3 }}>
+                        <RegisterTitle title={"동아리 이름"} />
+                        <CustomTextField
+                            data={form.name || ""}
+                            setData={(value) =>
+                                setForm((prev) => ({ ...prev, name: value }))
+                            }
+                            placeholder="예: 날아라 붉은 해파리"
+                            padding={10}
+                        />
+                    </Grid>
+
+                    {/* 동아리 설립 취지 */}
+                    <Grid size={12} sx={{ mb: 3 }}>
+                        <RegisterTitle title={"설립 목적 및 취지"} />
+                        <CustomTextField
+                            data={form.purpose || ""}
+                            setData={(value) =>
+                                setForm((prev) => ({ ...prev, purpose: value }))
+                            }
+                            placeholder="예: 건강 증진을 위해"
+                            padding={10}
+                        />
+                    </Grid>
+
+                    {/* 최대 모집 인원 */}
+                    <Grid size={12} sx={{ mb: 0 }}>
+                        <RegisterTitle title={"최대 모집 인원"} />
+                        <TextField
+                            name="maxMember"
+                            type="number"
+                            fullWidth
+                            required
+                            sx={{ mb: 0, padding: 0 }}
+                            placeholder="1"
+                            value={form.maxMember || ""}
+                            onChange={onChange}
+                        />
+                    </Grid>
+                </Paper>
+            </Grid>
+
+            <Grid
+                size={isMobile || isTablet ? 12 : 6}
+                sx={{ pt: isMobile || isTablet ? 2 : 0 }}
+            >
+                <SubTitle
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        pl: 2,
+                    }}
+                >
+                    <CalendarCheck color={theme.palette.primary.main} />
+                    활동 정보
+                </SubTitle>
+                <Paper
+                    sx={{
+                        p: 3,
+                        position: "relative",
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${alpha(
+                            theme.palette.primary.main,
+                            0.3
+                        )}`,
+                        "&::before": {
+                            content: '""',
+                            position: "absolute",
+                            left: 0,
+                            top: 0,
+                            width: 4,
+                            height: "100%",
+                            borderRadius: `100px 0 0 100px`,
+                            backgroundColor: theme.palette.primary.main,
+                        },
+                    }}
+                >
+                    {/* 활동 위치 */}
+                    <Grid container size={12} sx={{ mb: 3 }}>
+                        <RegisterTitle title={"활동 위치"} />
+                        <Grid item size={8}>
+                            <CustomTextField
+                                data={form.address || ""}
+                                setData={(value) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        address: value,
+                                    }))
+                                }
+                                placeholder="기본 주소"
+                                padding={10}
+                            />
+                        </Grid>
+                        <Grid item size={4} mb={1}>
+                            <OneAlignedButton
+                                sx={{ height: "100%", width: "100%" }}
+                                buttonWrapperSx={{ width: "90%" }}
+                            >
+                                검색
+                            </OneAlignedButton>
+                        </Grid>
+                        <CustomTextField
+                            data={form.addressDetail || ""}
+                            setData={(value) =>
+                                setForm((prev) => ({
+                                    ...prev,
+                                    addressDetail: value,
+                                }))
+                            }
+                            placeholder="상세 주소"
+                            padding={10}
+                        />
+                    </Grid>
+
+                    {/* 활동 주기 */}
+                    <Grid container size={12} sx={{ mb: 0 }}>
+                        <RegisterTitle title={"활동 주기"} />
+                        {/* 정기 혹은 비정기 선택 */}
+                        <Grid size={12}>
+                            <FormControl sx={{ mb: 1 }}>
+                                <RadioGroup
+                                    row
+                                    value={scheduleType}
+                                    onChange={(e) =>
+                                        setScheduleType(e.target.value)
+                                    }
+                                >
+                                    <FormControlLabel
+                                        value="정기"
+                                        control={<Radio />}
+                                        label="정기"
+                                    />
+                                    <FormControlLabel
+                                        value="비정기"
+                                        control={<Radio />}
+                                        label="비정기"
+                                    />
+                                </RadioGroup>
+                            </FormControl>
+                        </Grid>
+                        {/* 매주, 격주, 매월 선택 */}
+                        <Grid size={12} mb={2}>
+                            {scheduleType === "정기" ? (
+                                <>
+                                    {/* 주기 선택 */}
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{
+                                            mb: 0.7,
+                                            color: theme.palette.text.secondary,
+                                        }}
+                                    >
+                                        주기 선택
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            gap: 1,
+                                            flexWrap: "wrap",
+                                        }}
+                                    >
+                                        {["매주", "격주", "매월"].map((w) => (
+                                            <Button
+                                                size="small"
+                                                sx={{
+                                                    px: 1,
+                                                    py: 0.3,
+                                                    minWidth: "auto",
+                                                    fontSize: "0.85rem",
+                                                }}
+                                                key={w}
+                                                variant={
+                                                    selectedWeeks.includes(w)
+                                                        ? "contained"
+                                                        : "outlined"
+                                                }
+                                                onClick={() =>
+                                                    handleWeekToggle(w)
+                                                }
+                                            >
+                                                {w}
+                                            </Button>
+                                        ))}
+                                    </Box>
+                                </>
+                            ) : (
+                                <></>
+                            )}
+                        </Grid>
+                        <Grid size={12}>
+                            {scheduleType === "정기" ? (
+                                <>
+                                    {/* 요일 선택 */}
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{
+                                            mb: 0.75,
+                                            color: theme.palette.text.secondary,
+                                        }}
+                                    >
+                                        요일 선택
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            gap: 1,
+                                            flexWrap: "wrap",
+                                            mb: 0,
+                                        }}
+                                    >
+                                        {[
+                                            "월",
+                                            "화",
+                                            "수",
+                                            "목",
+                                            "금",
+                                            "토",
+                                            "일",
+                                        ].map((d) => (
+                                            <Button
+                                                sx={{
+                                                    px: 1.2,
+                                                    py: 0.3,
+                                                    minWidth: "auto",
+                                                    fontSize: "0.85rem",
+                                                }}
+                                                size="small"
+                                                key={d}
+                                                variant={
+                                                    selectedDays.includes(d)
+                                                        ? "contained"
+                                                        : "outlined"
+                                                }
+                                                onClick={() =>
+                                                    handleDayToggle(d)
+                                                }
+                                            >
+                                                {d}
+                                            </Button>
+                                        ))}
+                                    </Box>
+                                </>
+                            ) : (
+                                <>
+                                    {/* 비정기일 경우 특정 날짜 입력 */}
+                                    <Box sx={{ mb: 3.2 }}>
+                                        <Typography
+                                            variant="subtitle1"
+                                            sx={{
+                                                mt: 3,
+                                                mb: 1,
+                                                color: theme.palette.text
+                                                    .secondary,
+                                            }}
+                                        >
+                                            활동 날짜
+                                        </Typography>
+                                        <CustomTextField
+                                            data={customDate}
+                                            setData={(value) => {
+                                                setCustomDate(value);
+                                                setForm((prev) => ({
+                                                    ...prev,
+                                                    customDate: value,
+                                                }));
+                                            }}
+                                            placeholder="예: 매월 17일, 5월 3일 등"
+                                            padding={10}
+                                        />
+                                    </Box>
+                                </>
+                            )}
+                        </Grid>
+                    </Grid>
+                </Paper>
+            </Grid>
+        </>
+    );
+};
