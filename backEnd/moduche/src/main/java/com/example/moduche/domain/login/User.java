@@ -5,12 +5,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.moduche.domain.login.enums.UserStatus;
 import com.example.moduche.domain.myFit.MyFitMeasure;
 
 import lombok.*;
 
 @Entity @Table(name="users")
 @Getter @Setter @NoArgsConstructor
+@Builder @AllArgsConstructor
 public class User {
   @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
   private Long userId;
@@ -20,7 +22,9 @@ public class User {
   private String name;
   private String phone;
   private String email;
-  private String status;
+  
+  @Enumerated(EnumType.STRING) 
+  private UserStatus status;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
