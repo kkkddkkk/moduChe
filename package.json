@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@mui/x-date-pickers": "^8.15.0",
+    "@mui/x-date-pickers-pro": "^8.15.0",
+    "@mui/x-license-pro": "^6.10.2",
+    "dayjs": "^1.11.18",
+    "react-responsive-carousel": "^3.2.23",
+    "react-slick": "^0.31.0",
+    "recharts": "^3.3.0",
+    "slick-carousel": "^1.8.1"
+  }
+}

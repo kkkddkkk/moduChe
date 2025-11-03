@@ -32,50 +32,48 @@ export default function CourseDetail() {
   const hasDetail = true;
   const hasSidebar = true;
 
-  return (
+  
+   return (
     <Layout>
       <Toolbar />
 
-      {/* ⬇️ 화면 높이 확보: AppBar(툴바) 높이를 뺀 만큼은 최소 확보 */}
       <Container
         maxWidth="xl"
         sx={{
           px: { xs: 2, md: 3 },
           py: 3,
-          minHeight: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' }, // 모바일/데스크탑 AppBar
-          display: 'flex',
-          flexDirection: 'column',
+          minHeight: { xs: "calc(100vh - 56px)", sm: "calc(100vh - 64px)" },
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        {/* 퀵서치 */}
         <Box sx={{ mb: 3 }}>
           <QuickSearchBar />
         </Box>
 
-        {/* 콘텐트 행: 좌 메인 + 우 사이드바 */}
         <Box
           sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', lg: 'row' },
+            display: "flex",
+            flexDirection: { xs: "column", lg: "row" },
             gap: 3,
-            alignItems: 'stretch',
-            flex: 1,                 // ⬅️ 남은 세로 공간을 전부 이 행이 먹음
+            alignItems: "stretch",
+            flex: 1,
             minHeight: 0,
           }}
         >
-          {/* 좌측 메인 (이미지+헤더 + 상세) */}
+          {/* 좌측 메인 */}
           <Box
             sx={{
               flex: { lg: 3 },
-              display: 'flex',
-              flexDirection: 'column',
+              display: "flex",
+              flexDirection: "column",
               gap: 3,
               minWidth: 0,
               minHeight: 0,
             }}
           >
-            {/* 상단 카드: 이미지 | 헤더 */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
+            {/* 상단: 이미지 | 헤더 */}
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
               <Box sx={{ flex: { md: 1 }, minWidth: 0 }}>
                 <CourseImage
                   hasImage={hasImage}
@@ -92,13 +90,16 @@ export default function CourseDetail() {
                   setSessionId={setSessionId}
                   date={date}
                   setDate={setDate}
+                  showMeta={false}         // ⬅️ 헤더에서 메타 숨김
+                  emphasizeByline={true}   // ⬅️ by… 라인 크게
                 />
               </Box>
             </Box>
 
-            {/* ⬇️ 상세: 남는 높이를 먹어서 푸터 위까지 채움 */}
-            <Box sx={{ flex: 1, minHeight: 240, display: 'flex' }}>
-              {/* CourseDescription이 카드 높이를 고정하지 않는 한, 래퍼가 커지며 하단을 채움 */}
+            
+
+            {/* 상세 */}
+            <Box sx={{ flex: 1, minHeight: 240, display: "flex" }}>
               <Box sx={{ flex: 1 }}>
                 <CourseDescription hasDetail={hasDetail} />
               </Box>
@@ -110,28 +111,26 @@ export default function CourseDetail() {
             sx={{
               flex: { lg: 1 },
               minWidth: { lg: 320 },
-              position: { lg: 'sticky' },
-              top: { lg: 88 }, // 헤더 높이에 맞춰 필요하면 조정
-              alignSelf: { lg: 'flex-start' },
+              position: { lg: "sticky" },
+              top: { lg: 88 },
+              alignSelf: { lg: "flex-start" },
             }}
           >
-            {/* 아래 sx가 사이드바 세로 여유 + 내부 간격 */}
             <CourseSidebar
-  hasSidebar={hasSidebar}
-  spotsLeft={spotsLeft}
-  sessions={sessions}
-  sessionId={sessionId}
-  date={date}
-  sx={{
-    p: 3,              // 카드 안쪽 패딩 ↑
-    gap: 2.5,          // 섹션 사이 기본 간격 ↑
-    // 블록별 미세 간격
-    '& .sidebar-price': { mb: 2 },              // 가격/상단 요약
-    '& .sidebar-picker': { my: 2.5, p: 2 },     // Session/Date 선택 카드
-    '& .sidebar-cta': { mt: 2.5, mb: 1 },       // 버튼 영역
-    '& .sidebar-footnote': { mt: 2 },           // 하단 안내문
-  }}
-/>
+              hasSidebar={hasSidebar}
+              spotsLeft={spotsLeft}
+              sessions={sessions}
+              sessionId={sessionId}
+              date={date}
+              sx={{
+                p: 3,
+                gap: 2.5,
+                "& .sidebar-price": { mb: 2 },
+                "& .sidebar-picker": { my: 2.5, p: 2 },
+                "& .sidebar-cta": { mt: 2.5, mb: 1 },
+                "& .sidebar-footnote": { mt: 2 },
+              }}
+            />
           </Box>
         </Box>
       </Container>

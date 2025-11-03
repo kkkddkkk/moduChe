@@ -5,13 +5,22 @@ export default function ClubDescription({ hasDetail, clubData }) {
   return (
     <SectionBox label="동호회 상세 내용" sx={{ flexGrow: 1 }}>
       {hasDetail && (
-        <Box sx={{ p: 3, "& h6": { mt: 3, mb: 1.5 }, "& p": { mb: 1.5 } }}>
+        <Box
+          sx={{
+            p: 3,
+            "& h6": { mt: 3, mb: 1.5, fontSize: "1.3rem", fontWeight: 600 },
+            "& p": { mb: 1.5, fontSize: "1.15rem", lineHeight: 1.8 }, // 본문 크기·가독성 ↑
+            "& li": { fontSize: "1.1rem", lineHeight: 1.8 },
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             동호회 소개
           </Typography>
           <Typography variant="body1" paragraph>
-            <strong>{clubData.name}</strong>에 오신 것을 환영합니다! 저희는 달리기를 사랑하는 사람들이 모여 함께 건강한 습관을 만들어가는 커뮤니티입니다.
-            초보자부터 숙련자까지 모두 환영하며, 아름다운 {clubData.location}을 함께 달리며 즐거운 주말 아침을 시작합니다.
+            <strong>{clubData.name}</strong>에 오신 것을 환영합니다! 저희는
+            달리기를 사랑하는 사람들이 모여 함께 건강한 습관을 만들어가는
+            커뮤니티입니다. 초보자부터 숙련자까지 모두 환영하며, 아름다운{" "}
+            {clubData.location}을 함께 달리며 즐거운 주말 아침을 시작합니다.
           </Typography>
 
           <Typography variant="h6" gutterBottom>
@@ -45,8 +54,9 @@ export default function ClubDescription({ hasDetail, clubData }) {
             가입 안내
           </Typography>
           <Typography variant="body1" paragraph>
-            우측의 '동호회 가입' 버튼을 통해 언제든지 가입 신청을 할 수 있습니다. 가입 승인 후 단체 채팅방에 초대해 드립니다.
-            궁금한 점이 있다면 언제든지 문의해주세요!
+            우측의 '동호회 가입' 버튼을 통해 언제든지 가입 신청을 할 수
+            있습니다. 가입 승인 후 단체 채팅방에 초대해 드립니다. 궁금한 점이
+            있다면 언제든지 문의해주세요!
           </Typography>
         </Box>
       )}

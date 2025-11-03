@@ -4,13 +4,12 @@ import { OneAlignedButton } from "../../component/common/Button";
 import Paper from "../../component/common/Paper";
 import SectionBox from "../Course/SectionBox"; 
 
-export default function ClubSidebar({
-  hasSidebar,
-  clubData,
-}) {
+export default function ClubSidebar({ hasSidebar, clubData }) {
   if (!hasSidebar) {
     return (
-      <Box sx={{ position: { lg: "sticky" }, top: { lg: "88px" }, width: "100%" }}>
+      <Box
+        sx={{ position: { lg: "sticky" }, top: { lg: "88px" }, width: "100%" }}
+      >
         <SectionBox label="사이드바" />
       </Box>
     );
@@ -30,16 +29,20 @@ export default function ClubSidebar({
       <SectionBox>
         <Box
           sx={{
-            p: 3,                               // ⬅️ CourseSidebar와 동일
+            p: 3, // ⬅️ CourseSidebar와 동일
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            gap: 3,                             // ⬅️ 섹션 간 기본 간격
-            minHeight: { xs: 380, md: 460 },    // ⬅️ 세로 여유(동일)
+            gap: 3, // ⬅️ 섹션 간 기본 간격
+            minHeight: { xs: 380, md: 460 }, // ⬅️ 세로 여유(동일)
           }}
         >
           {/* 상단 요약 (CourseSidebar의 가격/정원 영역 대응) */}
-          <Grid container justifyContent="space-between" alignItems="flex-start">
+          <Grid
+            container
+            justifyContent="space-between"
+            alignItems="flex-start"
+          >
             <Grid item>
               <Typography variant="h5" fontWeight="bold">
                 가입비 없음
@@ -54,11 +57,17 @@ export default function ClubSidebar({
                 color="text.secondary"
                 sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
               >
-                <Users style={{ width: 16, height: 16 }} /> {memberCount} / {capacity}
+                <Users style={{ width: 16, height: 16 }} /> {memberCount} /{" "}
+                {capacity}
               </Typography>
               <Typography
                 variant="caption"
-                sx={{ color: "success.main", fontWeight: 600, display: "block", mt: 0.5 }}
+                sx={{
+                  color: "success.main",
+                  fontWeight: 600,
+                  display: "block",
+                  mt: 0.5,
+                }}
               >
                 {Math.max(capacity - memberCount, 0)} 자리 남음
               </Typography>
@@ -69,19 +78,38 @@ export default function ClubSidebar({
           <Paper
             sx={{
               m: 0,
-              p: 2.5,                 // ⬅️ 동일
+              p: 2.5, // ⬅️ 동일
               borderRadius: 2,
               bgcolor: "grey.50",
               mt: 0.5,
-              mb: 1.5,                // ⬅️ 버튼과의 간격
+              mb: 1.5, // ⬅️ 버튼과의 간격
             }}
           >
-            <Grid container justifyContent="space-between" alignItems="center">
-              <Typography variant="body2" color="text.secondary">
+            <Grid
+              container
+              justifyContent="space-between"
+              alignItems="center"
+              gap={2}
+            >
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ fontSize: "1.1rem" }}
+                alignItems="center"
+              >
                 정기 일정
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 1 }}>
-                <CalendarHeart size={16} />
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 1,
+                  fontSize: "1.1rem",
+                }}
+              >
+                <CalendarHeart size={20} />
                 {schedule}
               </Typography>
             </Grid>
@@ -93,7 +121,7 @@ export default function ClubSidebar({
               size="large"
               buttonSx={{
                 width: "100%",
-                py: 1.3,              // ⬅️ 버튼 세로 여유
+                py: 1.3, // ⬅️ 버튼 세로 여유
                 fontWeight: 600,
               }}
             >
@@ -103,7 +131,7 @@ export default function ClubSidebar({
               variant="caption"
               color="text.secondary"
               component="p"
-              sx={{ mt: 2, textAlign: "center" }}  // ⬅️ 버튼 아래 간격
+              sx={{ mt: 2, textAlign: "center" }} // ⬅️ 버튼 아래 간격
             >
               참여 시 커뮤니티 가이드에 동의하게 됩니다.
             </Typography>
