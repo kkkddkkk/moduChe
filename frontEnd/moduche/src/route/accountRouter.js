@@ -3,7 +3,8 @@ import { lazy, Suspense } from "react";
 const Loading = <div>Loading...</div>
 const Login = lazy(() => import("../pages/Account/Login"));
 const JoinUs = lazy(() => import("../pages/Account/JoinUs"));
-const SignIn = lazy(() => import("../pages/Account/SignIn"));
+const IndividualSignIn = lazy(() => import("../pages/Account/IndividualSignIn"));
+const FacilitySignIn = lazy(() => import("../pages/Account/FacilitySignIn"));
 const FindId = lazy(() => import("../pages/Account/FindId"));
 const FindPw = lazy(() => import("../pages/Account/FindPw"));
 
@@ -25,10 +26,17 @@ export default function accoutRouter() {
                 </Suspense>
             ),
         }, {
-            path: "signIn",
+            path: "signInI",
             element: (
                 <Suspense fallback={Loading}>
-                    <SignIn/>
+                    <IndividualSignIn/>
+                </Suspense>
+            ),
+        },{
+            path: "signInF",
+            element: (
+                <Suspense fallback={Loading}>
+                    <FacilitySignIn/>
                 </Suspense>
             ),
         },{

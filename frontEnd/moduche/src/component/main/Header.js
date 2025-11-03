@@ -3,7 +3,6 @@ import {
   Divider,
   Grid,
   IconButton,
-  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -15,7 +14,7 @@ import { Contents } from '../common/Text';
 import { SlideModal } from '../common/Modals';
 import { useEffect, useRef, useState } from 'react';
 import CustomTextField from '../common/CustomTextField';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const theme = useTheme();
@@ -80,18 +79,20 @@ const Header = () => {
       <AppBar position="sticky" ref={headerRef} sx={{ zIndex: 1500 }}>
         <Toolbar sx={{ backgroundColor: theme.palette.background.default }}>
           <Box component={'div'} flexGrow={1}>
-
-              <Box
-                component={'img'}
-                src={`/logo/MODUCHE_LOGO.png`}
-                sx={{
-                  width: '160px',
-                  height: 'auto',
-                  display: 'inline-block',
-                  cursor: 'pointer',
-                }}
-                onClick={()=>navigate("/")}
-              />
+            <Box
+              component={'img'}
+              src={`/logo/MODUCHE_LOGO.png`}
+              sx={{
+                width: '160px',
+                height: 'auto',
+                display: 'inline-block',
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                navigate('/');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
           </Box>
 
           <HeaderMenu onClick={clickSearchButton}>검색하기</HeaderMenu>

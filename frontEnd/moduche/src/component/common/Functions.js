@@ -29,7 +29,7 @@ export const handleApiError = (error) => {
     message = "서버와 연결할 수 없습니다. 네트워크를 확인하세요.";
   } else {
     const status = error.response.status;
-    const data = error.response.data;
+    const data = error.response?.data||{};
 
     switch (status) {
       case 400:
