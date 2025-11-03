@@ -129,11 +129,7 @@ function CalculatePage() {
             const matchTo = toDate ? dateOnly <= toDate : true;
 
             return (
-                matchKeyword &&
-                matchStatus &&
-                matchType &&
-                matchFrom &&
-                matchTo
+                matchKeyword && matchStatus && matchType && matchFrom && matchTo
             );
         });
     }, [list, keyword, statusFilter, typeFilter, fromDate, toDate]);
@@ -189,8 +185,8 @@ function CalculatePage() {
                         textAlign: { xs: "left", sm: "center" },
                     }}
                 >
-                    배너, 수수료 등 정산 완료 및 예정 내역을 조회하고
-                    다운로드할 수 있습니다.
+                    배너, 수수료 등 정산 완료 및 예정 내역을 조회하고 다운로드할
+                    수 있습니다.
                 </Typography>
             </Box>
 
@@ -522,7 +518,9 @@ function CalculatePage() {
                                 },
                             }}
                         >
-                            <TableCell sx={{ minWidth: 120 }}>정산번호</TableCell>
+                            <TableCell sx={{ minWidth: 120 }}>
+                                정산번호
+                            </TableCell>
                             <TableCell sx={{ minWidth: 140 }}>업체명</TableCell>
                             <TableCell sx={{ minWidth: 120 }}>
                                 사업자번호
@@ -560,8 +558,7 @@ function CalculatePage() {
                                         transition:
                                             "background-color 0.15s ease-in-out",
                                         "&:hover": {
-                                            backgroundColor:
-                                                "rgba(0,0,0,0.03)",
+                                            backgroundColor: "rgba(0,0,0,0.03)",
                                         },
                                     }}
                                 >
