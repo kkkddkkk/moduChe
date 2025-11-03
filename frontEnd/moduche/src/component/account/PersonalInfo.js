@@ -1,11 +1,20 @@
-import { Grid, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Button,
+  Grid,
+  TextField,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import Layout from '../common/Layout';
 import Paper from '../common/Paper';
 import CustomTextField from '../common/CustomTextField';
 import { OneAlignedButton } from '../common/Button';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SignInText } from './SignInText';
+import { Circle, Minus } from 'lucide-react';
+import { emailTest } from '../../api/accountAPI';
+import EmailTest from './EmailTest';
 
 const PersonalInfo = ({
   name,
@@ -18,26 +27,43 @@ const PersonalInfo = ({
   setEmailError,
   numberError,
   setNumberError,
+  birth,
+  setBirth,
+  birthError,
+  setBirthError,
+  backFirst,
+  setBackFirst,
+  backFirstError,
+  setBackFirstError,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
-  const [searchParam] = useSearchParams();
-  const signRole = searchParam.get('role');
 
-  //정규식
-  const regPhone = /^01[016789]-?\d{3,4}-?\d{4}$/;
-  const regEmail = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  //#region[정규식+검증]
+  const regPhone = /^(01[016789]\d{3,4}\d{4}|0\d{1,2}\d{3,4}\d{4})$/;
+  const regBirth = /^\d{6}$/;
+  const regBackFirst = /^[1-8]$/;
 
-  useEffect(() => {
-    if (email.length > 0 && !regEmail.test(email)) {
-      setEmailError(true);
+  function regPhoneNumber(numbers) {
+    if (numbers.startsWith('01')) {
+      // 휴대전화
+      numbers = numbers.replace(/^(\d{3})(\d{3,4})(\d{0,4})$/, '$1-$2-$3');
+    } else if (numbers.startsWith('02')) {
+      // 2자리 지역번호
+      numbers = numbers.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '$1-$2-$3');
     } else {
-      setEmailError(false);
+      // 3자리 지역번호
+      numbers = numbers.replace(/^(\d{3})(\d{3,4})(\d{0,4})$/, '$1-$2-$3');
     }
-  }, [email]);
+
+    // 마지막 하이픈 제거 (있으면)
+    numbers = numbers.replace(/-$/g, '');
+    return numbers;
+  }
 
   useEffect(() => {
+    //번호 검증
     if (number.length > 0 && !regPhone.test(number)) {
       setNumberError(true);
     } else {
@@ -45,51 +71,132 @@ const PersonalInfo = ({
     }
   }, [number]);
 
-  const checkDuplicated = () => {
-    alert('중복?');
-  };
+  useEffect(() => {
+    //생일 검증
+    if (birth.length > 0 && !regBirth.test(birth)) {
+      setBirthError(true);
+    } else {
+      setBirthError(false);
+    }
+  }, [birth]);
+
+  useEffect(() => {
+    //주민번호 7번째 자리 검증
+    if (backFirst.length > 0 && !regBackFirst.test(backFirst)) {
+      setBackFirstError(true);
+    } else {
+      setBackFirstError(false);
+    }
+  }, [backFirst]);
+  //#endregion
 
   return (
-    <Paper sx={{ height: isMobile || isTablet ? 'auto' : '50vh' }}>
-      <Layout>
-        <SignInText title={signRole === 'individual' ? '이름' : '시설명'} />
+    <Paper sx={{ height: 'auto' }}>
+      <Layout space={2}>
+        <SignInText title={'이름'} first />
         <Grid size={12} marginBottom={'5%'}>
           <CustomTextField
             data={name}
             setData={setName}
-            placeholder={signRole === 'individual' ? '이름' : '시설명'}
+            placeholder={'이름'}
             padding={10}
           />
         </Grid>
         <SignInText title={'이메일'} />
-        <Grid size={8} marginBottom={'5%'}>
-          <CustomTextField
-            data={email}
-            setData={setEmail}
-            placeholder={'이메일'}
-            error={emailError}
-            helperText={'이메일 형식이 올바르지 않습니다.'}
-            padding={10}
-          />
-        </Grid>
-        <Grid size={4}>
-          <OneAlignedButton
-            sx={{ height: '100%', width: '100%' }}
-            // onClick={checkDuplicated}
-          >
-            이메일 검증
-          </OneAlignedButton>
-        </Grid>
+        <EmailTest
+          email={email}
+          setEmail={setEmail}
+          emailError={emailError}
+          setEmailError={setEmailError}
+        />
         <SignInText title={'전화번호'} />
         <Grid size={12} marginBottom={'5%'}>
-          <CustomTextField
-            data={number}
-            setData={setNumber}
-            placeholder={'전화번호'}
+          <TextField
+            value={regPhoneNumber(number)}
+            placeholder="전화번호"
             error={numberError}
-            helperText={'전화번호 형식이 올바르지 않습니다.'}
-            padding={10}
+            helperText={numberError ? '올바르지 않은 형식입니다.' : ''}
+            fullWidth
+            inputProps={{
+              style: { padding: 10 },
+            }}
+            type="text"
+            onChange={(e) => {
+              setNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 11));
+            }}
           />
+        </Grid>
+        <SignInText title={'주민등록번호'} />
+        <Grid size={12} marginBottom={'5%'}>
+          <Layout>
+            <Grid size={6}>
+              <TextField
+                value={birth}
+                placeholder="생년월일"
+                error={birthError}
+                helperText={birthError ? '올바르지 않은 형식입니다.' : ''}
+                fullWidth
+                inputProps={{
+                  style: { padding: 10 },
+                }}
+                type="text"
+                onChange={(e) => {
+                  setBirth(e.target.value.replace(/[^0-9]/g, '').slice(0, 6));
+                }}
+              />
+            </Grid>
+            <Grid
+              size={1}
+              sx={{
+                fontSize: 30,
+                display: 'flex',
+                justifyContent: 'center',
+                textAlign: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <Minus></Minus>
+            </Grid>
+            <Grid size={5}>
+              <Layout space={1}>
+                <Grid size={4}>
+                  <TextField
+                    value={backFirst}
+                    error={backFirstError}
+                    helperText={''}
+                    fullWidth
+                    inputProps={{
+                      style: { padding: 10 },
+                    }}
+                    type="text"
+                    onChange={(e) => {
+                      setBackFirst(
+                        e.target.value.replace(/[^0-8]/g, '').slice(0, 1),
+                      );
+                    }}
+                  />
+                </Grid>
+                <Grid
+                  size={8}
+                  sx={{
+                    fontSize: 30,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Circle style={{ fill: 'currentColor' }} />
+                  <Circle style={{ fill: 'currentColor' }} />
+                  <Circle style={{ fill: 'currentColor' }} />
+                  <Circle style={{ fill: 'currentColor' }} />
+                  <Circle style={{ fill: 'currentColor' }} />
+                  <Circle style={{ fill: 'currentColor' }} />
+                </Grid>
+              </Layout>
+            </Grid>
+          </Layout>
         </Grid>
       </Layout>
     </Paper>

@@ -91,9 +91,9 @@ const Login = () => {
 
   return (
     <Layout padding={2}>
-      {isMobile ? <></> : <Grid size={isTablet?2:4} />}
+      {isMobile ? <></> : <Grid size={isTablet ? 2 : 4} />}
 
-      <Grid size={isMobile ? 12 : isTablet?8:4}>
+      <Grid size={isMobile ? 12 : isTablet ? 8 : 4}>
         <CenterTitle>로그인</CenterTitle>
         <Box
           width={'100%'}
@@ -136,7 +136,12 @@ const Login = () => {
           helperText={'비밀번호가 올바르지 않습니다.'}
         />
         <LoginDivider />
-        <OneAlignedButton onClick={tryLogin}>로그인</OneAlignedButton>
+        <OneAlignedButton
+          buttonWrapperSx={{ width: '100%' }}
+          onClick={tryLogin}
+        >
+          로그인
+        </OneAlignedButton>
         <Box width={'100%'} textAlign={'center'} margin={'5% 0'}>
           <LoginText item={'joinUs'}>회원가입</LoginText>
           <LoginText item={'findId'} last>
@@ -154,7 +159,7 @@ const Login = () => {
           <GoogleLoginButton />
         </Box>
       </Grid>
-      {isMobile ? <></> : <Grid size={isTablet?2:4} />}
+      {isMobile ? <></> : <Grid size={isTablet ? 2 : 4} />}
     </Layout>
   );
 };

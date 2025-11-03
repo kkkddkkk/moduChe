@@ -17,4 +17,5 @@ public class Facility {
   private String facilityPhone;
   private String openHours;
   private String accessibilityFeatures;
+  private String business_num;
 }

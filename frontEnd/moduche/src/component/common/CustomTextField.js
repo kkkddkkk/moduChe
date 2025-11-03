@@ -61,7 +61,8 @@ const CustomTextField = React.memo(
     margin,
     show = true,
     rest,
-    variant="outlined"
+    variant="outlined",
+    onChange
   }) => {
     return (
       <PaddingControlTextField
@@ -71,7 +72,7 @@ const CustomTextField = React.memo(
         fullWidth
         variant={variant}
         value={data}
-        onChange={(event) => setData(event.target.value)}
+        onChange={onChange?onChange:(event) => setData(event.target.value)}
         padding={padding}
         disabled={disabled}
         placeholder={placeholder}
