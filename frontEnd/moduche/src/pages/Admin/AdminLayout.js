@@ -128,6 +128,7 @@ export default function AdminLayout() {
                         borderRight: "1px solid",
                         borderColor: "divider",
                         bgcolor: "background.paper",
+                        pt: 1,
                     },
                 }}
                 open
