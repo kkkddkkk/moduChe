@@ -18,9 +18,9 @@ import com.example.moduche.domain.community.repository.CommunityMemberRepository
 import com.example.moduche.domain.community.repository.CommunityPostPhotoRepository;
 import com.example.moduche.domain.community.repository.CommunityPostRepository;
 import com.example.moduche.domain.community.repository.CommunityRepository;
-import com.example.moduche.domain.community.repository.UserRepository;
 import com.example.moduche.domain.login.User;
 import com.example.moduche.global.AWS.service.AWSService;
+import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 

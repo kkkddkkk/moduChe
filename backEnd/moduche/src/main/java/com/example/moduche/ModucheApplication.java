@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication(scanBasePackages = "com.example.moduche")                 // ✅ 컴포넌트 스캔
 @EntityScan(basePackages = "com.example.moduche.domain")                        // ✅ 엔티티 스캔
-@EnableJpaRepositories(basePackages = "com.example.moduche.domain")         // ✅ 리포지토리 패키지(없어도 OK, 있으면 경로 맞춰주세요)
+//@EnableJpaRepositories(basePackages = "com.example.moduche.domain")         // ✅ 리포지토리 패키지(없어도 OK, 있으면 경로 맞춰주세요)
 @EnableTransactionManagement
 public class ModucheApplication {
     public static void main(String[] args) {
