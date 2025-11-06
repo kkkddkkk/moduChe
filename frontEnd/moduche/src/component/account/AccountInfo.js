@@ -7,28 +7,72 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SignInText } from './SignInText';
 import { idTest } from '../../api/accountAPI';
+import Loading from '../common/Loading';
+import { useApi } from '../../hook/useAPI';
 
 const AccountInfo = ({
   id,
   setId,
-  idError,
-  setIdError,
   password,
   setPassword,
-  pwError,
-  setPwError,
   chkPw,
   setChkPw,
-  chkPwError,
-  setChkPwError,
+  accountError,
+  setAccountError,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
   const isNotDeskTop = useMediaQuery(theme.breakpoints.down('lg'));
+  
+  const [idHelperText, setIdHelperText] = useState('5자 ~ 16자의 영어 + 숫자로 입력해주세요.');
 
   const [show1, setShow1] = useState(false);
   const [show2, setShow2] = useState(false);
+
+  const [idError, setIdError] = useState(false);
+  const [IdChecked, setIdChecked] = useState(false);
+  const [pwError, setPwError] = useState(false);
+  const [chkPwError, setChkPwError] = useState(false);
+
+  const { callApi: checkIdApi, loading } = useApi(idTest);
+
+  //예외처리
+  useEffect(() => {
+    if (id.length === 0) {
+      setAccountError({ message: 'ID가 입력되지 않았습니다.', ready: false });
+      return;
+    }
+    if (idError) {
+      setAccountError({
+        message: 'ID 입력란을 다시 확인해주세요.',
+        ready: false,
+      });
+      return;
+    }
+    if (!IdChecked) {
+      setAccountError({
+        message: 'ID 중복확인 버튼을 클릭해주세요.',
+        ready: false,
+      });
+      return;
+    }
+    if (password.length === 0 || chkPw.length === 0) {
+      setAccountError({
+        message: '비밀번호가 입력되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    if (pwError || chkPwError) {
+      setAccountError({
+        message: '비밀번호 입력란을 다시 확인해주세요.',
+        ready: false,
+      });
+      return;
+    }
+    setAccountError({ message: '계정정보 준비 완료', ready: true });
+  }, [id, password, chkPw, idError, IdChecked, pwError, chkPwError]);
 
   //#region[정규식+검증]
   const regId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,16}$/; //5~116자 숫자+영어
@@ -41,6 +85,7 @@ const AccountInfo = ({
     } else {
       setIdError(false);
     }
+    setIdHelperText('5자 ~ 16자의 영어 + 숫자로 입력해주세요.');
   }, [id]);
 
   useEffect(() => {
@@ -62,16 +107,26 @@ const AccountInfo = ({
 
   //중복 ID 체크 로직
   const checkId = async () => {
-    const res = await idTest(id);
+    const res = await checkIdApi(id);
     alert(res.message);
-    if(res.status!=='OK'){
+    if (res.status !== 'OK') {
       setIdError(true);
+      setIdChecked(false);
+      setIdHelperText('이미 사용 중인 ID입니다.');
+    } else {
+      setIdChecked(true);
     }
     console.log(res);
   };
 
+  //ID 값 바뀌면 setIdChecked를 false로
+  useEffect(() => {
+    setIdChecked(false);
+  }, [id]);
+
   return (
     <Paper sx={{ height: 'auto' }}>
+      <Loading open={loading} text={'로딩 중입니다.'}/>
       <SignInText title={'아이디'} />
       <Layout space={2}>
         <Grid size={8} marginBottom={'5%'}>
@@ -80,7 +135,7 @@ const AccountInfo = ({
             setData={setId}
             placeholder={'아이디'}
             error={idError}
-            helperText={'5자 ~ 16자의 영어 + 숫자로 입력해주세요.'}
+            helperText={idHelperText}
             padding={10}
           />
         </Grid>
@@ -88,7 +143,7 @@ const AccountInfo = ({
           <OneAlignedButton
             buttonWrapperSx={{ width: '100%' }}
             onClick={checkId}
-            disabled={idError || id.length == 0}
+            disabled={idError || id.length == 0 || IdChecked}
           >
             중복확인
           </OneAlignedButton>

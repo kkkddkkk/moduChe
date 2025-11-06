@@ -14,12 +14,11 @@ import lombok.Setter;
 public class FacilitySignInDTO {
 	private String username;
 	private String password;
-	private String name;
+	private Long facilityId;
 	private String email;
 	private String phone;
 	
-	private String birth;
-	private String gender;
-	private boolean qualified;
-	
+	private String businessNum;
+	private String boss;
+
 }

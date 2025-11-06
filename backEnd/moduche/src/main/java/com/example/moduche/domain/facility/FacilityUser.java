@@ -10,6 +10,7 @@ import lombok.*;
 @Entity @Table(name="facility_user",
 uniqueConstraints=@UniqueConstraint(name="uk_fac_user", columnNames={"facility_id","user_id"}))
 @Getter @Setter @NoArgsConstructor
+@Builder @AllArgsConstructor
 public class FacilityUser {
 @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 private Long id;

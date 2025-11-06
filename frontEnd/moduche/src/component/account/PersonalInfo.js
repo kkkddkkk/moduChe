@@ -1,19 +1,10 @@
-import {
-  Button,
-  Grid,
-  TextField,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Grid, TextField, useMediaQuery, useTheme } from '@mui/material';
 import Layout from '../common/Layout';
 import Paper from '../common/Paper';
 import CustomTextField from '../common/CustomTextField';
-import { OneAlignedButton } from '../common/Button';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { SignInText } from './SignInText';
 import { Circle, Minus } from 'lucide-react';
-import { emailTest } from '../../api/accountAPI';
 import EmailTest from './EmailTest';
 
 const PersonalInfo = ({
@@ -23,22 +14,24 @@ const PersonalInfo = ({
   setEmail,
   number,
   setNumber,
-  emailError,
-  setEmailError,
-  numberError,
-  setNumberError,
   birth,
   setBirth,
-  birthError,
-  setBirthError,
   backFirst,
   setBackFirst,
-  backFirstError,
-  setBackFirstError,
+  personalError,
+  setPersonalError,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
+
+  const [emailChecked, setEmailChecked] = useState(false);
+
+  //error
+  const [emailError, setEmailError] = useState(false);
+  const [numberError, setNumberError] = useState(false);
+  const [birthError, setBirthError] = useState(false);
+  const [backFirstError, setBackFirstError] = useState(false);
 
   //#region[정규식+검증]
   const regPhone = /^(01[016789]\d{3,4}\d{4}|0\d{1,2}\d{3,4}\d{4})$/;
@@ -90,6 +83,68 @@ const PersonalInfo = ({
   }, [backFirst]);
   //#endregion
 
+  //#region[예외처리]
+  useEffect(() => {
+    if (name.length == 0) {
+      setPersonalError({
+        message: '이름이 입력되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    if (!emailChecked) {
+      setPersonalError({
+        message: '이메일 인증이 완료되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    if (number.length == 0) {
+      setPersonalError({
+        message: '전화번호가 입력되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    if (numberError) {
+      setPersonalError({
+        message: '전화번호 입력란을 다시 확인해주세요.',
+        ready: false,
+      });
+      return;
+    }
+    if (birth.length == 0 || backFirst.length == 0) {
+      setPersonalError({
+        message: '생년월일이 입력되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    if (birthError || backFirstError) {
+      setPersonalError({
+        message: '생년월일 입력란을 다시 확인해주세요.',
+        ready: false,
+      });
+      return;
+    }
+    setPersonalError({
+      message: '개인정보 입력 완료!',
+      ready: true,
+    });
+  }, [
+    name,
+    email,
+    emailError,
+    emailChecked,
+    number,
+    numberError,
+    birth,
+    birthError,
+    backFirst,
+    backFirstError,
+  ]);
+  //#endregion
+
   return (
     <Paper sx={{ height: 'auto' }}>
       <Layout space={2}>
@@ -108,6 +163,8 @@ const PersonalInfo = ({
           setEmail={setEmail}
           emailError={emailError}
           setEmailError={setEmailError}
+          emailChecked={emailChecked}
+          setEmailChecked={setEmailChecked}
         />
         <SignInText title={'전화번호'} />
         <Grid size={12} marginBottom={'5%'}>

@@ -2,11 +2,20 @@ import { OneAlignedButton } from '../common/Button';
 import { useEffect, useState } from 'react';
 import { useTheme } from '@emotion/react';
 import { Grid, TextField, useMediaQuery } from '@mui/material';
-import { emailTest } from '../../api/accountAPI';
+import { codeTest, emailTest } from '../../api/accountAPI';
 import Layout from '../common/Layout';
 import CustomTextField from '../common/CustomTextField';
+import { useApi } from '../../hook/useAPI';
+import Loading from '../common/Loading';
 
-const EmailTest = ({ email, setEmail, emailError, setEmailError }) => {
+const EmailTest = ({
+  email,
+  setEmail,
+  emailError,
+  setEmailError,
+  emailChecked,
+  setEmailChecked,
+}) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -16,10 +25,16 @@ const EmailTest = ({ email, setEmail, emailError, setEmailError }) => {
   const [count, setCount] = useState(30);
   const [timerId, setTimerId] = useState(null);
 
+  const [codeError, setCodeError] = useState(false);
+  const [disableEmail, setDisableEmail] = useState(false);
+
+  const { callApi: checkEmailAPI, loading } = useApi(emailTest);
+
   const regEmail = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   useEffect(() => {
     //이메일 검증
+    setEmailChecked(false);
     if (email.length > 0 && !regEmail.test(email)) {
       setEmailError(true);
     } else {
@@ -29,8 +44,7 @@ const EmailTest = ({ email, setEmail, emailError, setEmailError }) => {
 
   const checkEmail = async () => {
     //중복 Email 체크 로직
-
-    const res = await emailTest(email);
+    const res = await checkEmailAPI(email);
     alert(res.message);
     if (res.status == 'OK') {
       setIsSent(true);
@@ -38,8 +52,7 @@ const EmailTest = ({ email, setEmail, emailError, setEmailError }) => {
       setEmailError(true);
       return;
     }
-    console.log(res);
-
+    
     setCount(300);
 
     if (timerId) clearInterval(timerId); // 이전 타이머 제거
@@ -66,9 +79,25 @@ const EmailTest = ({ email, setEmail, emailError, setEmailError }) => {
       .padStart(2, '0')}`;
   };
 
+  //인증코드 체크
+  const checkCode = async () => {
+    const res = await codeTest(email, emailCode);
+    if (res.data === 'SUCCESS') {
+      setEmailChecked(true);
+      alert('확인되었습니다.');
+      setCodeError(false);
+      setDisableEmail(true);
+    } else {
+      setEmailChecked(false);
+      alert('인증번호가 일치하지 않습니다.');
+      setCodeError(true);
+    }
+  };
+
   return (
     <>
       <Grid size={isMobile ? 7 : 8} marginBottom={'5%'}>
+        <Loading open={loading} text={'로딩 중입니다.'} />
         <CustomTextField
           data={email}
           setData={setEmail}
@@ -76,13 +105,14 @@ const EmailTest = ({ email, setEmail, emailError, setEmailError }) => {
           error={emailError}
           helperText={'이메일 형식이 올바르지 않습니다.'}
           padding={10}
+          disabled={disableEmail}
         />
       </Grid>
       <Grid size={isMobile ? 5 : 4}>
         <OneAlignedButton
           buttonWrapperSx={{ width: '100%' }}
           onClick={checkEmail}
-          disabled={emailError || email.length == 0}
+          disabled={emailError || email.length == 0 || disableEmail}
         >
           이메일 인증
         </OneAlignedButton>
@@ -94,10 +124,13 @@ const EmailTest = ({ email, setEmail, emailError, setEmailError }) => {
               value={emailCode}
               placeholder="이메일 인증코드"
               helperText={
-                formatTime(count) == '00:00'
+                disableEmail
+                  ? '인증이 완료되었습니다.'
+                  : formatTime(count) == '00:00'
                   ? '이메일 인증 버튼 클릭 후, 메일함을 확인해주세요.'
                   : formatTime(count)
               }
+              error={codeError}
               fullWidth
               inputProps={{
                 style: { padding: 10 },
@@ -106,12 +139,14 @@ const EmailTest = ({ email, setEmail, emailError, setEmailError }) => {
               onChange={(e) => {
                 setEmailCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6));
               }}
+              disabled={disableEmail}
             />
           </Grid>
           <Grid size={isMobile ? 5 : 4}>
             <OneAlignedButton
               buttonWrapperSx={{ width: '100%' }}
-              // onClick={checkDuplicated}
+              onClick={checkCode}
+              disabled={disableEmail}
             >
               인증코드 확인
             </OneAlignedButton>

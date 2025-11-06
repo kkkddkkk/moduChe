@@ -35,7 +35,7 @@ public class EmailService {
 	// 이메일 전송
 	public void sendEmail(String toEmail, String title, String content) throws MessagingException {
 		MimeMessage message = emailSender.createMimeMessage();
-		MimeMessageHelper helper = new MimeMessageHelper(message, true);
+		MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 		ClassPathResource resource = new ClassPathResource("static/MODUCHE_LOGO.png");
 		
 		helper.setFrom(fromEmail);

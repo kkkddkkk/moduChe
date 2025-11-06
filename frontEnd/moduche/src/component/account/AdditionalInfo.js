@@ -8,29 +8,92 @@ import {
 import Layout from '../common/Layout';
 import Paper from '../common/Paper';
 import { SignInText } from './SignInText';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SmallerSubTitle } from '../common/Text';
 import { StandardSelect } from '../common/CustomSelect';
+import { useApi } from '../../hook/useAPI';
+import { getDisabilityList } from '../../api/accountAPI';
+import Loading from '../common/Loading';
 
-const AdditionalInfo = ({ disability, setDisability, degree, setDegree }) => {
+const AdditionalInfo = ({
+  disability,
+  setDisability,
+  degree,
+  setDegree,
+  additionalError,
+  setAdditionalError,
+}) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
-  const disabilities = ['장애', '장애장애', '장애장애장애'];
-  const degrees = ['1급', '2급', '3급'];
-  const certificated = ['가지고 있습니다.', '가지고 있지 않습니다.'];
+  const [search, setSearch] = useState('');
+  const [disabilities, setDisabilities] = useState([]);
 
+  //error
+  const [disabilityError, setDisabilityError] = useState(false);
+  const [degreeError, setDegreeError] = useState(false);
+
+  const degrees = ['해당없음', '경증', '중증'];
+  const certificated = ['가지고 있습니다.', '가지고 있지 않습니다.'];
   const [cert, setCert] = useState('가지고 있습니다.');
+
+  const { callApi: fetchDisabilityAPI, loading } = useApi(getDisabilityList);
+
+  useEffect(() => {
+    const fetchDisability = async () => {
+      const res = await fetchDisabilityAPI(search);
+      setDisabilities(res.data);
+    };
+    fetchDisability();
+  }, [search]);
+
+  useEffect(() => {
+    if (disability === null) setDisabilityError(true);
+    else setDisabilityError(false);
+  }, [disability]);
+
+  useEffect(() => {
+    console.log(degree);
+    if (degree === null) setDegreeError(true);
+    else setDegreeError(false);
+  }, [degree]);
+
+  //#region[예외처리]
+  useEffect(() => {
+    if (disabilityError) {
+      setAdditionalError({
+        message: '장애유형이 등록되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    if (degreeError) {
+      setAdditionalError({
+        message: '장애등급이 등록되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    setAdditionalError({
+      message: '추가정보 등록 완료!',
+      ready: true,
+    });
+  }, [disabilityError, degreeError]);
+  //#endregion
 
   return (
     <Paper>
+      <Loading open={loading} text={'로딩 중입니다.'} />
       <Layout space={3}>
         <Grid size={isMobile ? 12 : 8} marginBottom={'5%'}>
           <SignInText title={'장애유형'} />
           <Autocomplete
-            options={disabilities}
-            value={disability}
-            onChange={(event, newValue) => setDisability(newValue)}
+            options={disabilities || []}
+            getOptionLabel={(option) => option.name.toString()}
+            value={disability || null}
+            onChange={(event, newValue) =>
+              setDisability(newValue ? newValue : null)
+            }
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -38,15 +101,16 @@ const AdditionalInfo = ({ disability, setDisability, degree, setDegree }) => {
                 variant="standard"
               />
             )}
-            freeSolo // 입력한 값도 허용
+            isOptionEqualToValue={(option, val) => option.name === val?.name}
+            onInputChange={(event, newInputValue) => setSearch(newInputValue)}
           />
         </Grid>
 
         <Grid size={isMobile ? 12 : 4} marginBottom={'5%'}>
           <SignInText title={'급수'} />
           <Autocomplete
-            options={degrees}
-            value={degree}
+            options={degrees || []}
+            value={degree || null}
             onChange={(event, newValue) => setDegree(newValue)}
             renderInput={(params) => (
               <TextField
@@ -55,7 +119,6 @@ const AdditionalInfo = ({ disability, setDisability, degree, setDegree }) => {
                 variant="standard"
               />
             )}
-            freeSolo // 입력한 값도 허용
           />
         </Grid>
 
