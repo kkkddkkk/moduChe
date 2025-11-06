@@ -9,6 +9,7 @@ import { OneAlignedButton } from '../../component/common/Button';
 import { individualSignIn } from '../../api/accountAPI';
 import { useApi } from '../../hook/useAPI';
 import { useNavigate } from 'react-router-dom';
+import Loading from '../../component/common/Loading';
 
 const SignIn = () => {
   //hook
@@ -33,6 +34,7 @@ const SignIn = () => {
   const [backFirst, setBackFirst] = useState('');
   const [disability, setDisability] = useState('');
   const [degree, setDegree] = useState('');
+  const [qualified, setQualified] = useState(false);
 
   //error
   const [accountError, setAccountError] = useState({
@@ -52,6 +54,8 @@ const SignIn = () => {
   const [done, setDone] = useState(false);
 
   const signIn = async () => {
+    console.log(disability);
+    console.log(degree);
     if (!accountError.ready) {
       alert(accountError.message);
       accountRef.current?.scrollIntoView({
@@ -69,7 +73,6 @@ const SignIn = () => {
       return;
     }
     if (!additionalError.ready) {
-      console.log(additionalError);
       alert(additionalError.message);
       additionalRef.current?.scrollIntoView({
         behavior: 'smooth',
@@ -81,11 +84,14 @@ const SignIn = () => {
     const dto = {
       username: id,
       password: password,
-      // facilityId: facility.id,
-      // email: email,
-      // phone: number,
-      // businessNum: businessNum,
-      // boss: boss,
+      name: name,
+      email: email,
+      phone: number,
+      birth: birth,
+      gender: backFirst,
+      disabilityGrade: degree,
+      disabilityType: disability.id, 
+      qualified: qualified
     };
 
     const res = await signInAPI(dto);
@@ -100,6 +106,7 @@ const SignIn = () => {
 
   return (
     <Layout padding={2}>
+      <Loading open={loading} text={'회원가입 중입니다.'} />
       {isMobile ? <></> : <Grid size={3} />}
       <Grid size={isMobile ? 12 : 6}>
         <CenterTitle>회원가입</CenterTitle>
@@ -142,6 +149,8 @@ const SignIn = () => {
           setDegree={setDegree}
           additionalError={additionalError}
           setAdditionalError={setAdditionalError}
+          qualified={qualified}
+          setQualified={setQualified}
         />
         <Box marginTop={'5%'} />
         <Layout>

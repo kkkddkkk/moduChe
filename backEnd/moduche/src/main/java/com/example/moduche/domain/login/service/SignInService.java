@@ -19,6 +19,7 @@ import com.example.moduche.domain.facility.FacilityUser;
 import com.example.moduche.domain.facility.dto.FacilityListForSignInDTO;
 import com.example.moduche.domain.facility.repository.FacilityRepository;
 import com.example.moduche.domain.facility.repository.FacilityUserRepository;
+import com.example.moduche.domain.login.AccessibilityProfile;
 import com.example.moduche.domain.login.Disability;
 import com.example.moduche.domain.login.EmailVerification;
 import com.example.moduche.domain.login.Role;
@@ -29,6 +30,7 @@ import com.example.moduche.domain.login.dto.FacilitySignInDTO;
 import com.example.moduche.domain.login.dto.IndividualSignInDTO;
 import com.example.moduche.domain.login.enums.UserStatus;
 import com.example.moduche.domain.login.enums.VerifyStatus;
+import com.example.moduche.domain.login.repository.AccessibilityProfileRepository;
 import com.example.moduche.domain.login.repository.DisabilityRepository;
 import com.example.moduche.domain.login.repository.EmailVerificationRepository;
 import com.example.moduche.domain.login.repository.RoleRepository;
@@ -64,13 +66,13 @@ public class SignInService {
 	private final RoleRepository roleRepository;
 	private final UserRoleRepository userRoleRepository;
 	private final DisabilityRepository disabilityRepository;
+	private final AccessibilityProfileRepository accessibilityProfileRepository;
 	private final AESUtil aesUtil;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
-	// ======================================== 이메일 인증 시작
-	// ========================================\\
+// ======================================== 이메일 인증 시작 ========================================\\
 	@AllArgsConstructor
 	public static class EmailCodeResult {// rowcode+entity 같이 가져가기
 		private EmailVerification entity;
@@ -192,20 +194,50 @@ public class SignInService {
 
 //======================================== 중복검사+리스트 끝 ========================================\\
 //======================================== 회원가입 시작 ========================================\\
-	public void individual(IndividualSignInDTO dto) {
-
-//		  private String username;
-//		  private String password;
-//		  private String name;
-//		  private String phone;
-//		  private String email;
-//		  private String status;
-//		  private LocalDateTime createdAt;
-//		  private LocalDateTime updatedAt;
-		User user = User.builder().username(dto.getUsername()).password(passwordEncoder.encode(dto.getPassword()))
-				.name(dto.getName()).phone(dto.getPhone()).email(dto.getEmail())
-
+	public Long individual(IndividualSignInDTO dto) throws Exception {
+		//개인회원 회원가입
+		Role role = roleRepository.findByRoleCode("INDIVIDUAL").get();		
+		
+		//user row 생성
+		User user = User.builder()
+				.username(dto.getUsername())
+				.password(passwordEncoder.encode(dto.getPassword()))
+				.name(dto.getName())
+				.phone(dto.getPhone())
+				.email(dto.getEmail())
+				.status(UserStatus.ACTIVE)
+				.createdAt(LocalDateTime.now())
+				.role(role)
 				.build();
+		userRepository.save(user);
+		
+		//userRole row 생성
+		UserRole userRole = UserRole.builder()
+				.user(user)
+				.role(role)
+				.assignedAt(LocalDateTime.now())
+				.build();
+		userRoleRepository.save(userRole);
+		
+		String gender = "";
+		if(dto.getGender()%2==0) gender = "F";
+		else gender = "M";		
+		Disability disability = disabilityRepository.findById(dto.getDisabilityType())
+				.orElseThrow(() -> new Exception());
+		
+		//accessibilityProfile row 생성
+		AccessibilityProfile accessibilityProfile = AccessibilityProfile.builder()
+				.user(user)
+				.birth(dto.getBirth())
+				.gender(gender)
+				.disability(disability)
+				.disabilityGrade(dto.getDisabilityGrade())
+				.qualified(dto.isQualified())
+				.build();
+		accessibilityProfileRepository.save(accessibilityProfile);
+		
+		return user.getUserId();
+		
 	}
 
 	// 기관 회원가입
@@ -214,6 +246,7 @@ public class SignInService {
 
 		Facility facility = facilityRepository.findById(dto.getFacilityId()).orElseThrow(() -> new Exception());
 		
+		//user row 생성
 		User user = User.builder()
 				.username(dto.getUsername())
 				.password(passwordEncoder.encode(dto.getPassword()))
@@ -226,9 +259,12 @@ public class SignInService {
 				.build();
 
 		userRepository.save(user);
+		
+		//facility update
 		facility.setBoss(dto.getBoss());
 		facility.setBusiness_num(aesUtil.aesEncode(dto.getBusinessNum()));
 
+		//userRole row 생성
 		UserRole userRole = UserRole.builder()
 				.user(user)
 				.role(roleRepository.findByRoleCode("FACILITY").get())
@@ -236,6 +272,7 @@ public class SignInService {
 				.build();
 		userRoleRepository.save(userRole);
 		
+		//facilityUser row 생성
 		FacilityUser facilityUser = FacilityUser.builder()
 				.facility(facility)
 				.user(user)

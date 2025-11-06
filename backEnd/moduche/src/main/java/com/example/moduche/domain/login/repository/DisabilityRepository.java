@@ -10,15 +10,20 @@ import org.springframework.stereotype.Repository;
 
 import com.example.moduche.domain.facility.dto.FacilityListForSignInDTO;
 import com.example.moduche.domain.login.Disability;
+import com.example.moduche.domain.login.EmailVerification;
 import com.example.moduche.domain.login.Role;
 import com.example.moduche.domain.login.dto.DisabilityDTO;
 
 @Repository
 public interface DisabilityRepository extends JpaRepository<Disability, Long>{
 
-    //김도경: disabilityCode로 Disability 찾기
+    //김도경: disabilityCode로 Disability 찾기(dto)
     @Query("SELECT new com.example.moduche.domain.login.dto.DisabilityDTO"+
     "(d.disabilityId, d.disabilityCode) " +
     "FROM Disability d WHERE LOWER(d.disabilityCode) LIKE LOWER(CONCAT('%', :disabilityCode, '%'))")
      List<DisabilityDTO> findByDisabilityCode(@Param("disabilityCode") String disabilityCode);
+    
+    //김도경: disabilitycode로 disability 찾기
+    @Query("SELECT d FROM Disability d WHERE d.disabilityCode = :disabilityCode")
+    Optional<Disability> findByCodeEntity(@Param("disabilityCode") String disabilityCode);
 }

@@ -88,9 +88,9 @@ public class SignInController {
 	
 	//개인 회원가입
 	@PostMapping("/individual")
-	public Response individual(@RequestBody IndividualSignInDTO dto) {
-		
-		return new Response(StatusEnum.OK, "회원가입 로직 성공",null);
+	public Response individual(@RequestBody IndividualSignInDTO dto) throws Exception {
+		Long userId = signInService.individual(dto);
+		return new Response(StatusEnum.OK, "회원가입 로직 성공",userId);
 	}
 	
 	//시설 회원가입

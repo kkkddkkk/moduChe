@@ -19,9 +19,9 @@ public class IndividualSignInDTO {
 	private String phone;
 	
 	private String birth;
-	private String gender;
-	private String disablityGrade;
-	private String disabilityType;
+	private int gender;
+	private String disabilityGrade;
+	private long disabilityType;
 	private boolean qualified;
 	
 }

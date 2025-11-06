@@ -7,6 +7,7 @@ import lombok.*;
 @Entity @Table(name="accessibility_profile",
 uniqueConstraints=@UniqueConstraint(name="uk_accprofile_user", columnNames={"user_id"}))
 @Getter @Setter @NoArgsConstructor
+@Builder @AllArgsConstructor
 public class AccessibilityProfile {
 @Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 private Long accId;
