@@ -1,4 +1,4 @@
-package com.example.moduche.domain.myFit;
+package com.example.moduche.domain.myFit.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
