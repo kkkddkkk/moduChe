@@ -1,4 +1,4 @@
-package com.example.moduche.domain.myFit;
+package com.example.moduche.domain.myFit.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

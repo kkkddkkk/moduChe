@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.moduche.domain.login.enums.UserStatus;
-import com.example.moduche.domain.myFit.MyFitMeasure;
 
 import lombok.*;
 
@@ -34,5 +33,5 @@ public class User {
   private Role role;
   
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<MyFitMeasure> measures = new ArrayList<>();
+  private List<com.example.moduche.domain.myFit.entity.MyFitMeasure> measures = new ArrayList<>();
 }

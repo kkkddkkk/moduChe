@@ -1,10 +1,7 @@
-package com.example.moduche.domain.myFit;
+package com.example.moduche.domain.myFit.entity;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.example.moduche.domain.login.User;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -21,30 +18,25 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "my_fit_measure")
+@Table(name = "my_fit_recommend")
 @Getter @Setter @NoArgsConstructor
-public class MyFitMeasure extends MyFitBaseEntity {
+public class MyFitRecommend extends MyFitBaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long measureId;
+    private Long recommendId;
 
-    private String centerName;
-    private String measurePlaceFlagNm;
-    private Integer measureAge;
-    private String inputFlagNm;
-    private LocalDate measureDate;
-
+    private String ageFlagNm;
+    private String recommendMvmNm;
+    private Integer rank;
+    private String intensity;
+    private String frequency;
+    private String duration;
+    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "prescription_id")
+    private MyFitPrescription prescription;
 
-    @OneToMany(mappedBy = "measure", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MyFitMeasureResult> results = new ArrayList<>();
+    @OneToMany(mappedBy = "recommend", cascade = CascadeType.ALL)
+    private List<MyFitMvmContent> contents = new ArrayList<>();
 }
-
-
-
-
-
-
