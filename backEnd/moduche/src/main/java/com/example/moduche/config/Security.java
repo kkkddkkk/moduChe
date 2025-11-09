@@ -1,14 +1,23 @@
 package com.example.moduche.config;
 
+import com.example.moduche.domain.community.repository.CommunityPostPhotoRepository;
+import com.example.moduche.global.security.JwtFilter;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@RequiredArgsConstructor
 public class Security {
+	
+	private final JwtFilter jwtFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -18,12 +27,16 @@ public class Security {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf().disable() // REST API라면 CSRF 비활성화
-            .authorizeHttpRequests()
-                .anyRequest().permitAll() // 모든 요청 인증 없이 허용
-            .and()
-            .formLogin().disable() // 기본 로그인 폼 비활성화
-            .httpBasic().disable(); // HTTP Basic 인증 비활성화
+            .csrf(csrf -> csrf.disable()) // REST API라면 CSRF 비활성화
+            .authorizeHttpRequests(auth -> auth
+            	    .requestMatchers("/api/auth/**").permitAll()
+            	    .requestMatchers("/").permitAll()
+            	    .requestMatchers("/api/signIn/**").permitAll()
+                    .anyRequest().authenticated()
+                )
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .formLogin(form -> form.disable())
+            .httpBasic(httpBasic -> httpBasic.disable());
         return http.build();
     }
 }

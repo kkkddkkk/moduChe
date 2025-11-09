@@ -11,11 +11,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoginResponseDTO {
-	private String message;
-	private String name;
-	private boolean idSuccess;
-	private boolean allSuccess;
-	private String accessToken;
-	private String refreshToken;
+public class LogoutDTO {
+	private String username;
 }

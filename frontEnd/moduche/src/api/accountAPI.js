@@ -35,7 +35,7 @@ export const codeTest = async (email, code) => {
   try {
     const res = await axios.post(`${SIGN_IN_SERVER_HOST}/test`, {
       email: email,
-      code: code
+      code: code,
     });
     return res.data;
   } catch (err) {
@@ -113,7 +113,7 @@ export const validateBusiness = async ({ businessNum, startDate, boss }) => {
 //회원가입 - 시설
 export const facilitySignIn = async (dto) => {
   try {
-    const res = await axios.post(`${SIGN_IN_SERVER_HOST}/facility`,dto);
+    const res = await axios.post(`${SIGN_IN_SERVER_HOST}/facility`, dto);
     return res.data;
   } catch (err) {
     handleApiError(err);
@@ -123,7 +123,31 @@ export const facilitySignIn = async (dto) => {
 //회원가입 - 개인
 export const individualSignIn = async (dto) => {
   try {
-    const res = await axios.post(`${SIGN_IN_SERVER_HOST}/individual`,dto);
+    const res = await axios.post(`${SIGN_IN_SERVER_HOST}/individual`, dto);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+const AUTH_SERVER_HOST = `${API_SERVER_HOST}/api/auth`;
+
+export const logIn = async (dto) => {
+  try {
+    const res = await axios.post(`${AUTH_SERVER_HOST}/login`, dto);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+export const logOut = async (username, ) => {
+  const dto={
+    username: username
+  }
+
+  try {
+    const res = await axios.post(`${AUTH_SERVER_HOST}/logout`, dto);
     return res.data;
   } catch (err) {
     handleApiError(err);

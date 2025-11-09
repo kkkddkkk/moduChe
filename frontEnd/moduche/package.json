@@ -11,6 +11,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^13.2.1",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.546.0",
     "quill": "^2.0.3",
     "react": "^19.2.0",
@@ -20,6 +21,7 @@
     "react-router-dom": "^7.9.3",
     "react-scripts": "5.0.1",
     "recharts": "^3.3.0",
+    "recoil": "^0.7.7",
     "web-vitals": "^2.1.0"
   },
   "scripts": {

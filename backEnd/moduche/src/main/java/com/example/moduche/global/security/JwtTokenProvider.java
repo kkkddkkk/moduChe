@@ -9,8 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import com.example.moduche.domain.login.User;
-
+import com.example.moduche.domain.login.repository.AccessibilityProfileRepository;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -25,10 +26,14 @@ public class JwtTokenProvider {
 	// 토큰 유지시간 (기본 30분)
     private final long accessTokenValidityMs = 1000L * 60 * 15; // 15분
     private final long refreshTokenValidityMs = 1000L * 60 * 60 * 24 * 14; // 14일
-    
-    private SecretKey secretKey() {
+        
+    private SecretKey secretKey() {//encode
     	//hmacShaKeyFor-> byte 배열로 Secretkey 생성해줌.
     	return Keys.hmacShaKeyFor(jwtKey.getBytes(StandardCharsets.UTF_8));
+    }
+    
+    private SecretKey getSigningKey() {//decode
+        return Keys.hmacShaKeyFor(jwtKey.getBytes(StandardCharsets.UTF_8));
     }
 	
 	//토큰 생성
@@ -69,4 +74,28 @@ public class JwtTokenProvider {
 		
 		return token;
 	}
+	
+	//refreshToken 검증
+	public boolean validateToken(String token) {
+		try {
+			Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
+			return true;
+		}catch(JwtException | IllegalArgumentException e) {
+			return false;
+		}
+	}
+	
+    public String getUsername(String token) {
+        return Jwts.parserBuilder().setSigningKey(getSigningKey()).build()
+                .parseClaimsJws(token).getBody().getSubject();
+    }
+    public String getRole(String token) {
+        return (String)Jwts.parserBuilder().setSigningKey(getSigningKey()).build()
+                .parseClaimsJws(token).getBody().get("role");
+    }
+
+    public Date getExpiration(String token) {
+        return Jwts.parserBuilder().setSigningKey(getSigningKey()).build()
+                .parseClaimsJws(token).getBody().getExpiration();
+    }
 }

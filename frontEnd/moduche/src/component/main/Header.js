@@ -15,6 +15,12 @@ import { SlideModal } from '../common/Modals';
 import { useEffect, useRef, useState } from 'react';
 import CustomTextField from '../common/CustomTextField';
 import { useNavigate } from 'react-router-dom';
+import { getUsernameFromToken, isLoggedIn } from '../../utils/auth';
+import { User } from 'lucide-react';
+import { useUser } from '../../context/UserContext';
+import { logOut } from '../../api/accountAPI';
+import { useApi } from '../../hook/useAPI';
+import Loading from '../common/Loading';
 
 const Header = () => {
   const theme = useTheme();
@@ -25,12 +31,16 @@ const Header = () => {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
+  const accessToken = localStorage.getItem('accessToken');
+  const { name, setName, loggedIn, setLoggedIn } = useUser();
+
   const menuColor = theme.palette.primary.main;
 
   useEffect(() => {
     if (headerRef.current) {
       setHeaderHeight(headerRef.current.clientHeight);
     }
+    setLoggedIn(isLoggedIn());
   }, []);
 
   const moveTo = (item) => {
@@ -40,6 +50,20 @@ const Header = () => {
   const clickSearchButton = () => {
     setOpenSearch(!openSearch);
   };
+
+  const { callApi: logoutAPI, loading, done } = useApi(logOut);
+  const logout = () => {
+    const result = window.confirm('로그아웃 하시겠습니까?');
+    if (!result) return;
+    logoutAPI(getUsernameFromToken(accessToken));
+  };
+  useEffect(() => {
+    if (!done) return;
+    setName(null);
+    setLoggedIn(false);
+    localStorage.removeItem('accessToken');
+    navigate('/');
+  }, [done]);
 
   const HeaderMenu = ({ children, onClick }) => {
     return (
@@ -77,6 +101,7 @@ const Header = () => {
   return (
     <>
       <AppBar position="sticky" ref={headerRef} sx={{ zIndex: 1500 }}>
+        <Loading open={loading} text='로그아웃 처리 중입니다.'/>
         <Toolbar sx={{ backgroundColor: theme.palette.background.default }}>
           <Box component={'div'} flexGrow={1}>
             <Box
@@ -112,9 +137,26 @@ const Header = () => {
                 gap: 1, // 항목 간 간격
               }}
             >
-              <HeaderMenu onClick={() => moveTo('login')}>로그인</HeaderMenu>
-              <MenuBar />
-              <HeaderMenu onClick={() => moveTo('joinUs')}>회원가입</HeaderMenu>
+              {loggedIn ? (
+                <>
+                  <HeaderMenu onClick={logout}>로그아웃</HeaderMenu>
+                  <MenuBar />
+                  <User style={{ color: menuColor }} />
+                  <HeaderMenu onClick={() => moveTo('joinUs')}>
+                    {name}님
+                  </HeaderMenu>
+                </>
+              ) : (
+                <>
+                  <HeaderMenu onClick={() => moveTo('login')}>
+                    로그인
+                  </HeaderMenu>
+                  <MenuBar />
+                  <HeaderMenu onClick={() => moveTo('joinUs')}>
+                    회원가입
+                  </HeaderMenu>
+                </>
+              )}
             </Box>
           )}
         </Toolbar>

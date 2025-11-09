@@ -2,6 +2,7 @@ import { useState } from "react";
 
 export function useApi(apiFunc) {
   const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
 
   const callApi = async (...args) => {
     setLoading(true);
@@ -12,8 +13,9 @@ export function useApi(apiFunc) {
       throw err;
     } finally {
       setLoading(false);
+      setDone(true);
     }
   };
 
-  return { callApi, loading };
+  return { callApi, loading, done };
 }
