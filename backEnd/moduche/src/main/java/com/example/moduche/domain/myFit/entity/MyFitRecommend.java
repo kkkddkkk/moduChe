@@ -25,6 +25,8 @@ public class MyFitRecommend extends MyFitBaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long recommendId;
+    
+    private String disabilityType;
 
     private String ageFlagNm;
     private String recommendMvmNm;

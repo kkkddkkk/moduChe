@@ -30,4 +30,11 @@ public class MyFitRecommendServiceImpl implements MyFitRecommendService {
                 .orElseThrow(() -> new IllegalArgumentException("추천 정보를 찾을 수 없습니다."));
         return MyFitRecommendResponseDTO.fromEntity(recommend);
     }
+
+    @Override
+    public List<MyFitRecommendResponseDTO> getRecommendationsByDisability(String disabilityType) {
+        return recommendRepository.findByDisabilityType(disabilityType).stream()
+                .map(MyFitRecommendResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+	}
 }

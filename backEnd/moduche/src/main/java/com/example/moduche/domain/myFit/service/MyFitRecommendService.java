@@ -9,5 +9,7 @@ public interface MyFitRecommendService {
 	List<MyFitRecommendResponseDTO> getAllRecommends();
 	
     MyFitRecommendResponseDTO getRecommendById(Long id);
+    
+    List<MyFitRecommendResponseDTO> getRecommendationsByDisability(String disabilityType);
 
 }

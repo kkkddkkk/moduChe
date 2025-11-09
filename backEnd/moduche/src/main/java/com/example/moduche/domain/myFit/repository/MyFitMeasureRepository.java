@@ -6,6 +6,6 @@ import java.util.Optional;
 
 public interface MyFitMeasureRepository extends JpaRepository<MyFitMeasureResult, Long> {
 	
-    Optional<MyFitMeasureResult> findByUserId(Long userId);
+    Optional<MyFitMeasureResult> findByMeasureUserUserId(Long userId);
     
 }
