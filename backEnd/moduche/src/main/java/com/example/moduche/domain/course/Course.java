@@ -1,6 +1,7 @@
 package com.example.moduche.domain.course;
 
 import com.example.moduche.domain.facility.Facility;
+import com.example.moduche.domain.tag.Tag;
 import com.example.moduche.domain.login.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -95,4 +96,11 @@ public class Course {
     @PreUpdate void preUpdate() { /* updatedAt은 Auditing이 처리 */ }
     public enum CourseFormat { ONLINE, OFFLINE, HYBRID }
     public enum CourseStatus { DRAFT, PUBLISHED, ARCHIVED, DELETED }
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+      name = "course_tag",
+      joinColumns = @JoinColumn(name = "course_id"),
+      inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private java.util.Set<Tag> tags = new java.util.LinkedHashSet<>();
 }

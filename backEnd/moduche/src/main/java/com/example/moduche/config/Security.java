@@ -1,5 +1,7 @@
 package com.example.moduche.config;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,16 +16,20 @@ public class Security {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf().disable() // REST API라면 CSRF 비활성화
-            .authorizeHttpRequests()
-                .anyRequest().permitAll() // 모든 요청 인증 없이 허용
-            .and()
-            .formLogin().disable() // 기본 로그인 폼 비활성화
-            .httpBasic().disable(); // HTTP Basic 인증 비활성화
+            .csrf(csrf -> csrf.disable())
+            .cors(withDefaults()) // ✅ WebMvcConfigurer의 CORS 설정을 Security에서 사용
+            .authorizeHttpRequests(auth -> auth
+                // 여기에 공개 API 패턴을 추가적으로 나눌 수 있음
+                // .requestMatchers("/api/public/**").permitAll()
+                .anyRequest().permitAll()
+            )
+            .httpBasic(httpBasic -> httpBasic.disable())
+            .formLogin(form -> form.disable());
+
         return http.build();
     }
 }
