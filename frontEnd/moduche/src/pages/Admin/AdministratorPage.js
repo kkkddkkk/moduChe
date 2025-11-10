@@ -36,33 +36,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import DownloadIcon from "@mui/icons-material/FileDownload";
 
 import Paper from "../../component/common/Paper";
-
-const DUMMY_ADMINS = [
-    {
-        uid: "A0001",
-        name: "최관리",
-        email: "superadmin@example.com",
-        role: "SUPER_ADMIN",
-        status: "ACTIVE",
-        createdAt: "2025-07-01 10:12",
-    },
-    {
-        uid: "A0002",
-        name: "운영담당",
-        email: "ops@example.com",
-        role: "OPERATOR",
-        status: "ACTIVE",
-        createdAt: "2025-09-14 08:40",
-    },
-    {
-        uid: "A0003",
-        name: "고객지원",
-        email: "support@example.com",
-        role: "CS_MANAGER",
-        status: "DISABLED",
-        createdAt: "2025-10-02 12:21",
-    },
-];
+import { fetchAdmins, patchAdmin, deleteAdmin } from "../../api/admin";
 
 const ROLE_LABEL = {
     SUPER_ADMIN: "최고관리자",
@@ -73,13 +47,17 @@ const STATUS_LABEL = { ACTIVE: "사용 중", DISABLED: "중지" };
 const STATUS_COLOR = { ACTIVE: "success", DISABLED: "default" };
 
 export default function AdministratorPage() {
-    // 상태값
-    const [admins, setAdmins] = useState(DUMMY_ADMINS);
+    // 서버 데이터
+    const [admins, setAdmins] = useState([]);
+    // 필터
     const [keyword, setKeyword] = useState("");
     const [roleFilter, setRoleFilter] = useState("ALL");
     const [statusFilter, setStatusFilter] = useState("ALL");
-    const [page, setPage] = useState(1);
+    // 페이징
+    const [page, setPage] = useState(1); // UI 1-base
     const rowsPerPage = 5;
+    const [totalElements, setTotalElements] = useState(0);
+    const [loading, setLoading] = useState(false);
 
     // 토스트
     const [toast, setToast] = useState({
@@ -88,131 +66,103 @@ export default function AdministratorPage() {
         severity: "success",
     });
 
-    // 삭제 확인 다이얼로그
-    const [deleteTarget, setDeleteTarget] = useState(null); // { uid, name, ... } 또는 null
+    // 상세 모달
+    const [viewTarget, setViewTarget] = useState(null); // { userId, username, ... }
 
-    // 팝업 열기 (새로운 작은 창) — 전역 screen 미사용
-    const handleCreateAdmin = () => {
-        const w = 520;
-        const h = 640;
+    // 삭제 다이얼로그
+    const [deleteTarget, setDeleteTarget] = useState(null); // { userId, username, name, ... }
 
-        const dualScreenLeft = window.screenLeft ?? window.screenX ?? 0;
-        const dualScreenTop = window.screenTop ?? window.screenY ?? 0;
+    // 서버 응답 -> View 모델
+    const toView = (r) => {
+        if (!r) return null;
 
-        const viewportW =
-            window.innerWidth ??
-            document.documentElement?.clientWidth ??
-            window.screen?.width ??
-            0;
+        const userId = r.user_id ?? r.userId ?? r.id ?? null;
+        const username = r.username ?? "";
+        const roleId = r.role_id ?? r.roleId ?? null;
 
-        const viewportH =
-            window.innerHeight ??
-            document.documentElement?.clientHeight ??
-            window.screen?.height ??
-            0;
+        const roleCode =
+            roleId === 1
+                ? "SUPER_ADMIN"
+                : roleId === 2
+                ? "OPERATOR"
+                : roleId === 3
+                ? "PERSONAL"
+                : roleId === 4
+                ? "FACILITY"
+                : `${roleId ?? ""}`;
 
-        const availW = (window.screen?.availWidth ?? viewportW) || 1; // ??와 || 혼용시 괄호로 안전 처리
-        const systemZoom = viewportW / availW;
+        const createdAtRaw = r.created_at ?? r.createdAt ?? "";
+        const createdAt = createdAtRaw
+            ? String(createdAtRaw).replace("T", " ").slice(0, 16)
+            : "";
 
-        const left = (viewportW - w) / 2 / (systemZoom || 1) + dualScreenLeft;
-        const top = (viewportH - h) / 2 / (systemZoom || 1) + dualScreenTop;
-
-        window.open(
-            "/admin/admins/new",
-            "AdminCreateWindow",
-            `scrollbars=yes,width=${w},height=${h},top=${top},left=${left},noopener,noreferrer`
-        );
+        return {
+            userId,
+            username,
+            name: r.name ?? r.username ?? "",
+            email: r.email ?? "",
+            phone: r.phone ?? "",
+            roleId,
+            role: roleCode,
+            status: r.status ?? "ACTIVE",
+            createdAt,
+            _raw: r,
+        };
     };
 
-    const handleRefresh = () =>
-        console.log("🔄 관리자 계정 리스트 새로고침 (API)");
-    const handleExport = () => console.log("⬇ 관리자 계정 목록 내보내기");
-    const handleView = (uid) => console.log("👁 상세 보기:", uid);
+    // 목록 로드
+    const loadAdmins = async (opts = {}) => {
+        setLoading(true);
+        try {
+            const resp = await fetchAdmins({
+                page: (opts.page ?? page) - 1, // API 0-base
+                size: rowsPerPage,
+                q: keyword || undefined,
+                status: statusFilter === "ALL" ? undefined : statusFilter,
+                role: roleFilter === "ALL" ? undefined : roleFilter,
+            });
 
-    const handleToggleEnabled = (uid, currentStatus) => {
-        setAdmins((prev) =>
-            prev.map((a) =>
-                a.uid === uid
-                    ? {
-                          ...a,
-                          status:
-                              currentStatus === "DISABLED"
-                                  ? "ACTIVE"
-                                  : "DISABLED",
-                      }
-                    : a
-            )
-        );
-        setToast({
-            open: true,
-            message:
-                currentStatus === "DISABLED"
-                    ? "계정을 활성화했어요."
-                    : "계정을 중지했어요.",
-            severity: "success",
-        });
+            const content = resp?.content ?? [];
+            const mapped = content.map(toView);
+            setAdmins(mapped);
+            setTotalElements(resp?.totalElements ?? mapped.length);
+        } catch (err) {
+            console.error("관리자 목록 불러오기 실패:", err);
+            setToast({
+                open: true,
+                message: "관리자 목록 불러오기 실패",
+                severity: "error",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // 삭제 버튼 클릭 → 확인 다이얼로그 오픈
-    const askDelete = (uid) => {
-        const target = admins.find((a) => a.uid === uid);
-        if (target) setDeleteTarget(target);
-    };
+    useEffect(() => {
+        loadAdmins({ page });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page]);
 
-    // 삭제 확정
-    const confirmDelete = () => {
-        if (!deleteTarget) return;
-        const removedUid = deleteTarget.uid;
-        setAdmins((prev) => prev.filter((a) => a.uid !== removedUid));
-        setDeleteTarget(null);
-        setToast({
-            open: true,
-            message: "관리자 계정을 삭제했습니다.",
-            severity: "success",
-        });
-    };
+    useEffect(() => {
+        setPage(1);
+        loadAdmins({ page: 1 });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [keyword, roleFilter, statusFilter]);
 
-    // 필터링
-    const filteredList = useMemo(() => {
-        const kw = keyword.trim().toLowerCase();
-        return admins.filter((a) => {
-            const matchKeyword =
-                kw === "" ||
-                a.name.toLowerCase().includes(kw) ||
-                a.email.toLowerCase().includes(kw) ||
-                a.uid.toLowerCase().includes(kw);
-            const matchRole =
-                roleFilter === "ALL" ? true : a.role === roleFilter;
-            const matchStatus =
-                statusFilter === "ALL" ? true : a.status === statusFilter;
-            return matchKeyword && matchRole && matchStatus;
-        });
-    }, [admins, keyword, roleFilter, statusFilter]);
-
-    // 페이지 슬라이스
-    const pagedList = useMemo(() => {
-        const start = (page - 1) * rowsPerPage;
-        return filteredList.slice(start, start + rowsPerPage);
-    }, [filteredList, page]);
-
-    const pageCount = Math.ceil(filteredList.length / rowsPerPage) || 1;
-
-    // 필터 변경 시 페이지 리셋
-    useEffect(() => setPage(1), [keyword, roleFilter, statusFilter, admins]);
-
-    // 새 창에서 postMessage로 넘겨준 생성 결과 수신
+    // postMessage로 생성 결과 수신
     useEffect(() => {
         const onMessage = (event) => {
             if (event.origin !== window.location.origin) return;
             const { type, payload } = event.data || {};
             if (type === "ADMIN_CREATED" && payload) {
+                const v = toView(payload);
                 setAdmins((prev) => {
                     const dup = prev.some(
                         (a) =>
-                            a.uid === payload.uid ||
-                            (!!payload.email && a.email === payload.email)
+                            a.userId === v.userId ||
+                            (!!v.email && a.email === v.email)
                     );
-                    return dup ? prev : [payload, ...prev];
+                    return dup ? prev : [v, ...prev];
                 });
                 setToast({
                     open: true,
@@ -225,6 +175,141 @@ export default function AdministratorPage() {
         return () => window.removeEventListener("message", onMessage);
     }, []);
 
+    // 액션
+    const handleRefresh = () => loadAdmins({ page: 1 });
+    const handleExport = () => console.log("⬇ 관리자 계정 목록 내보내기");
+
+    // 상세 모달 열기
+    const handleView = (userId) => {
+        const t = admins.find((a) => a.userId === userId);
+        if (!t) {
+            setToast({
+                open: true,
+                message: "대상을 찾을 수 없습니다.",
+                severity: "error",
+            });
+            return;
+        }
+        setViewTarget(t);
+    };
+
+    const handleToggleEnabled = async (userId, currentStatus) => {
+        const next = currentStatus === "ACTIVE" ? "DISABLED" : "ACTIVE";
+
+        if (!userId || Number.isNaN(Number(userId))) {
+            // 임시 레코드 fallback
+            setAdmins((prev) =>
+                prev.map((a) =>
+                    a.userId === userId ? { ...a, status: next } : a
+                )
+            );
+            setViewTarget((v) =>
+                v && v.userId === userId ? { ...v, status: next } : v
+            );
+            setToast({
+                open: true,
+                message:
+                    next === "ACTIVE"
+                        ? "계정을 활성화했어요."
+                        : "계정을 중지했어요.",
+                severity: "success",
+            });
+            return;
+        }
+
+        try {
+            await patchAdmin(Number(userId), { status: next });
+            setAdmins((prev) =>
+                prev.map((a) =>
+                    a.userId === userId ? { ...a, status: next } : a
+                )
+            );
+            setViewTarget((v) =>
+                v && v.userId === userId ? { ...v, status: next } : v
+            );
+            setToast({
+                open: true,
+                message:
+                    next === "ACTIVE" ? "계정 활성화 완료" : "계정 중지 완료",
+                severity: "success",
+            });
+        } catch (err) {
+            console.error("상태 변경 실패:", err);
+            setToast({
+                open: true,
+                message: "상태 변경 실패",
+                severity: "error",
+            });
+        }
+    };
+
+    const askDelete = (userId) => {
+        const target = admins.find((a) => a.userId === userId);
+        if (target) setDeleteTarget(target);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+        const { userId } = deleteTarget;
+
+        if (!userId || Number.isNaN(Number(userId))) {
+            // 임시 레코드 삭제
+            setAdmins((prev) => prev.filter((a) => a.userId !== userId));
+            setDeleteTarget(null);
+            setViewTarget((v) => (v && v.userId === userId ? null : v));
+            setToast({
+                open: true,
+                message: "관리자 계정을 삭제했습니다.",
+                severity: "success",
+            });
+            return;
+        }
+
+        try {
+            await deleteAdmin(Number(userId));
+            setAdmins((prev) => prev.filter((a) => a.userId !== userId));
+            setViewTarget((v) => (v && v.userId === userId ? null : v));
+            setToast({ open: true, message: "삭제 완료", severity: "success" });
+        } catch (err) {
+            console.error("삭제 실패:", err);
+            setToast({ open: true, message: "삭제 실패", severity: "error" });
+        } finally {
+            setDeleteTarget(null);
+        }
+    };
+
+    // 클라 필터
+    const filteredList = useMemo(() => {
+        const kw = keyword.trim().toLowerCase();
+        return admins.filter((a) => {
+            const matchKeyword =
+                kw === "" ||
+                (a.username && a.username.toLowerCase().includes(kw)) ||
+                (a.name && a.name.toLowerCase().includes(kw)) ||
+                (a.email && a.email.toLowerCase().includes(kw));
+
+            const matchRole =
+                roleFilter === "ALL"
+                    ? true
+                    : a.role === roleFilter || String(a.roleId) === roleFilter;
+
+            const matchStatus =
+                statusFilter === "ALL" ? true : a.status === statusFilter;
+
+            return matchKeyword && matchRole && matchStatus;
+        });
+    }, [admins, keyword, roleFilter, statusFilter]);
+
+    // 페이지 슬라이스는 UI용
+    const pagedList = useMemo(() => {
+        const start = (page - 1) * rowsPerPage;
+        return filteredList.slice(start, start + rowsPerPage);
+    }, [filteredList, page]);
+
+    const pageCount = Math.max(1, Math.ceil(totalElements / rowsPerPage));
+
+    useEffect(() => setPage(1), [keyword, roleFilter, statusFilter]);
+
     return (
         <Paper
             sx={{
@@ -235,7 +320,7 @@ export default function AdministratorPage() {
                 boxShadow: 1,
             }}
         >
-            {/* 1. 상단 영역 */}
+            {/* 헤더 */}
             <Box sx={{ mb: 3 }}>
                 <Typography
                     variant="h5"
@@ -264,7 +349,7 @@ export default function AdministratorPage() {
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* 2. 필터/액션 바 */}
+            {/* 필터/액션 바 */}
             <Box
                 sx={{
                     display: "flex",
@@ -280,13 +365,13 @@ export default function AdministratorPage() {
                     borderColor: "divider",
                     borderRadius: 2,
                     boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                    bgcolor: (theme) =>
-                        theme.palette.mode === "dark"
-                            ? theme.palette.background.default
-                            : theme.palette.grey[50],
+                    bgcolor: (t) =>
+                        t.palette.mode === "dark"
+                            ? t.palette.background.default
+                            : t.palette.grey[50],
                 }}
             >
-                {/* 왼쪽: 필터 + 검색 */}
+                {/* 왼쪽 */}
                 <Box
                     sx={{
                         display: "flex",
@@ -303,12 +388,28 @@ export default function AdministratorPage() {
                         size="small"
                         value={roleFilter}
                         onChange={(e) => setRoleFilter(e.target.value)}
-                        sx={{ minWidth: 110 }}
+                        sx={{
+                            minWidth: 110,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                backgroundColor: "background.paper",
+                                "& fieldset": { borderColor: "divider" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                            "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                        }}
                     >
                         <MenuItem value="ALL">전체</MenuItem>
                         <MenuItem value="SUPER_ADMIN">최고관리자</MenuItem>
                         <MenuItem value="OPERATOR">운영</MenuItem>
                         <MenuItem value="CS_MANAGER">고객지원</MenuItem>
+                        <MenuItem value="1">role_id = 1</MenuItem>
+                        <MenuItem value="2">role_id = 2</MenuItem>
                     </TextField>
 
                     <TextField
@@ -317,7 +418,21 @@ export default function AdministratorPage() {
                         size="small"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        sx={{ minWidth: 110 }}
+                        sx={{
+                            minWidth: 110,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                backgroundColor: "background.paper",
+                                "& fieldset": { borderColor: "divider" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                            "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                        }}
                     >
                         <MenuItem value="ALL">전체</MenuItem>
                         <MenuItem value="ACTIVE">사용 중</MenuItem>
@@ -326,10 +441,24 @@ export default function AdministratorPage() {
 
                     <TextField
                         size="small"
-                        placeholder="이름 / 이메일 / UID 검색"
+                        placeholder="계정명(username) / 이름 / 이메일 검색"
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
-                        sx={{ minWidth: { xs: "100%", md: 240 } }}
+                        sx={{
+                            minWidth: { xs: "100%", md: 280 },
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 5,
+                                backgroundColor: "background.paper",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                                "& fieldset": { borderColor: "transparent" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                        }}
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
@@ -345,7 +474,7 @@ export default function AdministratorPage() {
                     />
                 </Box>
 
-                {/* 오른쪽: 현황 + 버튼들 */}
+                {/* 오른쪽 */}
                 <Stack
                     direction="row"
                     alignItems="center"
@@ -356,16 +485,28 @@ export default function AdministratorPage() {
                         justifyContent: { xs: "space-between", md: "flex-end" },
                     }}
                 >
-                    <Typography
-                        sx={{
-                            fontSize: "0.8rem",
-                            color: "text.secondary",
-                            fontWeight: 400,
-                            whiteSpace: "nowrap",
-                        }}
-                    >
-                        총 {filteredList.length}명 · 페이지 {page} / {pageCount}
-                    </Typography>
+                    <Box sx={{ textAlign: "right", mr: 1 }}>
+                        <Typography
+                            sx={{
+                                fontSize: "0.8rem",
+                                color: "text.secondary",
+                                fontWeight: 400,
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            총 {filteredList.length}명
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontSize: "0.8rem",
+                                fontWeight: 600,
+                                whiteSpace: "nowrap",
+                                color: "text.primary",
+                            }}
+                        >
+                            페이지 {page} / {pageCount}
+                        </Typography>
+                    </Box>
 
                     <Button
                         size="small"
@@ -379,57 +520,87 @@ export default function AdministratorPage() {
                             px: 1.5,
                             py: 1,
                         }}
-                        onClick={handleCreateAdmin}
+                        onClick={() => {
+                            const w = 520,
+                                h = 640;
+                            const dualScreenLeft =
+                                window.screenLeft ?? window.screenX ?? 0;
+                            const dualScreenTop =
+                                window.screenTop ?? window.screenY ?? 0;
+                            const viewportW =
+                                window.innerWidth ??
+                                document.documentElement?.clientWidth ??
+                                window.screen?.width ??
+                                0;
+                            const viewportH =
+                                window.innerHeight ??
+                                document.documentElement?.clientHeight ??
+                                window.screen?.height ??
+                                0;
+                            const availW =
+                                (window.screen?.availWidth ?? viewportW) || 1;
+                            const systemZoom = viewportW / availW;
+                            const left =
+                                (viewportW - w) / 2 / (systemZoom || 1) +
+                                dualScreenLeft;
+                            const top =
+                                (viewportH - h) / 2 / (systemZoom || 1) +
+                                dualScreenTop;
+                            window.open(
+                                "/admin-window/admins/new",
+                                "AdminCreateWindow",
+                                `scrollbars=yes,width=${w},height=${h},top=${top},left=${left},noopener,noreferrer`
+                            );
+                        }}
                     >
                         새 관리자 추가
                     </Button>
 
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            border: "1px solid",
-                            borderColor: "divider",
-                            borderRadius: 2,
-                            overflow: "hidden",
-                        }}
-                    >
-                        <Tooltip title="새로고침">
-                            <IconButton
-                                size="small"
-                                onClick={handleRefresh}
-                                sx={{
-                                    borderRadius: 0,
-                                    "&:hover": {
-                                        bgcolor: "primary.main",
-                                        color: "#fff",
-                                    },
-                                }}
-                            >
-                                <RefreshIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                        <Divider orientation="vertical" flexItem />
-                        <Tooltip title="내보내기">
-                            <IconButton
-                                size="small"
-                                onClick={handleExport}
-                                sx={{
-                                    borderRadius: 0,
-                                    "&:hover": {
-                                        bgcolor: "success.main",
-                                        color: "#fff",
-                                    },
-                                }}
-                            >
-                                <DownloadIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
+                    <Tooltip title="새로고침">
+                        <IconButton
+                            size="small"
+                            onClick={handleRefresh}
+                            sx={{
+                                borderRadius: 2,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                "&:hover": {
+                                    bgcolor: "primary.main",
+                                    color: "#fff",
+                                    borderColor: "primary.main",
+                                },
+                                width: 32,
+                                height: 32,
+                            }}
+                        >
+                            <RefreshIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title="내보내기">
+                        <IconButton
+                            size="small"
+                            onClick={handleExport}
+                            sx={{
+                                borderRadius: 2,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                "&:hover": {
+                                    bgcolor: "success.main",
+                                    color: "#fff",
+                                    borderColor: "success.main",
+                                },
+                                width: 32,
+                                height: 32,
+                            }}
+                        >
+                            <DownloadIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                 </Stack>
             </Box>
 
-            {/* 3. 테이블 */}
+            {/* 테이블 */}
             <Box
                 sx={{
                     borderRadius: 2,
@@ -457,7 +628,7 @@ export default function AdministratorPage() {
                                 },
                             }}
                         >
-                            <TableCell>UID</TableCell>
+                            <TableCell>UID(계정명)</TableCell>
                             <TableCell>이름</TableCell>
                             <TableCell>이메일</TableCell>
                             <TableCell>역할</TableCell>
@@ -475,13 +646,15 @@ export default function AdministratorPage() {
                                     align="center"
                                     sx={{ py: 6, color: "text.secondary" }}
                                 >
-                                    조건에 맞는 관리자가 없습니다.
+                                    {loading
+                                        ? "불러오는 중..."
+                                        : "조건에 맞는 관리자가 없습니다."}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            pagedList.map((admin) => (
+                            pagedList.map((admin, idx) => (
                                 <TableRow
-                                    key={admin.uid}
+                                    key={admin.userId ?? `row-${idx}`}
                                     hover
                                     sx={{
                                         "&:last-of-type td": {
@@ -500,8 +673,9 @@ export default function AdministratorPage() {
                                             fontSize: "0.8rem",
                                         }}
                                     >
-                                        {admin.uid}
+                                        {admin.username || "-"}
                                     </TableCell>
+
                                     <TableCell
                                         sx={{
                                             fontWeight: 500,
@@ -510,11 +684,15 @@ export default function AdministratorPage() {
                                     >
                                         {admin.name}
                                     </TableCell>
+
                                     <TableCell
                                         sx={{
                                             maxWidth: 220,
                                             fontSize: "0.8rem",
                                             color: "text.secondary",
+                                            whiteSpace: "nowrap",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
                                         }}
                                     >
                                         {admin.email}
@@ -578,7 +756,7 @@ export default function AdministratorPage() {
                                             <IconButton
                                                 size="small"
                                                 onClick={() =>
-                                                    handleView(admin.uid)
+                                                    handleView(admin.userId)
                                                 }
                                             >
                                                 <VisibilityIcon fontSize="small" />
@@ -601,10 +779,11 @@ export default function AdministratorPage() {
                                                 }
                                                 onClick={() =>
                                                     handleToggleEnabled(
-                                                        admin.uid,
+                                                        admin.userId,
                                                         admin.status
                                                     )
                                                 }
+                                                sx={{ ml: 0.5 }}
                                             >
                                                 <BlockIcon fontSize="small" />
                                             </IconButton>
@@ -615,8 +794,9 @@ export default function AdministratorPage() {
                                                 size="small"
                                                 color="error"
                                                 onClick={() =>
-                                                    askDelete(admin.uid)
+                                                    askDelete(admin.userId)
                                                 }
+                                                sx={{ ml: 0.5 }}
                                             >
                                                 <DeleteIcon fontSize="small" />
                                             </IconButton>
@@ -629,7 +809,7 @@ export default function AdministratorPage() {
                 </Table>
             </Box>
 
-            {/* 4. 페이지네이션 */}
+            {/* 페이지네이션 */}
             <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
                 <Pagination
                     count={pageCount}
@@ -644,7 +824,53 @@ export default function AdministratorPage() {
                 />
             </Stack>
 
-            {/* ▶ 삭제 확인 다이얼로그 */}
+            {/* 상세 보기 모달 */}
+            <Dialog
+                open={Boolean(viewTarget)}
+                onClose={() => setViewTarget(null)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 700 }}>관리자 상세</DialogTitle>
+                <DialogContent dividers>
+                    {viewTarget && (
+                        <Stack spacing={1.25}>
+                            <Typography>
+                                <b>UID</b>: {viewTarget.username || "-"}
+                            </Typography>
+                            <Typography>
+                                <b>이름</b>: {viewTarget.name || "-"}
+                            </Typography>
+                            <Typography>
+                                <b>이메일</b>: {viewTarget.email || "-"}
+                            </Typography>
+                            <Typography>
+                                <b>전화</b>: {viewTarget.phone || "-"}
+                            </Typography>
+                            <Typography>
+                                <b>역할</b>:{" "}
+                                {ROLE_LABEL[viewTarget.role] ||
+                                    viewTarget.role ||
+                                    "-"}
+                            </Typography>
+                            <Typography>
+                                <b>상태</b>:{" "}
+                                {STATUS_LABEL[viewTarget.status] ||
+                                    viewTarget.status ||
+                                    "-"}
+                            </Typography>
+                            <Typography>
+                                <b>생성일</b>: {viewTarget.createdAt || "-"}
+                            </Typography>
+                        </Stack>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setViewTarget(null)}>닫기</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* 삭제 확인 다이얼로그 */}
             <Dialog
                 open={Boolean(deleteTarget)}
                 onClose={() => setDeleteTarget(null)}
@@ -663,7 +889,8 @@ export default function AdministratorPage() {
                             </Typography>
                             <Stack spacing={0.5}>
                                 <Typography sx={{ fontFamily: "monospace" }}>
-                                    {deleteTarget.uid}
+                                    {deleteTarget.username} (ID:{" "}
+                                    {deleteTarget.userId})
                                 </Typography>
                                 <Typography color="text.secondary">
                                     {deleteTarget.name} · {deleteTarget.email}
@@ -684,7 +911,7 @@ export default function AdministratorPage() {
                 </DialogActions>
             </Dialog>
 
-            {/* ▶ 토스트 */}
+            {/* 토스트 */}
             <Snackbar
                 open={toast.open}
                 autoHideDuration={2200}

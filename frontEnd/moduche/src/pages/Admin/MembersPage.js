@@ -1,5 +1,5 @@
 // src/pages/Admin/MembersPage.js
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
     Box,
     Stack,
@@ -22,60 +22,21 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
+    Snackbar,
+    Alert,
 } from "@mui/material";
 
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import DownloadIcon from "@mui/icons-material/FileDownload";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/DeleteForever";
 
 import Paper from "../../component/common/Paper";
+import communityHttp from "../../api/communityAPI/communityHttp";
 
-const DUMMY_MEMBERS = [
-    {
-        uid: "U0001",
-        name: "김민수",
-        email: "minsu@example.com",
-        phone: "010-1234-5678",
-        birth: "1995-06-20",
-        role: "USER",
-        status: "ACTIVE",
-        joinedAt: "2025-09-12 14:32",
-    },
-    {
-        uid: "U0002",
-        name: "관리자계정",
-        email: "admin@example.com",
-        phone: "010-9999-0000",
-        birth: "1988-03-15",
-        role: "ADMIN",
-        status: "ACTIVE",
-        joinedAt: "2025-07-03 09:10",
-    },
-    {
-        uid: "U0003",
-        name: "테스트유저",
-        email: "test4@example.com",
-        phone: "010-2222-3333",
-        birth: "2001-01-05",
-        role: "USER",
-        status: "ACTIVE",
-        joinedAt: "2025-10-20 11:22",
-    },
-    {
-        uid: "U0004",
-        name: "블랙리스트",
-        email: "banme@example.com",
-        phone: "010-0000-0000",
-        birth: "1990-12-11",
-        role: "USER",
-        status: "SUSPENDED",
-        joinedAt: "2025-06-18 07:55",
-    },
-];
+const USERS_ENDPOINT = "/users"; // baseURL이 /api 라면 최종 /api/users
 
 const STATUS_COLOR = {
     ACTIVE: "success",
@@ -87,64 +48,236 @@ const ROLE_LABEL = {
     ADMIN: "관리자",
 };
 
+// numeric userId -> UID string (U0001)
+const formatUid = (userId) => {
+    if (userId === null || userId === undefined) return "";
+    return "U" + String(userId).padStart(4, "0");
+};
+
 export default function MembersPage() {
-    // 상태값들
-    const [members, setMembers] = useState(DUMMY_MEMBERS);
+    // data & UI state
+    const [members, setMembers] = useState([]);
     const [keyword, setKeyword] = useState("");
     const [roleFilter, setRoleFilter] = useState("ALL");
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [page, setPage] = useState(1);
     const rowsPerPage = 5;
 
-    // 상세모달 상태
+    const [totalPages, setTotalPages] = useState(1);
+    const [loading, setLoading] = useState(false);
+
+    // detail / delete / toast
     const [detailOpen, setDetailOpen] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
 
-    // 삭제 다이얼로그 상태
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [targetMember, setTargetMember] = useState(null);
     const [confirmText, setConfirmText] = useState("");
 
-    // 액션들
-    const handleRefresh = () => {
-        console.log("🔄 refresh member list (call API)");
-    };
+    const [toast, setToast] = useState({
+        open: false,
+        message: "",
+        severity: "info",
+    });
 
-    const handleExport = () => {
-        console.log("⬇ export member list");
-    };
+    // avoid double fetch
+    const initialFetchRef = useRef(false);
+    const fetchingRef = useRef(false);
 
-    // 상세 보기 열기
-    const handleView = (uid) => {
-        const found = members.find((m) => m.uid === uid);
-        setSelectedMember(found || null);
-        setDetailOpen(true);
-    };
+    // --- API: list
+    const fetchUsers = async (p = page) => {
+        if (fetchingRef.current) return;
+        fetchingRef.current = true;
+        setLoading(true);
+        try {
+            const resp = await communityHttp.get(USERS_ENDPOINT, {
+                params: {
+                    page: Math.max(0, p - 1),
+                    size: rowsPerPage,
+                    search: keyword || undefined,
+                    role: roleFilter === "ALL" ? undefined : roleFilter,
+                    status: statusFilter === "ALL" ? undefined : statusFilter,
+                },
+            });
 
-    // 상세 보기 닫기
-    const handleCloseDetail = () => {
-        setDetailOpen(false);
-    };
+            const data = resp.data;
+            const list = data.content || data;
 
-    const handleToggleBlock = (uid, currentStatus) => {
-        if (currentStatus === "SUSPENDED") {
-            console.log(`✅ 해제 요청 for ${uid}`);
-            setMembers((prev) =>
-                prev.map((m) =>
-                    m.uid === uid ? { ...m, status: "ACTIVE" } : m
-                )
+            const mapped = (list || []).map((u) => ({
+                uid: formatUid(u.userId),
+                userId: u.userId,
+                username: u.username,
+                name: u.name,
+                email: u.email,
+                phone: u.phone,
+                birth: u.birth || null,
+                role:
+                    u.roleName ||
+                    u.roleCode ||
+                    (u.role && u.role.roleCode) ||
+                    "USER",
+                roleId: u.roleId || (u.role && u.role.roleId) || null,
+                status: u.status || "ACTIVE",
+                joinedAt: u.createdAt
+                    ? new Date(u.createdAt).toLocaleString()
+                    : u.joinedAt || "",
+                raw: u,
+            }));
+            setMembers(mapped);
+
+            const computedTotalPages =
+                data && data.totalPages != null
+                    ? data.totalPages
+                    : Math.max(1, Math.ceil(mapped.length / rowsPerPage));
+            setTotalPages(computedTotalPages);
+        } catch (e) {
+            console.error(
+                "회원 목록 로드 실패",
+                e.response?.status,
+                (e.response?.config?.baseURL || "") +
+                    (e.response?.config?.url || ""),
+                e.response?.data || e.message
             );
-        } else {
-            console.log(`⛔ 정지 요청 for ${uid}`);
-            setMembers((prev) =>
-                prev.map((m) =>
-                    m.uid === uid ? { ...m, status: "SUSPENDED" } : m
-                )
-            );
+            setToast({
+                open: true,
+                message: "회원 목록을 불러오지 못했습니다.",
+                severity: "error",
+            });
+        } finally {
+            setLoading(false);
+            fetchingRef.current = false;
         }
     };
 
-    // 삭제 플로우
+    // --- API: detail
+    const fetchUserDetail = async (userId) => {
+        try {
+            const resp = await communityHttp.get(`${USERS_ENDPOINT}/${userId}`);
+            const u = resp.data;
+            const mapped = {
+                uid: formatUid(u.userId),
+                userId: u.userId,
+                username: u.username,
+                name: u.name,
+                email: u.email,
+                phone: u.phone,
+                birth: u.birth || null,
+                role: u.roleName || (u.role && u.role.roleCode) || "USER",
+                roleId: u.roleId || (u.role && u.role.roleId) || null,
+                status: u.status || "ACTIVE",
+                joinedAt: u.createdAt
+                    ? new Date(u.createdAt).toLocaleString()
+                    : "",
+                raw: u,
+            };
+            setSelectedMember(mapped);
+            setDetailOpen(true);
+        } catch (e) {
+            console.error(
+                "상세조회 실패",
+                e.response?.status,
+                (e.response?.config?.baseURL || "") +
+                    (e.response?.config?.url || ""),
+                e.response?.data || e.message
+            );
+            setToast({
+                open: true,
+                message: "회원 상세 정보를 불러오지 못했습니다.",
+                severity: "error",
+            });
+        }
+    };
+
+    // mount: initial load
+    useEffect(() => {
+        if (initialFetchRef.current) return;
+        initialFetchRef.current = true;
+        fetchUsers(1);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // refetch when paging/filter/search change
+    useEffect(() => {
+        fetchUsers(page);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, keyword, roleFilter, statusFilter]);
+
+    // actions
+    const handleRefresh = () => {
+        setPage(1);
+        fetchUsers(1);
+    };
+
+    const handleView = async (uidOrUserId) => {
+        let numericId = null;
+        if (typeof uidOrUserId === "number") numericId = uidOrUserId;
+        else if (String(uidOrUserId).startsWith("U"))
+            numericId = parseInt(String(uidOrUserId).slice(1), 10);
+        else numericId = parseInt(uidOrUserId, 10);
+
+        if (!numericId) {
+            const found = members.find((m) => m.uid === uidOrUserId);
+            setSelectedMember(found || null);
+            setDetailOpen(true);
+            return;
+        }
+        await fetchUserDetail(numericId);
+    };
+
+    const handleToggleBlock = async (uid, currentStatus) => {
+        let numericId = null;
+        if (typeof uid === "number") numericId = uid;
+        else if (String(uid).startsWith("U"))
+            numericId = parseInt(String(uid).slice(1), 10);
+        if (!numericId) {
+            console.warn("Invalid id for toggle:", uid);
+            return;
+        }
+
+        const newStatus =
+            currentStatus === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
+        try {
+            const existingResp = await communityHttp.get(
+                `${USERS_ENDPOINT}/${numericId}`
+            );
+            const existing = existingResp.data;
+            const payload = {
+                userId: existing.userId,
+                username: existing.username,
+                name: existing.name,
+                email: existing.email,
+                phone: existing.phone,
+                status: newStatus,
+                roleId:
+                    existing.roleId ||
+                    (existing.role && existing.role.roleId) ||
+                    null,
+            };
+            await communityHttp.put(`${USERS_ENDPOINT}/${numericId}`, payload);
+            await fetchUsers(page);
+            if (selectedMember?.userId === numericId)
+                await fetchUserDetail(numericId);
+            setToast({
+                open: true,
+                message: "상태 변경이 적용되었습니다.",
+                severity: "success",
+            });
+        } catch (e) {
+            console.error(
+                "상태 변경 실패",
+                e.response?.status,
+                (e.response?.config?.baseURL || "") +
+                    (e.response?.config?.url || ""),
+                e.response?.data || e.message
+            );
+            setToast({
+                open: true,
+                message: "상태 변경에 실패했습니다.",
+                severity: "error",
+            });
+        }
+    };
+
     const openDeleteDialog = (member) => {
         setTargetMember(member);
         setConfirmText("");
@@ -157,41 +290,85 @@ export default function MembersPage() {
         setConfirmText("");
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (!targetMember) return;
-        // ADMIN은 삭제 불가 (실무에선 서버 권한검증 필수)
         if (targetMember.role === "ADMIN") {
-            console.warn("관리자 계정은 삭제할 수 없습니다.");
+            setToast({
+                open: true,
+                message: "관리자 계정은 삭제할 수 없습니다.",
+                severity: "warning",
+            });
             return;
         }
-        setMembers((prev) => prev.filter((m) => m.uid !== targetMember.uid));
-        // 상세 모달에서 삭제했다면 닫기
-        if (selectedMember?.uid === targetMember.uid) setDetailOpen(false);
-        closeDeleteDialog();
+
+        let numericId = targetMember.userId;
+        if (
+            !numericId &&
+            targetMember.uid &&
+            targetMember.uid.startsWith("U")
+        ) {
+            numericId = parseInt(targetMember.uid.slice(1), 10);
+        }
+
+        if (!numericId) {
+            // client-only deletion fallback
+            setMembers((prev) =>
+                prev.filter((m) => m.uid !== targetMember.uid)
+            );
+            if (selectedMember?.uid === targetMember.uid) setDetailOpen(false);
+            closeDeleteDialog();
+            setToast({
+                open: true,
+                message: "회원이 삭제되었습니다 (클라이언트에서만).",
+                severity: "info",
+            });
+            return;
+        }
+
+        try {
+            await communityHttp.delete(`${USERS_ENDPOINT}/${numericId}`);
+            await fetchUsers(Math.max(1, page));
+            if (selectedMember?.userId === numericId) setDetailOpen(false);
+            closeDeleteDialog();
+            setToast({
+                open: true,
+                message: "회원이 삭제되었습니다.",
+                severity: "success",
+            });
+        } catch (e) {
+            console.error(
+                "삭제 실패",
+                e.response?.status,
+                (e.response?.config?.baseURL || "") +
+                    (e.response?.config?.url || ""),
+                e.response?.data || e.message
+            );
+            setToast({
+                open: true,
+                message: "회원 삭제에 실패했습니다.",
+                severity: "error",
+            });
+        }
     };
 
-    // 필터 적용된 리스트
+    // client-side filters
     const filteredList = useMemo(() => {
         const kw = keyword.trim().toLowerCase();
-
         return members.filter((m) => {
             const matchKeyword =
                 kw === "" ||
-                m.name.toLowerCase().includes(kw) ||
-                m.email.toLowerCase().includes(kw) ||
-                m.uid.toLowerCase().includes(kw);
+                (m.name && m.name.toLowerCase().includes(kw)) ||
+                (m.email && m.email.toLowerCase().includes(kw)) ||
+                (m.uid && m.uid.toLowerCase().includes(kw));
 
             const matchRole =
                 roleFilter === "ALL" ? true : m.role === roleFilter;
-
             const matchStatus =
                 statusFilter === "ALL" ? true : m.status === statusFilter;
-
             return matchKeyword && matchRole && matchStatus;
         });
     }, [members, keyword, roleFilter, statusFilter]);
 
-    // 현재 페이지 slice
     const pagedList = useMemo(() => {
         const start = (page - 1) * rowsPerPage;
         return filteredList.slice(start, start + rowsPerPage);
@@ -199,22 +376,17 @@ export default function MembersPage() {
 
     const pageCount = Math.ceil(filteredList.length / rowsPerPage) || 1;
 
-    // 필터 바뀌면 페이지 리셋
     useEffect(() => {
         setPage(1);
     }, [keyword, roleFilter, statusFilter, members]);
 
-    // 상세정보 줄 하나 컴포넌트
+    // small reusable detail row
     const DetailRow = ({ label, children, verticalAlign = "center" }) => (
         <Stack
             direction="row"
             alignItems={verticalAlign}
             spacing={2}
-            sx={{
-                py: 1,
-                borderBottom: "1px solid",
-                borderColor: "divider",
-            }}
+            sx={{ py: 1, borderBottom: "1px solid", borderColor: "divider" }}
         >
             <Typography
                 variant="body2"
@@ -228,7 +400,6 @@ export default function MembersPage() {
             >
                 {label}
             </Typography>
-
             <Box
                 sx={{
                     flexGrow: 1,
@@ -242,6 +413,7 @@ export default function MembersPage() {
         </Stack>
     );
 
+    // ---------- RENDER ----------
     return (
         <>
             <Paper
@@ -253,7 +425,7 @@ export default function MembersPage() {
                     boxShadow: 1,
                 }}
             >
-                {/* 상단 영역: 메인 타이틀/설명 */}
+                {/* Header */}
                 <Box sx={{ mb: 3 }}>
                     <Typography
                         variant="h5"
@@ -282,7 +454,7 @@ export default function MembersPage() {
 
                 <Divider sx={{ mb: 3 }} />
 
-                {/* 검색/필터/액션바 */}
+                {/* Option Bar */}
                 <Box
                     sx={{
                         display: "flex",
@@ -290,13 +462,10 @@ export default function MembersPage() {
                         flexWrap: "wrap",
                         alignItems: { xs: "stretch", md: "center" },
                         justifyContent: "space-between",
-
                         rowGap: 2,
                         columnGap: 2,
-
                         p: 2,
                         mb: 2,
-
                         border: "1px solid",
                         borderColor: "divider",
                         borderRadius: 2,
@@ -307,7 +476,7 @@ export default function MembersPage() {
                                 : theme.palette.grey[50],
                     }}
                 >
-                    {/* 왼쪽: 검색 + 필터 묶음 */}
+                    {/* Left: filters + search */}
                     <Box
                         sx={{
                             display: "flex",
@@ -318,11 +487,10 @@ export default function MembersPage() {
                             minWidth: 0,
                         }}
                     >
-                        {/* 권한 필터 */}
                         <TextField
                             select
-                            size="small"
                             label="권한"
+                            size="small"
                             value={roleFilter}
                             onChange={(e) => setRoleFilter(e.target.value)}
                             sx={{
@@ -330,9 +498,7 @@ export default function MembersPage() {
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: 2,
                                     backgroundColor: "background.paper",
-                                    "& fieldset": {
-                                        borderColor: "divider",
-                                    },
+                                    "& fieldset": { borderColor: "divider" },
                                     "&:hover fieldset": {
                                         borderColor: "primary.light",
                                     },
@@ -350,11 +516,10 @@ export default function MembersPage() {
                             <MenuItem value="ADMIN">관리자</MenuItem>
                         </TextField>
 
-                        {/* 상태 필터 */}
                         <TextField
                             select
-                            size="small"
                             label="상태"
+                            size="small"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                             sx={{
@@ -362,9 +527,7 @@ export default function MembersPage() {
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: 2,
                                     backgroundColor: "background.paper",
-                                    "& fieldset": {
-                                        borderColor: "divider",
-                                    },
+                                    "& fieldset": { borderColor: "divider" },
                                     "&:hover fieldset": {
                                         borderColor: "primary.light",
                                     },
@@ -382,14 +545,13 @@ export default function MembersPage() {
                             <MenuItem value="SUSPENDED">정지</MenuItem>
                         </TextField>
 
-                        {/* 검색창 */}
                         <TextField
                             size="small"
                             placeholder="이름 / 이메일 / UID 검색"
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
                             sx={{
-                                minWidth: { xs: "100%", md: 240 },
+                                minWidth: { xs: "100%", md: 260 },
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: 5,
                                     backgroundColor: "background.paper",
@@ -420,7 +582,7 @@ export default function MembersPage() {
                         />
                     </Box>
 
-                    {/* 오른쪽: 현황 + 버튼 묶음 */}
+                    {/* Right: summary + refresh */}
                     <Stack
                         direction="row"
                         alignItems="center"
@@ -434,68 +596,53 @@ export default function MembersPage() {
                             },
                         }}
                     >
-                        {/* "총 N명 · 페이지 X / Y" 부분 */}
-                        <Typography
-                            sx={{
-                                fontSize: "0.8rem",
-                                color: "text.secondary",
-                                fontWeight: 400,
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            총 {filteredList.length}명 · 페이지 {page} /{" "}
-                            {pageCount}
-                        </Typography>
-
-                        {/* 새로고침 / 내보내기 묶음 */}
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                border: "1px solid",
-                                borderColor: "divider",
-                                borderRadius: 2,
-                                overflow: "hidden",
-                            }}
-                        >
-                            <Tooltip title="새로고침">
-                                <IconButton
-                                    size="small"
-                                    onClick={handleRefresh}
-                                    sx={{
-                                        borderRadius: 0,
-                                        "&:hover": {
-                                            bgcolor: "primary.main",
-                                            color: "#fff",
-                                        },
-                                    }}
-                                >
-                                    <RefreshIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-
-                            <Divider orientation="vertical" flexItem />
-
-                            <Tooltip title="내보내기">
-                                <IconButton
-                                    size="small"
-                                    onClick={handleExport}
-                                    sx={{
-                                        borderRadius: 0,
-                                        "&:hover": {
-                                            bgcolor: "success.main",
-                                            color: "#fff",
-                                        },
-                                    }}
-                                >
-                                    <DownloadIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
+                        <Box sx={{ textAlign: "right", mr: 1 }}>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.8rem",
+                                    color: "text.secondary",
+                                    fontWeight: 400,
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                총 {filteredList.length}명
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontSize: "0.8rem",
+                                    fontWeight: 600,
+                                    whiteSpace: "nowrap",
+                                    color: "text.primary",
+                                }}
+                            >
+                                페이지 {page} / {pageCount}
+                            </Typography>
                         </Box>
+
+                        <Tooltip title="새로고침">
+                            <IconButton
+                                size="small"
+                                onClick={handleRefresh}
+                                sx={{
+                                    borderRadius: 2,
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    "&:hover": {
+                                        bgcolor: "primary.main",
+                                        color: "#fff",
+                                        borderColor: "primary.main",
+                                    },
+                                    width: 32,
+                                    height: 32,
+                                }}
+                            >
+                                <RefreshIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
                     </Stack>
                 </Box>
 
-                {/* 테이블 */}
+                {/* Table */}
                 <Box
                     sx={{
                         borderRadius: 2,
@@ -527,13 +674,27 @@ export default function MembersPage() {
                                     },
                                 }}
                             >
-                                <TableCell>UID</TableCell>
-                                <TableCell>이름</TableCell>
-                                <TableCell>이메일</TableCell>
-                                <TableCell>권한</TableCell>
-                                <TableCell>상태</TableCell>
-                                <TableCell>가입일</TableCell>
-                                <TableCell align="right">액션</TableCell>
+                                <TableCell sx={{ minWidth: 120 }}>
+                                    UID
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 140 }}>
+                                    이름
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 180 }}>
+                                    이메일
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 100 }}>
+                                    권한
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 100 }}>
+                                    상태
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 130 }}>
+                                    가입일
+                                </TableCell>
+                                <TableCell align="right" sx={{ minWidth: 100 }}>
+                                    액션
+                                </TableCell>
                             </TableRow>
                         </TableHead>
 
@@ -545,7 +706,9 @@ export default function MembersPage() {
                                         align="center"
                                         sx={{ py: 6, color: "text.secondary" }}
                                     >
-                                        조건에 맞는 회원이 없습니다.
+                                        {loading
+                                            ? "불러오는 중..."
+                                            : "조건에 맞는 회원이 없습니다."}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -567,7 +730,6 @@ export default function MembersPage() {
                                                 },
                                             }}
                                         >
-                                            {/* UID */}
                                             <TableCell
                                                 sx={{
                                                     fontFamily: "monospace",
@@ -577,7 +739,6 @@ export default function MembersPage() {
                                                 {member.uid}
                                             </TableCell>
 
-                                            {/* 이름 */}
                                             <TableCell
                                                 sx={{
                                                     fontWeight: 500,
@@ -587,18 +748,19 @@ export default function MembersPage() {
                                                 {member.name}
                                             </TableCell>
 
-                                            {/* 이메일 */}
                                             <TableCell
                                                 sx={{
                                                     maxWidth: 200,
                                                     fontSize: "0.8rem",
                                                     color: "text.secondary",
+                                                    whiteSpace: "nowrap",
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
                                                 }}
                                             >
                                                 {member.email}
                                             </TableCell>
 
-                                            {/* 권한 */}
                                             <TableCell>
                                                 <Chip
                                                     label={
@@ -620,7 +782,6 @@ export default function MembersPage() {
                                                 />
                                             </TableCell>
 
-                                            {/* 상태 */}
                                             <TableCell>
                                                 <Chip
                                                     label={
@@ -659,7 +820,6 @@ export default function MembersPage() {
                                                 />
                                             </TableCell>
 
-                                            {/* 가입일 */}
                                             <TableCell
                                                 sx={{
                                                     fontSize: "0.8rem",
@@ -669,14 +829,14 @@ export default function MembersPage() {
                                                 {member.joinedAt}
                                             </TableCell>
 
-                                            {/* 액션 */}
                                             <TableCell align="right">
                                                 <Tooltip title="상세 보기">
                                                     <IconButton
                                                         size="small"
                                                         onClick={() =>
                                                             handleView(
-                                                                member.uid
+                                                                member.userId ||
+                                                                    member.uid
                                                             )
                                                         }
                                                     >
@@ -702,10 +862,12 @@ export default function MembersPage() {
                                                         }
                                                         onClick={() =>
                                                             handleToggleBlock(
-                                                                member.uid,
+                                                                member.userId ||
+                                                                    member.uid,
                                                                 member.status
                                                             )
                                                         }
+                                                        sx={{ ml: 0.5 }}
                                                     >
                                                         <BlockIcon fontSize="small" />
                                                     </IconButton>
@@ -728,6 +890,7 @@ export default function MembersPage() {
                                                                     member
                                                                 )
                                                             }
+                                                            sx={{ ml: 0.5 }}
                                                         >
                                                             <DeleteIcon fontSize="small" />
                                                         </IconButton>
@@ -742,7 +905,7 @@ export default function MembersPage() {
                     </Table>
                 </Box>
 
-                {/* 페이지네이션 */}
+                {/* Pagination */}
                 <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
                     <Pagination
                         count={pageCount}
@@ -758,17 +921,16 @@ export default function MembersPage() {
                 </Stack>
             </Paper>
 
-            {/* 상세정보 모달 */}
+            {/* Detail Dialog */}
             <Dialog
                 open={detailOpen}
-                onClose={handleCloseDetail}
+                onClose={() => setDetailOpen(false)}
                 maxWidth="sm"
                 fullWidth
             >
                 <DialogTitle sx={{ fontWeight: 700, pb: 1.5 }}>
                     회원 상세 정보
                 </DialogTitle>
-
                 <DialogContent dividers sx={{ pt: 1, px: 0 }}>
                     {selectedMember ? (
                         <Box sx={{ px: 3 }}>
@@ -884,7 +1046,7 @@ export default function MembersPage() {
                             onClick={() => {
                                 if (!selectedMember) return;
                                 handleToggleBlock(
-                                    selectedMember.uid,
+                                    selectedMember.userId || selectedMember.uid,
                                     selectedMember.status
                                 );
                             }}
@@ -910,7 +1072,7 @@ export default function MembersPage() {
                     </Stack>
 
                     <Button
-                        onClick={handleCloseDetail}
+                        onClick={() => setDetailOpen(false)}
                         variant="contained"
                         size="small"
                     >
@@ -919,7 +1081,7 @@ export default function MembersPage() {
                 </DialogActions>
             </Dialog>
 
-            {/* 삭제 확인 다이얼로그 */}
+            {/* Delete Dialog */}
             <Dialog
                 open={deleteOpen}
                 onClose={closeDeleteDialog}
@@ -932,8 +1094,7 @@ export default function MembersPage() {
                         <Stack spacing={2}>
                             <Typography variant="body2" color="text.secondary">
                                 아래 입력란에 <b>{targetMember.uid}</b> 를
-                                입력하면 삭제됩니다. (데이터는 예시로
-                                클라이언트에서만 제거됩니다)
+                                입력하면 삭제됩니다.
                             </Typography>
                             <TextField
                                 size="small"
@@ -962,6 +1123,23 @@ export default function MembersPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Toast */}
+            <Snackbar
+                open={toast.open}
+                autoHideDuration={2200}
+                onClose={() => setToast((t) => ({ ...t, open: false }))}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            >
+                <Alert
+                    onClose={() => setToast((t) => ({ ...t, open: false }))}
+                    severity={toast.severity}
+                    variant="filled"
+                    sx={{ width: "100%" }}
+                >
+                    {toast.message}
+                </Alert>
+            </Snackbar>
         </>
     );
 }

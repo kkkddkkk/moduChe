@@ -1,5 +1,4 @@
-// src/pages/Admin/BannersPage.js
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
     Box,
     Typography,
@@ -115,10 +114,156 @@ export default function BannersPage() {
         severity: "success",
     });
 
-    const handleRefresh = () => console.log("🔄 배너 목록 새로고침 (API)");
-    const handleExport = () => console.log("⬇ 배너 목록 다운로드 (엑셀/CSV)");
-    const handleCreateBanner = () =>
-        console.log("🆕 새 배너 등록 화면/모달 오픈");
+    // popup window reference
+    const popupRef = useRef(null);
+
+    // 메시지 수신: 팝업에서 보내는 BANNER_CREATED 처리
+    useEffect(() => {
+        function onMessage(e) {
+            // 보안: 동일 origin 체크 (필요하면 도메인 조정)
+            if (e.origin !== window.location.origin) return;
+            const { type, payload } = e.data || {};
+            if (type === "BANNER_CREATED" && payload) {
+                setBanners((prev) => {
+                    // 중복 검사: banner_id 또는 title 기준
+                    const dup = prev.some(
+                        (b) =>
+                            b.banner_id === payload.banner_id ||
+                            b.title === payload.title
+                    );
+                    return dup ? prev : [payload, ...prev];
+                });
+                setToast({
+                    open: true,
+                    message: "새 배너가 추가되었습니다.",
+                    severity: "success",
+                });
+                // 팝업 레퍼런스가 열려있다면 닫기 시도 (팝업에서 이미 닫혔을 수도 있음)
+                try {
+                    if (popupRef.current && !popupRef.current.closed)
+                        popupRef.current.close();
+                } catch (err) {}
+            }
+        }
+        window.addEventListener("message", onMessage);
+        return () => window.removeEventListener("message", onMessage);
+    }, []);
+
+    const handleRefresh = () => {
+        // 실제로는 API 재요청을 넣으세요.
+        console.log("🔄 배너 목록 새로고침 (API)");
+        setToast({
+            open: true,
+            message: "배너 목록을 새로고침했습니다.",
+            severity: "info",
+        });
+    };
+
+    const handleExport = () => {
+        if (!banners || banners.length === 0) {
+            setToast({
+                open: true,
+                message: "내보낼 배너가 없습니다.",
+                severity: "info",
+            });
+            return;
+        }
+        const headers = [
+            "배너ID",
+            "관리자ID",
+            "제목",
+            "위치",
+            "시작일",
+            "종료일",
+            "출력순서",
+            "이미지URL",
+            "이동URL",
+        ];
+        const rows = banners.map((b) => [
+            b.banner_id,
+            b.admin_id,
+            b.title,
+            b.location,
+            b.start_date,
+            b.end_date,
+            b.order_index,
+            b.image_url,
+            b.target_url,
+        ]);
+        const csvContent = [headers, ...rows]
+            .map((r) =>
+                r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")
+            )
+            .join("\n");
+        const blob = new Blob([csvContent], {
+            type: "text/csv;charset=utf-8;",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `banners_export_${new Date()
+            .toISOString()
+            .slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setToast({
+            open: true,
+            message: "배너 목록을 내보냈습니다.",
+            severity: "success",
+        });
+    };
+
+    // 작은 팝업으로 BannerCreateWindow 열기
+    const handleCreateBanner = () => {
+        const w = 520; // ✅ 통일된 가로 크기
+        const h = 640; // ✅ 통일된 세로 크기
+
+        // 안전하게 화면 위치 가져오기
+        const dualScreenLeft =
+            typeof window.screenLeft === "number" ? window.screenLeft : 0;
+        const dualScreenTop =
+            typeof window.screenTop === "number" ? window.screenTop : 0;
+
+        const viewportW =
+            window.innerWidth ||
+            document.documentElement.clientWidth ||
+            window.screen.width;
+        const viewportH =
+            window.innerHeight ||
+            document.documentElement.clientHeight ||
+            window.screen.height;
+
+        const left = Math.max(0, (viewportW - w) / 2 + dualScreenLeft);
+        const top = Math.max(0, (viewportH - h) / 2 + dualScreenTop);
+
+        // ✅ 통일된 옵션
+        const opts = `scrollbars=yes,width=${w},height=${h},top=${top},left=${left},resizable=no`;
+
+        try {
+            popupRef.current = window.open(
+                "/admin-window/banners/new",
+                "BannerCreateSmall",
+                `${opts},noopener,noreferrer`
+            );
+            if (popupRef.current) {
+                popupRef.current.focus();
+            } else {
+                setToast({
+                    open: true,
+                    message:
+                        "팝업이 차단되었을 수 있습니다. 브라우저의 팝업 허용 후 다시 시도하세요.",
+                    severity: "warning",
+                });
+            }
+        } catch (e) {
+            console.error("팝업 열기 실패", e);
+            setToast({
+                open: true,
+                message: "팝업을 열 수 없습니다.",
+                severity: "error",
+            });
+        }
+    };
 
     const handleView = (banner_id) => {
         const found = banners.find((b) => b.banner_id === banner_id);
@@ -212,7 +357,7 @@ export default function BannersPage() {
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* 옵션 바 */}
+            {/* 옵션 바 (CalculatePage 스타일 통일) */}
             <Box
                 sx={{
                     display: "flex",
@@ -250,7 +395,21 @@ export default function BannersPage() {
                         size="small"
                         value={locationFilter}
                         onChange={(e) => setLocationFilter(e.target.value)}
-                        sx={{ minWidth: 130 }}
+                        sx={{
+                            minWidth: 130,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                backgroundColor: "background.paper",
+                                "& fieldset": { borderColor: "divider" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                            "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                        }}
                     >
                         <MenuItem value="ALL">전체</MenuItem>
                         <MenuItem value="MAIN">메인</MenuItem>
@@ -265,16 +424,45 @@ export default function BannersPage() {
                         size="small"
                         value={fromDate}
                         onChange={(e) => setFromDate(e.target.value)}
-                        sx={{ minWidth: 140 }}
+                        sx={{
+                            minWidth: 140,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                backgroundColor: "background.paper",
+                                "& fieldset": { borderColor: "divider" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                            "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                        }}
                         InputLabelProps={{ shrink: true }}
                     />
+
                     <TextField
                         label="종료일"
                         type="date"
                         size="small"
                         value={toDate}
                         onChange={(e) => setToDate(e.target.value)}
-                        sx={{ minWidth: 140 }}
+                        sx={{
+                            minWidth: 140,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                backgroundColor: "background.paper",
+                                "& fieldset": { borderColor: "divider" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                            "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                        }}
                         InputLabelProps={{ shrink: true }}
                     />
 
@@ -283,7 +471,21 @@ export default function BannersPage() {
                         placeholder="배너ID / 제목 검색"
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
-                        sx={{ minWidth: { xs: "100%", md: 260 } }}
+                        sx={{
+                            minWidth: { xs: "100%", md: 260 },
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 5,
+                                backgroundColor: "background.paper",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                                "& fieldset": { borderColor: "transparent" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                        }}
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
@@ -309,16 +511,28 @@ export default function BannersPage() {
                         justifyContent: { xs: "space-between", md: "flex-end" },
                     }}
                 >
-                    <Typography
-                        sx={{
-                            fontSize: "0.8rem",
-                            color: "text.secondary",
-                            fontWeight: 400,
-                            whiteSpace: "nowrap",
-                        }}
-                    >
-                        총 {filteredList.length}건
-                    </Typography>
+                    <Box sx={{ textAlign: "right", mr: 1 }}>
+                        <Typography
+                            sx={{
+                                fontSize: "0.8rem",
+                                color: "text.secondary",
+                                fontWeight: 400,
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            총 {filteredList.length}건
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontSize: "0.8rem",
+                                fontWeight: 600,
+                                whiteSpace: "nowrap",
+                                color: "text.primary",
+                            }}
+                        >
+                            합계 · {filteredList.length}건
+                        </Typography>
+                    </Box>
 
                     <Button
                         size="small"
@@ -460,6 +674,7 @@ export default function BannersPage() {
                                     >
                                         {row.banner_id}
                                     </TableCell>
+
                                     <TableCell
                                         sx={{
                                             fontFamily: "monospace",
@@ -544,6 +759,7 @@ export default function BannersPage() {
                                                         row.banner_id
                                                     )
                                                 }
+                                                sx={{ ml: 0.5 }}
                                             >
                                                 <DeleteIcon fontSize="small" />
                                             </IconButton>
@@ -803,7 +1019,7 @@ export default function BannersPage() {
             {/* 토스트 */}
             <Snackbar
                 open={toast.open}
-                autoHideDuration={2000}
+                autoHideDuration={2200}
                 onClose={() => setToast((t) => ({ ...t, open: false }))}
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
