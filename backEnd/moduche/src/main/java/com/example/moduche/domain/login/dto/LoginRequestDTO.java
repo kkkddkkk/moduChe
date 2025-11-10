@@ -11,17 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IndividualSignInDTO {
-	private String username;
+public class LoginRequestDTO {
+	private String loginId;
 	private String password;
-	private String name;
-	private String email;
-	private String phone;
-	
-	private String birth;
-	private int gender;
-	private String disabilityGrade;
-	private long disabilityType;
-	private boolean qualified;
-	
 }

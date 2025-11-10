@@ -1,3 +1,5 @@
+import { useUser } from "../../context/UserContext";
+
 export const numberFormat = (number) => {
   if (number == null) return "0"
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');

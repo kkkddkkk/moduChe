@@ -1,6 +1,4 @@
-package com.example.moduche.domain.facility.dto;
-
-import com.example.moduche.domain.login.dto.IdTestDTO;
+package com.example.moduche.domain.login.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,8 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FacilityListForSignInDTO {
+public class DisabilityDTO {
 	private Long id;
 	private String name;
-	private String loca;
 }

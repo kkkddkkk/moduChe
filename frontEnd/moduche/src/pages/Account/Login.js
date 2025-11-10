@@ -12,6 +12,10 @@ import { useNavigate } from 'react-router-dom';
 import KakaoLoginButton from '../../component/account/KakaoLoginButton';
 import NaverLoginButton from '../../component/account/NaverLoginButton';
 import GoogleLoginButton from '../../component/account/GoogleLoginButton';
+import { logIn } from '../../api/accountAPI';
+import { useApi } from '../../hook/useAPI';
+import Loading from '../../component/common/Loading';
+import { useUser } from '../../context/UserContext';
 
 const Login = () => {
   //HOOK 정의
@@ -19,12 +23,6 @@ const Login = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
-
-  //로그인폼(제출버튼 누르면 set)
-  const [loginForm, setLoginForm] = useState({
-    loginId: '',
-    password: '',
-  });
 
   //form state 객체화(id, password)
   const [id, setId] = useState('');
@@ -34,10 +32,7 @@ const Login = () => {
   const [idError, setIdError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
 
-  useEffect(() => {
-    if (loginForm.loginId.length === 0) return;
-    console.log(loginForm);
-  }, [loginForm]);
+  const [message, setMessage] = useState('');
 
   //ID, Password 에러 설정 후 form에 변화있으면 error=false
   useEffect(() => {
@@ -48,16 +43,32 @@ const Login = () => {
   }, [password]);
 
   //로그인 시도
-  const tryLogin = () => {
-    setLoginForm({ loginId: id, password: password });
-    if (!window.confirm('ID 존재?')) {
-      //여기부터 임시
-      setIdError(true);
-    } else {
-      if (!window.confirm('비밀번호 맞음?')) setPasswordError(true);
-      else window.alert('로그인 완료');
+  const { callApi: loginAPI, loading, done } = useApi(logIn);
+  const { setName, setLoggedIn } = useUser();  //전역에 이름 저장
+
+  const tryLogin = async () => {
+    const dto = {
+      loginId: id,
+      password: password,
+    };
+    const res = await loginAPI(dto);
+    const data = res.data;
+    if (!data.allSuccess) {
+      if (!data.idSuccess) setIdError(true);
+      else setPasswordError(true);
+      return;
     }
+    localStorage.setItem('accessToken', data.accessToken);
+    setMessage(res.message);
+    setName(data.name);
+    setLoggedIn(true);
   };
+
+  useEffect(() => {
+    if (!done) return;
+    alert(message);
+    navigate('/');
+  }, [done]);
 
   //margin 주는 용도
   const LoginDivider = () => {
@@ -92,7 +103,7 @@ const Login = () => {
   return (
     <Layout padding={2}>
       {isMobile ? <></> : <Grid size={isTablet ? 2 : 4} />}
-
+      <Loading open={loading} text="로그인 중입니다." />
       <Grid size={isMobile ? 12 : isTablet ? 8 : 4}>
         <CenterTitle>로그인</CenterTitle>
         <Box
@@ -134,6 +145,7 @@ const Login = () => {
           placeholder={'비밀번호'}
           error={passwordError}
           helperText={'비밀번호가 올바르지 않습니다.'}
+          show={false}
         />
         <LoginDivider />
         <OneAlignedButton

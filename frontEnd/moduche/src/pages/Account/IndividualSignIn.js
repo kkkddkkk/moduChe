@@ -1,16 +1,27 @@
 import Layout from '../../component/common/Layout';
 import { Box, Grid, useMediaQuery, useTheme } from '@mui/material';
 import { CenterTitle, SubTitle } from '../../component/common/Text';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AccountInfo from '../../component/account/AccountInfo';
 import PersonalInfo from '../../component/account/PersonalInfo';
 import AdditionalInfo from '../../component/account/AdditionalInfo';
 import { OneAlignedButton } from '../../component/common/Button';
+import { individualSignIn } from '../../api/accountAPI';
+import { useApi } from '../../hook/useAPI';
+import { useNavigate } from 'react-router-dom';
+import Loading from '../../component/common/Loading';
 
 const SignIn = () => {
+  //hook
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
+  const navigate = useNavigate();
+
+  //ref
+  const accountRef = useRef(null);
+  const personalRef = useRef(null);
+  const additionalRef = useRef(null);
 
   //form
   const [id, setId] = useState('');
@@ -21,76 +32,134 @@ const SignIn = () => {
   const [number, setNumber] = useState('');
   const [birth, setBirth] = useState('');
   const [backFirst, setBackFirst] = useState('');
-
-  //additional for individual
   const [disability, setDisability] = useState('');
   const [degree, setDegree] = useState('');
+  const [qualified, setQualified] = useState(false);
 
   //error
-  const [idError, setIdError] = useState(false);
-  const [pwError, setPwError] = useState(false);
-  const [chkPwError, setChkPwError] = useState(false);
-  const [emailError, setEmailError] = useState(false);
-  const [numberError, setNumberError] = useState(false);
-  const [birthError, setBirthError] = useState(false);
-  const [backFirstError, setBackFirstError] = useState(false);
+  const [accountError, setAccountError] = useState({
+    message: '',
+    ready: false,
+  });
+  const [personalError, setPersonalError] = useState({
+    message: '',
+    ready: false,
+  });
+  const [additionalError, setAdditionalError] = useState({
+    message: '',
+    ready: false,
+  });
 
+  const { callApi: signInAPI, loading } = useApi(individualSignIn);
+  const [done, setDone] = useState(false);
+
+  const signIn = async () => {
+    console.log(disability);
+    console.log(degree);
+    if (!accountError.ready) {
+      alert(accountError.message);
+      accountRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+      return;
+    }
+    if (!personalError.ready) {
+      alert(personalError.message);
+      personalRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+      return;
+    }
+    if (!additionalError.ready) {
+      alert(additionalError.message);
+      additionalRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+      return;
+    }
+
+    const dto = {
+      username: id,
+      password: password,
+      name: name,
+      email: email,
+      phone: number,
+      birth: birth,
+      gender: backFirst,
+      disabilityGrade: degree,
+      disabilityType: disability.id, 
+      qualified: qualified
+    };
+
+    const res = await signInAPI(dto);
+    setDone(true);
+  };
+
+  useEffect(() => {
+    if (loading || !done) return;
+    alert('회원가입이 완료되었습니다. 로그인 화면으로 이동합니다.');
+    navigate(`/account/login`);
+  }, [loading, done]);
 
   return (
     <Layout padding={2}>
+      <Loading open={loading} text={'회원가입 중입니다.'} />
       {isMobile ? <></> : <Grid size={3} />}
       <Grid size={isMobile ? 12 : 6}>
         <CenterTitle>회원가입</CenterTitle>
+        <Box ref={accountRef} />
         <SubTitle>* 계정정보</SubTitle>
         <AccountInfo
           id={id}
           setId={setId}
-          idError={idError}
-          setIdError={setIdError}
           password={password}
           setPassword={setPassword}
-          pwError={pwError}
-          setPwError={setPwError}
           chkPw={chkPw}
           setChkPw={setChkPw}
-          chkPwError={chkPwError}
-          setChkPwError={setChkPwError}
+          accountError={accountError}
+          setAccountError={setAccountError}
         />
         <Box marginTop={'5%'} />
+        <Box ref={personalRef} />
         <SubTitle>* 개인정보</SubTitle>
         <PersonalInfo
           name={name}
           setName={setName}
           email={email}
           setEmail={setEmail}
-          emailError={emailError}
-          setEmailError={setEmailError}
           number={number}
           setNumber={setNumber}
-          numberError={numberError}
-          setNumberError={setNumberError}
           birth={birth}
           setBirth={setBirth}
-          birthError={birthError}
-          setBirthError={setBirthError}
           backFirst={backFirst}
           setBackFirst={setBackFirst}
-          backFirstError={backFirstError}
-          setBackFirstError={setBackFirstError}
+          personalError={personalError}
+          setPersonalError={setPersonalError}
         />
         <Box marginTop={'5%'} />
+        <Box ref={additionalRef} />
         <SubTitle>* 추가 정보</SubTitle>
         <AdditionalInfo
           disability={disability}
           setDisability={setDisability}
           degree={degree}
           setDegree={setDegree}
+          additionalError={additionalError}
+          setAdditionalError={setAdditionalError}
+          qualified={qualified}
+          setQualified={setQualified}
         />
         <Box marginTop={'5%'} />
         <Layout>
           <Grid size={2} />
           <Grid size={8}>
-            <OneAlignedButton buttonWrapperSx={{ width: '100%' }}>
+            <OneAlignedButton
+              buttonWrapperSx={{ width: '100%' }}
+              onClick={signIn}
+            >
               회원가입
             </OneAlignedButton>
           </Grid>

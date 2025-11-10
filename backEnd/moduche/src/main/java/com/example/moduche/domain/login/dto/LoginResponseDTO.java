@@ -1,6 +1,4 @@
-package com.example.moduche.domain.facility.dto;
-
-import com.example.moduche.domain.login.dto.IdTestDTO;
+package com.example.moduche.domain.login.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,8 +11,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FacilityListForSignInDTO {
-	private Long id;
+public class LoginResponseDTO {
+	private String message;
 	private String name;
-	private String loca;
+	private boolean idSuccess;
+	private boolean allSuccess;
+	private String accessToken;
+	private String refreshToken;
 }

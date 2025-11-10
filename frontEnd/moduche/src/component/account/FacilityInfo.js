@@ -3,6 +3,7 @@ import {
   Box,
   Grid,
   TextField,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -14,41 +15,77 @@ import { useEffect, useState } from 'react';
 import CustomTextField from '../common/CustomTextField';
 import EmailTest from './EmailTest';
 import { getFacilityList } from '../../api/accountAPI';
+import { useApi } from '../../hook/useAPI';
+import Loading from '../common/Loading';
 
 const FacilityInfo = ({
   facility,
   setFacility,
   number,
   setNumber,
-  numberError,
-  setNumberError,
   email,
   setEmail,
-  emailError,
-  setEmailError,
+  facilityError,
+  setFacilityError,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [facilities, setFacilities] = useState();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
+  const [emailChecked, setEmailChecked] = useState(false);
+
+  const [numberError, setNumberError] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+
+  const { callApi: fetchFacilityAPI, loading } = useApi(getFacilityList);
 
   const fetchFacility = async () => {
-    const res = await getFacilityList(search);
-    console.log(res);
+    const res = await fetchFacilityAPI(search);
     setFacilities(res.data);
   };
 
-  useEffect(()=>{
-    if(search.length<2){
+  useEffect(() => {
+    if (search.length < 2) {
       setFacilities([]);
       return;
     }
     fetchFacility();
-  },[search]);
+  }, [search]);
 
-  // const facilities = [
-  //   { name: '거지발싸개센터', loca: '서울시 거지구 발싸개동' },
-  // ];
+  useEffect(() => {
+    if (!facility || facility.id == null) {
+      setFacilityError({
+        message: '시설이 선택되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    if (number.length === 0) {
+      setFacilityError({
+        message: '연락처가 입력되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    if (numberError) {
+      setFacilityError({
+        message: '연락처 입력란을 다시 확인해주세요.',
+        ready: false,
+      });
+      return;
+    }
+    if (!emailChecked) {
+      setFacilityError({
+        message: '이메일이 확인되지 않았습니다.',
+        ready: false,
+      });
+      return;
+    }
+    setFacilityError({
+      message: '시설정보 확인 완료.',
+      ready: true,
+    });
+  }, [number, emailChecked, facility]);
 
   const regPhone = /^(01[016789]\d{3,4}\d{4}|0\d{1,2}\d{3,4}\d{4})$/;
   function regPhoneNumber(numbers) {
@@ -79,28 +116,28 @@ const FacilityInfo = ({
 
   return (
     <Paper>
+      <Loading open={loading} text={'로딩 중입니다.'} />
       <Layout space={3}>
         <Grid size={12} marginBottom={'5%'}>
           <SignInText title={'시설명'} />
           <Autocomplete
             options={facilities}
             getOptionLabel={(option) => option.name.toString()} // 내부적으로 검색용
-            value={
-              facilities?.find((n) => n.number === facility?.number) || null
-            } // value에 맞춰 객체 찾아서 전달
+            value={facility || null} // value에 맞춰 객체 찾아서 전달
             onChange={(event, newValue) =>
-              setSearch(newValue ? newValue : null)
-            }
-            filterOptions={(options, state) =>
-              options.filter((opt) =>
-                opt.name.toLowerCase().includes(state.inputValue.toLowerCase()),
-              )
+              setFacility(newValue ? newValue : null)
             }
             renderOption={(props, option, { index }) => (
               <li {...props} key={index}>
                 <Box display="flex" justifyContent="space-between" width="100%">
                   <Typography>{option.name}</Typography>
-                  <Typography>{option.loca}</Typography>
+                  <Tooltip title={option.loca} arrow placement="right">
+                    <Typography>
+                      {option.loca.length > 15
+                        ? option.loca.substring(0, 15) + '...'
+                        : option.loca}
+                    </Typography>
+                  </Tooltip>
                 </Box>
               </li>
             )}
@@ -111,9 +148,7 @@ const FacilityInfo = ({
                 variant="standard"
               />
             )}
-            isOptionEqualToValue={(option, val) =>
-              option.number === val?.number
-            }
+            isOptionEqualToValue={(option, val) => option.name === val?.name}
             onInputChange={(event, newInputValue) => setSearch(newInputValue)}
             noOptionsText="등록되지 않은 시설입니다. 회원가입을 위해 국민체육진흥공단에 개별 연락 바랍니다."
           />
@@ -153,6 +188,8 @@ const FacilityInfo = ({
           setEmail={setEmail}
           emailError={emailError}
           setEmailError={setEmailError}
+          emailChecked={emailChecked}
+          setEmailChecked={setEmailChecked}
         />
       </Layout>
     </Paper>
