@@ -1,36 +1,89 @@
+import { useEffect, useState } from "react";
 import { Toolbar } from "@mui/material";
-import PostDetailComponent from "../../component/community/PostDetailComponent";
 import { useNavigate, useParams } from "react-router-dom";
+import PostDetailComponent from "../../component/community/PostDetailComponent";
+
+import {
+    fetchCommunityPostDetail,
+    fetchCommunityPostComments,
+} from "../../api/communityAPI/communityAPI";
 
 const CommunityDetailPage = () => {
-    const { id } = useParams();
+    const { id: postId } = useParams();
     const navigate = useNavigate();
 
-    //더미 데이터.
-    const club = {
-        id,
-        name: `날아라 붉은 해파리 ${id}`,
-        address: '경기도 광명시',
-        addressDetail: '안양천 고가차도 아래',
-        title: '사랑과 낭만을 쫓는 사낭쫓에서 18기 회원을 모집합니다',
-        content: '이 동아리는 매주 아침에 함께 운동을 하며 건강과 친목을 도모하는 모임입니다. 함께 참여하실 분을 기다립니다!',
-        hashTags: '사랑 인연 낭만 회춘 운명 반려자 건전',
-        maxMember: 58,
-        purpose: '인류 보존과 악의 세력 척결을 위함',
-        scheduleType: 'OCCASIONAL',
-        scheduleDetail: '때가 되면 단체 연락 드립니다.',
-        createdAt: "2025-10-19",
-        founder: "고주임",
-        memberCount: 58,
-        imageUrl: null,
+    // 상태 정의
+    const [post, setPost] = useState(null);
+    const [comments, setComments] = useState([]);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
+
+    // 게시글 상세 조회
+    const loadPostDetail = async () => {
+        try {
+            const data = await fetchCommunityPostDetail(postId, true);
+            setPost(data);
+        } catch (err) {
+            console.error("게시물 정보를 불러오지 못했습니다:", err);
+            alert("게시물 정보를 불러오지 못했습니다.");
+            navigate("/community"); // 예외 시 목록으로 이동
+        }
+    };
+
+    console.log(post);
+    // 댓글 목록 조회
+    const loadComments = async (pageNum = 0) => {
+        try {
+            setLoading(true);
+            const data = await fetchCommunityPostComments(postId, pageNum, 10);
+            if (pageNum === 0) {
+                setComments(data.content);
+            } else {
+                setComments((prev) => [...prev, ...data.content]);
+            }
+            setHasMore(!data.last);
+            setPage(data.number);
+        } catch (err) {
+            console.error("댓글 조회 실패:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 마운트 시 게시글 + 댓글 1페이지 불러오기
+    useEffect(() => {
+        if (postId) {
+            loadPostDetail();
+            loadComments(0);
+        }
+    }, [postId]);
+
+    // 댓글 더보기 버튼 클릭
+    const handleLoadMoreComments = () => {
+        if (!loading && hasMore) {
+            loadComments(page + 1);
+        }
     };
 
     return (
         <>
-            <PostDetailComponent
-                data={club}
-            />
+            {post ? (
+                <PostDetailComponent
+                    data={post}
+                    comments={comments}
+                    onLoadMoreComments={handleLoadMoreComments}
+                    hasMore={hasMore}
+                    loading={loading}
+
+                />
+            ) : (
+                <p style={{ textAlign: "center", marginTop: "2rem" }}>
+                    로딩 중...
+                </p>
+            )}
         </>
-    )
-}
+    );
+};
+
 export default CommunityDetailPage;

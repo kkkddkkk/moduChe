@@ -1,8 +1,8 @@
 import axios from "axios";
-import API_SERVER_HOST from "./communityServerHost";
+import API_SERVER_HOST from "../../component/common/Variables";
 
 const communityHttp = axios.create({
-  baseURL: `${API_SERVER_HOST}/api`,
+  baseURL: `${process.env.REACT_APP_API_URL}`,
   headers: {
     "Content-Type": "application/json",
   },

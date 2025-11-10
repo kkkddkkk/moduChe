@@ -1,0 +1,21 @@
+package com.example.moduche.domain.community.dto;
+
+import java.time.LocalDateTime;
+
+import com.querydsl.core.annotations.QueryProjection;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+public class CommunityListResponseDTO {
+	private Long communityId;
+	private String name;
+	private String desc;
+	private String representativeImage;
+	private LocalDateTime createdAt;
+	private Long memberCount;
+	private boolean isPromoted;
+
+}
