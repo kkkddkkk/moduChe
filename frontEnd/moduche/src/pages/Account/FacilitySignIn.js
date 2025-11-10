@@ -6,10 +6,10 @@ import AccountInfo from '../../component/account/AccountInfo';
 import { OneAlignedButton } from '../../component/common/Button';
 import FacilityInfo from '../../component/account/FacilityInfo';
 import BusinessCert from '../../component/account/BusinessCert';
-import { facilitySignIn } from '../../api/accountAPI';
 import { useNavigate } from 'react-router-dom';
 import Loading from '../../component/common/Loading';
 import { useApi } from '../../hook/useAPI';
+import { facilitySignIn } from '../../api/accountAPI/signInAPI';
 
 const SignIn = () => {
   const theme = useTheme();

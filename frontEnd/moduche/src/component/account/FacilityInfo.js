@@ -14,9 +14,9 @@ import { SignInText } from './SignInText';
 import { useEffect, useState } from 'react';
 import CustomTextField from '../common/CustomTextField';
 import EmailTest from './EmailTest';
-import { getFacilityList } from '../../api/accountAPI';
 import { useApi } from '../../hook/useAPI';
 import Loading from '../common/Loading';
+import { getFacilityList } from '../../api/accountAPI/signInAPI';
 
 const FacilityInfo = ({
   facility,

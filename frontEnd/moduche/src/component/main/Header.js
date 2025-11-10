@@ -18,9 +18,9 @@ import { useNavigate } from 'react-router-dom';
 import { getUsernameFromToken, isLoggedIn } from '../../utils/auth';
 import { User } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
-import { logOut } from '../../api/accountAPI';
 import { useApi } from '../../hook/useAPI';
 import Loading from '../common/Loading';
+import { logOut } from '../../api/accountAPI/AuthAPI';
 
 const Header = () => {
   const theme = useTheme();

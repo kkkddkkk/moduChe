@@ -1,13 +1,9 @@
 package com.example.moduche.domain.login.service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -129,4 +125,12 @@ public class AuthService {
 	public void deleteToken(String username) {
 		refreshTokenRepository.deleteByUserName(username);
 	}
+	
+	//비밀번호 변경
+	@Transactional
+	public void changePw(String username, String password) {
+		User user = userRepository.findByUserName(username).orElseThrow();
+		user.setPassword(passwordEncoder.encode(password));
+	}
+
 }

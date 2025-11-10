@@ -6,10 +6,10 @@ import AccountInfo from '../../component/account/AccountInfo';
 import PersonalInfo from '../../component/account/PersonalInfo';
 import AdditionalInfo from '../../component/account/AdditionalInfo';
 import { OneAlignedButton } from '../../component/common/Button';
-import { individualSignIn } from '../../api/accountAPI';
 import { useApi } from '../../hook/useAPI';
 import { useNavigate } from 'react-router-dom';
 import Loading from '../../component/common/Loading';
+import { individualSignIn } from '../../api/accountAPI/signInAPI';
 
 const SignIn = () => {
   //hook

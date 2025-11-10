@@ -12,8 +12,8 @@ import { useEffect, useState } from 'react';
 import { SmallerSubTitle } from '../common/Text';
 import { StandardSelect } from '../common/CustomSelect';
 import { useApi } from '../../hook/useAPI';
-import { getDisabilityList } from '../../api/accountAPI';
 import Loading from '../common/Loading';
+import { getDisabilityList } from '../../api/accountAPI/signInAPI';
 
 const AdditionalInfo = ({
   disability,

@@ -1,5 +1,4 @@
 import {
-  Autocomplete,
   Grid,
   TextField,
   useMediaQuery,
@@ -9,12 +8,9 @@ import Layout from '../common/Layout';
 import Paper from '../common/Paper';
 import { SignInText } from './SignInText';
 import { useState } from 'react';
-import { SmallerSubTitle } from '../common/Text';
-import { StandardSelect } from '../common/CustomSelect';
 import CustomTextField from '../common/CustomTextField';
 import { OneAlignedButton } from '../common/Button';
-import { handleApiError } from '../common/Functions';
-import { BusinessApi, validateBusiness } from '../../api/accountAPI';
+import { validateBusiness } from '../../api/accountAPI/AuthAPI';
 
 const BusinessCert = ({
   businessNum,

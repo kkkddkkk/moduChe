@@ -1,6 +1,5 @@
 package com.example.moduche.config;
 
-import com.example.moduche.domain.community.repository.CommunityPostPhotoRepository;
 import com.example.moduche.global.security.JwtFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -32,6 +31,8 @@ public class Security {
             	    .requestMatchers("/api/auth/**").permitAll()
             	    .requestMatchers("/").permitAll()
             	    .requestMatchers("/api/signIn/**").permitAll()
+            	    .requestMatchers("/api/email/**").permitAll()
+            	    .requestMatchers("/api/find/**").permitAll()
                     .anyRequest().authenticated()
                 )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

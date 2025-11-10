@@ -12,10 +12,10 @@ import { useNavigate } from 'react-router-dom';
 import KakaoLoginButton from '../../component/account/KakaoLoginButton';
 import NaverLoginButton from '../../component/account/NaverLoginButton';
 import GoogleLoginButton from '../../component/account/GoogleLoginButton';
-import { logIn } from '../../api/accountAPI';
 import { useApi } from '../../hook/useAPI';
 import Loading from '../../component/common/Loading';
 import { useUser } from '../../context/UserContext';
+import { logIn } from '../../api/accountAPI/AuthAPI';
 
 const Login = () => {
   //HOOK 정의
@@ -156,7 +156,7 @@ const Login = () => {
         </OneAlignedButton>
         <Box width={'100%'} textAlign={'center'} margin={'5% 0'}>
           <LoginText item={'joinUs'}>회원가입</LoginText>
-          <LoginText item={'findId'} last>
+          <LoginText item={'find/Id'} last>
             아이디/비밀번호 찾기
           </LoginText>
         </Box>

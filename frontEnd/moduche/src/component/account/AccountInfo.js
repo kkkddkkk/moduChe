@@ -6,9 +6,9 @@ import { OneAlignedButton } from '../common/Button';
 import { Eye, EyeOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SignInText } from './SignInText';
-import { idTest } from '../../api/accountAPI';
 import Loading from '../common/Loading';
 import { useApi } from '../../hook/useAPI';
+import { idTest } from '../../api/accountAPI/signInAPI';
 
 const AccountInfo = ({
   id,

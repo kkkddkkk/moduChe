@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.moduche.domain.login.dto.ChangePwDTO;
 import com.example.moduche.domain.login.dto.LoginRequestDTO;
 import com.example.moduche.domain.login.dto.LoginResponseDTO;
 import com.example.moduche.domain.login.dto.LogoutDTO;
@@ -73,5 +74,13 @@ public class AuthController {
 	public ResponseEntity<?> logout(@RequestBody LogoutDTO dto) {
 	    authService.deleteToken(dto.getUsername());
 	    return ResponseEntity.ok().build();
+	}
+	
+	@PostMapping("/changePw")
+	public Response changePw(ChangePwDTO dto){
+		authService.changePw(dto.getUsername(), dto.getPassword());
+		String message = "비밀번호가 변경되었습니다.";
+	    
+	    return new Response(StatusEnum.OK, message, null);
 	}
 }
