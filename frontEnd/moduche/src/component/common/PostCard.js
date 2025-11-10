@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Contents, SmallerSubTitle, SubTitle } from "./Text";
+import { formattedDate } from "../community/utility/communityUtility";
 
 export function PostCard({
     type, //게시물 유형 (COURSE or COMMUNITY)
@@ -52,8 +53,8 @@ export function PostCard({
                                 size="small"
                                 variant="outlined"
                                 sx={{
-                                    borderColor: "#679cd4", 
-                                    color: "#679cd4", 
+                                    borderColor: "#679cd4",
+                                    color: "#679cd4",
                                     backgroundColor: "#ffffff",
                                     fontWeight: 500,
                                 }}
@@ -75,7 +76,10 @@ export function PostCard({
                     />
 
                     {/* 동아리 설명 (고정 높이 + 자동 잘림 처리). */}
-                    <Contents children={postDesc} sx={{ whiteSpace: 'pre-wrap' }} />
+                    <Contents
+                        children={postDesc}
+                        sx={{ whiteSpace: "pre-wrap" }}
+                    />
 
                     {/* 등록일 / 회원 수 → 한 줄 양 끝 배치. */}
                     <Box
@@ -87,7 +91,7 @@ export function PostCard({
                         }}
                     >
                         <Contents
-                            children={"등록일: " + createdAt}
+                            children={"등록일: " + formattedDate(createdAt)}
                             color={"text.secondary"}
                         />
 
