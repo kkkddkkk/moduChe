@@ -35,7 +35,6 @@ import com.example.moduche.domain.login.repository.DisabilityRepository;
 import com.example.moduche.domain.login.repository.EmailVerificationRepository;
 import com.example.moduche.domain.login.repository.RoleRepository;
 import com.example.moduche.domain.login.repository.UserRoleRepository;
-import com.example.moduche.domain.myFit.MyFitMeasure;
 import com.example.moduche.repository.UserRepository;
 import com.example.moduche.util.AESUtil;
 
