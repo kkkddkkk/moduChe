@@ -33,6 +33,7 @@ const Login = () => {
   const [passwordError, setPasswordError] = useState(false);
 
   const [message, setMessage] = useState('');
+  const [success, setSuccess] = useState(false);
 
   //ID, Password 에러 설정 후 form에 변화있으면 error=false
   useEffect(() => {
@@ -43,8 +44,8 @@ const Login = () => {
   }, [password]);
 
   //로그인 시도
-  const { callApi: loginAPI, loading, done } = useApi(logIn);
-  const { setName, setLoggedIn } = useUser();  //전역에 이름 저장
+  const { callApi: loginAPI, loading, done, setDone } = useApi(logIn);
+  const { setName, setLoggedIn } = useUser(); //전역에 이름 저장
 
   const tryLogin = async () => {
     const dto = {
@@ -53,13 +54,15 @@ const Login = () => {
     };
     const res = await loginAPI(dto);
     const data = res.data;
+    setSuccess(data.allSuccess);
+    setMessage(res.message);
     if (!data.allSuccess) {
       if (!data.idSuccess) setIdError(true);
       else setPasswordError(true);
       return;
     }
     localStorage.setItem('accessToken', data.accessToken);
-    setMessage(res.message);
+    localStorage.setItem('name', data.name);
     setName(data.name);
     setLoggedIn(true);
   };
@@ -67,8 +70,12 @@ const Login = () => {
   useEffect(() => {
     if (!done) return;
     alert(message);
+    if (!success){
+      setDone(false);
+      return;
+    }
     navigate('/');
-  }, [done]);
+  }, [done, success]);
 
   //margin 주는 용도
   const LoginDivider = () => {

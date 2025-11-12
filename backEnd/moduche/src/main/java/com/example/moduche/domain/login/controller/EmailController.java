@@ -30,13 +30,8 @@ public class EmailController {
 		VerifyStatus status = emailService.verifyTest(dto.getEmail(), dto.getCode());
 		Optional<EmailVerification> entityOp = emailVerificationRepository.findByEmail(dto.getEmail());
 
-		if (entityOp.isEmpty()) {
-			return new Response(StatusEnum.NO_CONTENT, "메일 주소 불일치", status);
-		} else {
-			EmailVerification entity = entityOp.get();
-			entity.setVerifyStatus(status);
-			emailVerificationRepository.save(entity);
-		}
+		if (entityOp.isEmpty()) return new Response(StatusEnum.NO_CONTENT, "메일 주소 불일치", status);
+		emailVerificationRepository.deleteByEmail(dto.getEmail());
 		return new Response(StatusEnum.OK, "인증 로직 성공", status);
 	}
 }

@@ -1,6 +1,6 @@
 import { Grid, TextField, useMediaQuery, useTheme } from '@mui/material';
 import EmailTest from './EmailTest';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import CustomTextField from '../common/CustomTextField';
 import { useEffect, useState } from 'react';
 import Loading from '../common/Loading';
@@ -10,6 +10,8 @@ import { SignInText } from './SignInText';
 import Layout from '../common/Layout';
 import { codeTest } from '../../api/accountAPI/EmailAPI';
 import { findPw } from '../../api/accountAPI/FindAPI';
+import { useApi } from '../../hook/useAPI';
+import { setPw } from '../../api/accountAPI/AuthAPI';
 
 const FindId = () => {
   const {
@@ -24,8 +26,9 @@ const FindId = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isNotDeskTop = useMediaQuery(theme.breakpoints.down('lg'));
+  const navigate = useNavigate();
 
-  const [id, setId] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [chkPw, setChkPw] = useState('');
 
@@ -35,6 +38,7 @@ const FindId = () => {
   const [disableId, setDisableId] = useState(false);
   const [show1, setShow1] = useState(false);
   const [show2, setShow2] = useState(false);
+  const [message, setMessage] = useState('');
 
   //#region[정규식+검증]
   const regPassword =
@@ -64,7 +68,8 @@ const FindId = () => {
     setDisableId(true);
   }, [emailChecked]);
 
-  const changePw = () => {
+  const { callApi: setPasswordAPI, loading, done } = useApi(setPw);
+  const changePw = async () => {
     if (password.length === 0 || chkPw.length === 0) {
       alert('비밀번호가 입력되지 않았습니다.');
       return;
@@ -73,15 +78,24 @@ const FindId = () => {
       alert('비밀번호 입력란을 다시 확인해주세요.');
       return;
     }
+    const res = await setPasswordAPI(username, password);
+    setMessage(res.message);
   };
+
+  useEffect(() => {
+    if (!done) return;
+    alert(message);
+    navigate('/');
+  }, [done]);
 
   return (
     <>
+      <Loading open={loading} text="비밀번호 변경 중입니다." />
       <SignInText title={'아이디'} />
       <Grid size={12} marginBottom={'5%'}>
         <CustomTextField
-          data={id}
-          setData={setId}
+          data={username}
+          setData={setUsername}
           placeholder={'아이디'}
           padding={10}
           disabled={disableId}
@@ -95,7 +109,7 @@ const FindId = () => {
         setEmailError={setEmailError}
         emailChecked={emailChecked}
         setEmailChecked={setEmailChecked}
-        checkLogic={() => findPw(id, email)}
+        checkLogic={() => findPw(username, email)}
       />
       {emailChecked ? (
         <>

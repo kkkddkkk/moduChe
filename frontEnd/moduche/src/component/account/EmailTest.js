@@ -17,6 +17,7 @@ const EmailTest = ({
   emailChecked,
   setEmailChecked,
   checkLogic,
+  setData,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -29,7 +30,8 @@ const EmailTest = ({
 
   const [codeError, setCodeError] = useState(false);
   const [disableEmail, setDisableEmail] = useState(false);
-  const [emailHelperText, setEmailHelperText] = useState('이메일 형식이 올바르지 않습니다.');
+  const [emailHelperText, setEmailHelperText] =
+    useState('이메일 형식이 올바르지 않습니다.');
 
   const { callApi: checkEmailAPI, loading } = useApi(checkLogic);
 
@@ -52,12 +54,15 @@ const EmailTest = ({
     alert(res.message);
     if (res.status == 'OK') {
       setIsSent(true);
+      if (setData) {
+        setData(res.data);
+      }
     } else {
       setEmailError(true);
       setEmailHelperText(res.message);
       return;
     }
-    
+
     setCount(300);
 
     if (timerId) clearInterval(timerId); // 이전 타이머 제거
@@ -92,9 +97,13 @@ const EmailTest = ({
       alert('확인되었습니다.');
       setCodeError(false);
       setDisableEmail(true);
-    } else {
+    } else if (res.data === 'NOT_FOUND') {
       setEmailChecked(false);
       alert('인증번호가 일치하지 않습니다.');
+      setCodeError(true);
+    } else {
+      setEmailChecked(false);
+      alert('만료된 인증번호입니다.');
       setCodeError(true);
     }
   };

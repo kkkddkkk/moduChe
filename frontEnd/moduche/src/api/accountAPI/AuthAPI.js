@@ -1,8 +1,9 @@
-import axios from "axios";
-import { handleApiError } from "../../component/common/Functions";
-import { API_SERVER_HOST } from "../../component/common/Variables";
+import axios from 'axios';
+import { handleApiError } from '../../component/common/Functions';
+import { API_SERVER_HOST } from '../../component/common/Variables';
+import api from '../axiosInstance';
 
-const AUTH_SERVER_HOST = `${API_SERVER_HOST}/api/auth`;
+const AUTH_SERVER_HOST = `/auth`;
 
 //사업자 인증 API
 const BusinessApi = axios.create({
@@ -44,11 +45,9 @@ export const validateBusiness = async ({ businessNum, startDate, boss }) => {
   }
 };
 
-
-
 export const logIn = async (dto) => {
   try {
-    const res = await axios.post(`${AUTH_SERVER_HOST}/login`, dto);
+    const res = await api.post(`${AUTH_SERVER_HOST}/login`, dto);
     return res.data;
   } catch (err) {
     handleApiError(err);
@@ -61,21 +60,31 @@ export const logOut = async (username) => {
   };
 
   try {
-    const res = await axios.post(`${AUTH_SERVER_HOST}/logout`, dto);
+    const res = await api.post(`${AUTH_SERVER_HOST}/logout`, dto);
     return res.data;
   } catch (err) {
     handleApiError(err);
   }
 };
 
-export const setPw = async (username, password) => {
-  const dto = {
-    username: username,
-    password, password
-  };
-
+export const reissue = async () => {
   try {
-    const res = await axios.post(`${AUTH_SERVER_HOST}/changePw`, dto);
+    const res = await api.post(
+      `${AUTH_SERVER_HOST}/reissue`,
+      {},
+      { withCredentials: true },
+    );
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+//비밀번호 수정
+export const setPw = async (username, password) => {
+  const dto = { username, password };
+  try {
+    const res = await api.post(`${AUTH_SERVER_HOST}/changePw`, dto);
     return res.data;
   } catch (err) {
     handleApiError(err);

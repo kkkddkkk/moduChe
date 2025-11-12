@@ -12,6 +12,7 @@ import com.example.moduche.domain.login.RefreshToken;
 import com.example.moduche.domain.login.User;
 import com.example.moduche.domain.login.dto.LoginRequestDTO;
 import com.example.moduche.domain.login.dto.LoginResponseDTO;
+import com.example.moduche.domain.login.repository.EmailVerificationRepository;
 import com.example.moduche.domain.login.repository.RefreshTokenRepository;
 import com.example.moduche.global.security.JwtTokenProvider;
 import com.example.moduche.repository.UserRepository;
@@ -29,6 +30,7 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
+	private final EmailVerificationRepository emailVerificationRepository;
 	
 	//로그인 시도
 	public LoginResponseDTO login(LoginRequestDTO dto) {
@@ -115,7 +117,7 @@ public class AuthService {
 		
 		String newAccessToken = jwtTokenProvider.createAccessToken(user);
 		responseDTO.setAccessToken(newAccessToken);
-		responseDTO.setAllSuccess(false);
+		responseDTO.setAllSuccess(true);
 		responseDTO.setMessage("accessToken이 재발급되었습니다.");
 		
 		return responseDTO;

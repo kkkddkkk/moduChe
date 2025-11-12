@@ -16,9 +16,12 @@ import com.example.moduche.domain.login.dto.ChangePwDTO;
 import com.example.moduche.domain.login.dto.LoginRequestDTO;
 import com.example.moduche.domain.login.dto.LoginResponseDTO;
 import com.example.moduche.domain.login.dto.LogoutDTO;
+import com.example.moduche.domain.login.repository.EmailVerificationRepository;
+import com.example.moduche.domain.login.repository.RefreshTokenRepository;
 import com.example.moduche.domain.login.service.AuthService;
 import com.example.moduche.global.Response;
 import com.example.moduche.global.StatusEnum;
+import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +31,9 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
 	private final AuthService authService;
+	private final EmailVerificationRepository emailVerificationRepository;
+	private final UserRepository userRepository;
+	private final RefreshTokenRepository refreshTokenRepository;
 
 	@PostMapping("/login") 
 	public ResponseEntity<Response> login(@RequestBody LoginRequestDTO requestDTO) {
@@ -73,14 +79,27 @@ public class AuthController {
 	@PostMapping("/logout")
 	public ResponseEntity<?> logout(@RequestBody LogoutDTO dto) {
 	    authService.deleteToken(dto.getUsername());
-	    return ResponseEntity.ok().build();
+	    
+	    ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+	            .httpOnly(true)
+	            .secure(true)
+	            .path("/")
+	            .maxAge(0)
+	            .sameSite("Strict")
+	            .build();
+		refreshTokenRepository.deleteByUserName(dto.getUsername());
+
+	    return ResponseEntity.ok()
+	            .header(HttpHeaders.SET_COOKIE, cookie.toString())
+	            .body(new Response(StatusEnum.OK, "로그아웃 성공", dto));
 	}
 	
 	@PostMapping("/changePw")
-	public Response changePw(ChangePwDTO dto){
+	public Response changePw(@RequestBody ChangePwDTO dto){
 		authService.changePw(dto.getUsername(), dto.getPassword());
 		String message = "비밀번호가 변경되었습니다.";
-	    
+		
+		String email = userRepository.findByUserName(dto.getUsername()).get().getEmail();
 	    return new Response(StatusEnum.OK, message, null);
 	}
 }

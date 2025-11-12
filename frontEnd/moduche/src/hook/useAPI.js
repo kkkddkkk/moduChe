@@ -17,5 +17,5 @@ export function useApi(apiFunc) {
     }
   };
 
-  return { callApi, loading, done };
+  return { callApi, loading, done, setDone };
 }

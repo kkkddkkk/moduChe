@@ -2,7 +2,7 @@ import { Box, Grid, useMediaQuery, useTheme } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import EmailTest from './EmailTest';
 import { SignInText } from './SignInText';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { findId } from '../../api/accountAPI/FindAPI';
 
 const FindId = () => {
@@ -17,9 +17,10 @@ const FindId = () => {
     setEmailChecked,
   } = useOutletContext();
 
+  const [id, setId] = useState('');
+
   useEffect(()=>{
     if(!emailChecked) return;
-
 
   },[emailChecked])
 
@@ -35,6 +36,7 @@ const FindId = () => {
         emailChecked={emailChecked}
         setEmailChecked={setEmailChecked}
         checkLogic={findId}
+        setData={setId}
       />
       <Grid size={12}>
         <Box
@@ -51,7 +53,7 @@ const FindId = () => {
             fontSize: '24px',
           }}
         >
-          {emailChecked ? '' : '이메일 인증을 완료해주세요.'}
+          {emailChecked ? `${id}님, 안녕하세요.` : '이메일 인증을 완료해주세요.'}
         </Box>
       </Grid>
     </>

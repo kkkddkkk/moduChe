@@ -3,27 +3,21 @@ import { isLoggedIn } from '../utils/auth';
 
 const UserContext = createContext();
 
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (!context) throw new Error('useUser must be used within UserProvider');
-  return context;
-};
+export const useUser = () => useContext(UserContext);
+
+let _userContext = null;
 
 export const UserProvider = ({ children }) => {
-  const [name, setName] = useState(null);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [name, setName] = useState(null);
 
-  useEffect(() => {
-    if (isLoggedIn()) setLoggedIn(true);
-    else {
-      setLoggedIn(false);
-      setName(null);
-    }
-  }, []);
+  _userContext = { loggedIn, setLoggedIn, name, setName };
 
   return (
-    <UserContext.Provider value={{ name, setName, loggedIn, setLoggedIn }}>
+    <UserContext.Provider value={{ loggedIn, setLoggedIn, name, setName }}>
       {children}
     </UserContext.Provider>
   );
 };
+
+export const getUserContext = () => _userContext;

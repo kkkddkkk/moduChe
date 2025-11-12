@@ -8,9 +8,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,8 +20,10 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import com.example.moduche.domain.login.EmailVerification;
+import com.example.moduche.domain.login.User;
 import com.example.moduche.domain.login.enums.VerifyStatus;
 import com.example.moduche.domain.login.repository.EmailVerificationRepository;
+import com.example.moduche.repository.UserRepository;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -37,6 +41,7 @@ public class EmailService {
 	private final JavaMailSender emailSender;
 	private final EmailVerificationRepository emailVerificationRepository;
 	private final SpringTemplateEngine templateEngine;
+	private final UserRepository userRepository;
 	
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -104,6 +109,12 @@ public class EmailService {
 			row = EmailVerification.builder().email(email).verifyStatus(VerifyStatus.PENDING).verificationCode(hashed)
 					.createdAt(LocalDateTime.now()).expireTime(LocalDateTime.now().plusMinutes(plusMinuite)).build();
 		}
+		
+		//userId가 있을 경우 set
+		Optional<User> userOp = userRepository.findByEmail(email);
+		if(userOp.isEmpty()) return new EmailCodeResult(row, rawCode);
+		Long userId = userOp.get().getUserId();
+		row.setUserId(userId);
 
 		return new EmailCodeResult(row, rawCode);
 	}
@@ -150,7 +161,7 @@ public class EmailService {
 			return VerifyStatus.NOT_FOUND;
 		if (entity.getExpireTime().isBefore(LocalDateTime.now()))
 			return VerifyStatus.EXPIRED;// 만료 여부 체크
-
+		
 		// 다 통과했으면 통과로 변경
 		return VerifyStatus.SUCCESS;
 	}

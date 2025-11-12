@@ -15,7 +15,7 @@ import { SlideModal } from '../common/Modals';
 import { useEffect, useRef, useState } from 'react';
 import CustomTextField from '../common/CustomTextField';
 import { useNavigate } from 'react-router-dom';
-import { getUsernameFromToken, isLoggedIn } from '../../utils/auth';
+import { getUsernameFromToken, isLoggedIn, isTokenExpired } from '../../utils/auth';
 import { User } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useApi } from '../../hook/useAPI';
@@ -32,7 +32,8 @@ const Header = () => {
   const navigate = useNavigate();
 
   const accessToken = localStorage.getItem('accessToken');
-  const { name, setName, loggedIn, setLoggedIn } = useUser();
+  const { loggedIn, setLoggedIn } = useUser();
+  const name = localStorage.getItem("name");
 
   const menuColor = theme.palette.primary.main;
 
@@ -41,6 +42,7 @@ const Header = () => {
       setHeaderHeight(headerRef.current.clientHeight);
     }
     setLoggedIn(isLoggedIn());
+    console.log(isTokenExpired(accessToken));
   }, []);
 
   const moveTo = (item) => {
@@ -59,9 +61,9 @@ const Header = () => {
   };
   useEffect(() => {
     if (!done) return;
-    setName(null);
     setLoggedIn(false);
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('name');
     navigate('/');
   }, [done]);
 
@@ -142,7 +144,7 @@ const Header = () => {
                   <HeaderMenu onClick={logout}>로그아웃</HeaderMenu>
                   <MenuBar />
                   <User style={{ color: menuColor }} />
-                  <HeaderMenu onClick={() => moveTo('joinUs')}>
+                  <HeaderMenu onClick={() => moveTo('auth')}>
                     {name}님
                   </HeaderMenu>
                 </>

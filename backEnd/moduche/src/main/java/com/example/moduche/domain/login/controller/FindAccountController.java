@@ -30,6 +30,7 @@ import com.example.moduche.domain.login.service.FindAccountService;
 import com.example.moduche.domain.login.service.SignInService;
 import com.example.moduche.global.Response;
 import com.example.moduche.global.StatusEnum;
+import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,14 +43,19 @@ public class FindAccountController {
 	private final FindAccountService findAccountService;
 	private final EmailService emailService;
 	private final SignInService signInService;
+	private final UserRepository userRepository;
 
 	@PostMapping("/id") // id 있는지 인증 후 이메일 보내기
 	public Response findId(@RequestBody FindIdDTO dto) {
 		boolean pass = findAccountService.isThereId(dto.getEmail());
 		String available = "인증 코드가 발송되었습니다.";
 		String unavailable = "가입되지 않은 이메일입니다.";
-		if (pass)
-			return new Response(StatusEnum.OK, available, emailService.sendCodeToEmail(dto.getEmail()));
+		if (pass) {
+			Long userId = emailService.sendCodeToEmail(dto.getEmail()).getUserId();
+			String username = userRepository.findById(userId).get().getUsername();
+			return new Response(StatusEnum.OK, available, username);
+		}
+
 		else
 			return new Response(StatusEnum.CONFLICT, unavailable, null);
 	}
@@ -59,13 +65,13 @@ public class FindAccountController {
 		String available = "인증 코드가 발송되었습니다.";
 		String unavailable = "ID 혹은 이메일을 다시 확인해주세요.";
 		String noId = "ID가 존재하지 않습니다.";
-		
+
 		boolean isThereId = findAccountService.isThereId(dto.getEmail());
-		if(!isThereId) return new Response(StatusEnum.CONFLICT, noId, null);
-		
+		if (!isThereId) return new Response(StatusEnum.CONFLICT, noId, null);
+
 		boolean isIdAvailable = findAccountService.isIdAvailable(dto.getUsername(), dto.getEmail());
-		if(!isIdAvailable) return new Response(StatusEnum.CONFLICT, unavailable, null);
-		
+		if (!isIdAvailable) return new Response(StatusEnum.CONFLICT, unavailable, null);
+
 		return new Response(StatusEnum.OK, available, emailService.sendCodeToEmail(dto.getEmail()));
 	}
 

@@ -41,6 +41,9 @@ const FindAccount = () => {
           onChange={(e, value) => {
             setTab(value); // index 저장
             setTitle(tabLabels[value]);
+            setEmail('');
+            setEmailChecked(false);
+            setEmailError(false);
           }}
           sx={{
             minHeight: 0,

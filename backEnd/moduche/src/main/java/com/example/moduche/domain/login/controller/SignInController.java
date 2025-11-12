@@ -15,6 +15,7 @@ import com.example.moduche.domain.login.dto.EmailTestDTO;
 import com.example.moduche.domain.login.dto.FacilitySignInDTO;
 import com.example.moduche.domain.login.dto.IdTestDTO;
 import com.example.moduche.domain.login.dto.IndividualSignInDTO;
+import com.example.moduche.domain.login.repository.EmailVerificationRepository;
 import com.example.moduche.domain.login.service.EmailService;
 import com.example.moduche.domain.login.service.SignInService;
 import com.example.moduche.global.Response;
@@ -29,6 +30,7 @@ public class SignInController {
 
 	private final EmailService emailService;
 	private final SignInService signInService;
+	private final EmailVerificationRepository emailVerificationRepository;
 
 	@PostMapping("/idTest") // 아이디 중복검사
 	public Response idTest(@RequestBody IdTestDTO dto) {
@@ -66,6 +68,8 @@ public class SignInController {
 	@PostMapping("/individual")
 	public Response individual(@RequestBody IndividualSignInDTO dto) throws Exception {
 		Long userId = signInService.individual(dto);
+		//인증코드 삭제
+		emailVerificationRepository.deleteByEmail(dto.getEmail());
 		return new Response(StatusEnum.OK, "회원가입 로직 성공",userId);
 	}
 	
@@ -73,6 +77,8 @@ public class SignInController {
 	@PostMapping("/facility")
 	public Response facility(@RequestBody FacilitySignInDTO dto) throws Exception {
 		Long userId = signInService.facility(dto);
+		//인증코드 삭제
+		emailVerificationRepository.deleteByEmail(dto.getEmail());
 		return new Response(StatusEnum.OK, "회원가입 로직 성공",userId);
 	}
 }
