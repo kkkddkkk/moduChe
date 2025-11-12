@@ -1,6 +1,45 @@
-import axios from "axios";
-import { handleApiError } from "../../component/common/Functions";
-import api from "../axiosInstance";
+import axios from 'axios';
+import { handleApiError } from '../../component/common/Functions';
+import api from '../axiosInstance';
 
 const MYPAGE_SERVER_HOST = `/myPage`;
+
+export const checkPassword = async (username, password) => {
+  const dto = { loginId: username, password: password };
+  try {
+    const res = await api.post(`${MYPAGE_SERVER_HOST}/checkPassword`, dto);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+export const emailTest = async (email) => {
+  const dto = { email: email };
+  try {
+    const res = await api.post(`${MYPAGE_SERVER_HOST}/emailTest`, dto);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+export const getAccount = async (username) => {
+  try {
+    const res = await api.get(`${MYPAGE_SERVER_HOST}/getAccount?username=${username}`);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+export const setAccount = async (dto) => {
+  try {
+    const res = await api.put(`${MYPAGE_SERVER_HOST}/setAccount`, dto);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
 

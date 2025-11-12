@@ -42,7 +42,6 @@ const Header = () => {
       setHeaderHeight(headerRef.current.clientHeight);
     }
     setLoggedIn(isLoggedIn());
-    console.log(isTokenExpired(accessToken));
   }, []);
 
   const moveTo = (item) => {

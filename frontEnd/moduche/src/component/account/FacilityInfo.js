@@ -16,7 +16,7 @@ import CustomTextField from '../common/CustomTextField';
 import EmailTest from './EmailTest';
 import { useApi } from '../../hook/useAPI';
 import Loading from '../common/Loading';
-import { getFacilityList } from '../../api/accountAPI/signInAPI';
+import { emailTest, getFacilityList } from '../../api/accountAPI/signInAPI';
 
 const FacilityInfo = ({
   facility,
@@ -190,6 +190,7 @@ const FacilityInfo = ({
           setEmailError={setEmailError}
           emailChecked={emailChecked}
           setEmailChecked={setEmailChecked}
+          checkLogic={emailTest}
         />
       </Layout>
     </Paper>

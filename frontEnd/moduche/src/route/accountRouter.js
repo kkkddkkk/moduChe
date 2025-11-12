@@ -8,13 +8,18 @@ const IndividualSignIn = lazy(() =>
 );
 const FacilitySignIn = lazy(() => import('../pages/Account/FacilitySignIn'));
 const FindAccount = lazy(() => import('../pages/Account/FindAccount'));
-const MyPage = lazy(() => import('../pages/Account/MyPage'));
+const MyPage = lazy(() => import('../pages/MyPage/MyPage'));
 const Auth = lazy(() => import('../pages/Account/Auth'));
 
 const FindId = lazy(() => import('../component/account/FindId'));
 const FindPw = lazy(() => import('../component/account/FindPw'));
 
-
+const MyPageIndividual = lazy(() =>
+  import('../component/account/MyPageIndividual'),
+);
+const MyPageFacility = lazy(() =>
+  import('../component/account/MyPageFacility'),
+);
 
 export default function accoutRouter() {
   return [
@@ -68,31 +73,13 @@ export default function accoutRouter() {
         },
       ],
     },
-     {
+    {
       path: 'auth',
       element: (
         <Suspense fallback={Loading}>
           <Auth />
         </Suspense>
-      )
-    },
-        {
-      path: 'myPage',
-      element: (
-        <Suspense fallback={Loading}>
-          <MyPage />
-        </Suspense>
       ),
-      children: [
-        {
-          path: 'individual',
-          element: <FindId />,
-        },
-        {
-          path: 'fecility',
-          element: <FindPw />,
-        },
-      ],
     },
   ];
 }

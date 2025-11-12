@@ -1,7 +1,7 @@
 import { OneAlignedButton } from '../common/Button';
 import { useEffect, useState } from 'react';
 import { useTheme } from '@emotion/react';
-import { Grid, TextField, useMediaQuery } from '@mui/material';
+import { Box, Grid, TextField, useMediaQuery } from '@mui/material';
 import Layout from '../common/Layout';
 import CustomTextField from '../common/CustomTextField';
 import { useApi } from '../../hook/useAPI';
