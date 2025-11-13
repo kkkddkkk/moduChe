@@ -26,7 +26,8 @@ import com.example.moduche.domain.login.repository.RefreshTokenRepository;
 import com.example.moduche.domain.login.service.AuthService;
 import com.example.moduche.domain.login.service.EmailService;
 import com.example.moduche.domain.login.service.SignInService;
-import com.example.moduche.domain.myPage.dto.AccountResponseDTO;
+import com.example.moduche.domain.myPage.dto.MyAccountResponseDTO;
+import com.example.moduche.domain.myPage.dto.MyDisabilityDTO;
 import com.example.moduche.domain.myPage.dto.UpdateAccountRequestDTO;
 import com.example.moduche.domain.myPage.service.MyPageService;
 import com.example.moduche.global.Response;
@@ -67,7 +68,7 @@ public class MyPageController {
 	
 	@GetMapping("/getAccount") 
 	public Response getAccount(@RequestParam("username") String username) {
-		AccountResponseDTO responseDTO = myPageService.getAccount(username);
+		MyAccountResponseDTO responseDTO = myPageService.getAccount(username);
 		
 		 return new Response(StatusEnum.OK, username+"의 개인정보입니다.", responseDTO);
 	}
@@ -75,6 +76,20 @@ public class MyPageController {
 	@PutMapping("/setAccount") 
 	public Response setAccount(@RequestBody UpdateAccountRequestDTO requestDTO) {
 		myPageService.setAccount(requestDTO);
+		
+		 return new Response(StatusEnum.OK, "계정 정보가 변경되었습니다.", null);
+	}
+	
+	@GetMapping("/getDisability") 
+	public Response getDisability(@RequestParam("username") String username) throws Exception {
+		MyDisabilityDTO dto = myPageService.getDisability(username);
+		
+		 return new Response(StatusEnum.OK, username+"의 개인정보입니다.", dto);
+	}
+	
+	@PutMapping("/setDisability") 
+	public Response setDisability(@RequestBody MyDisabilityDTO dto) throws Exception {
+		myPageService.setDisability(dto);
 		
 		 return new Response(StatusEnum.OK, "계정 정보가 변경되었습니다.", null);
 	}

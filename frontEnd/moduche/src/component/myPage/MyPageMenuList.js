@@ -27,39 +27,52 @@ export const individualList = [
     key: 'course',
     label: '이용 중인 강좌 관리',
     icon: <Book />,
-    path: '/admin/administrator',
+    path: '/myPage/course',
   },
   {
     key: 'community',
     label: '이용 중인 동호회 관리',
     icon: <Users />,
-    path: '/admin/calculate',
+    path: '/myPage/community',
   },
 ];
 
-export const fecilityList = [
+export const facilityList = [
   {
-    key: 'fecility',
+    key: 'account',
+    label: '계정 관리',
+    icon: <IdCard />,
+    path: '/myPage/account',
+  },
+  {
+    key: 'facility',
     label: '기관 관리',
     icon: <Building />,
-    path: '/admin/members',
+    path: '/myPage/facility',
   },
   {
     key: 'course',
     label: '강좌 관리',
     icon: <BookOpen />,
-    path: '/admin/administrator',
+    path: '/myPage/course',
   },
   {
     key: 'community',
     label: '동아리 관리',
     icon: <Users />,
-    path: '/admin/calculate',
+    path: '/myPage/community',
   },
 ];
 
-export const MeunTemplate = ({key, label, icon, path, selected, available = true}) => {
-    const navigate = useNavigate();
+export const MeunTemplate = ({
+  key,
+  label,
+  icon,
+  path,
+  selected,
+  available = true,
+}) => {
+  const navigate = useNavigate();
   return (
     <ListItemButton
       key={key}
@@ -85,7 +98,8 @@ export const MeunTemplate = ({key, label, icon, path, selected, available = true
       <ListItemIcon
         sx={{
           minWidth: 40,
-          color: selected && available ? 'primary.contrastText' : 'text.secondary',
+          color:
+            selected && available ? 'primary.contrastText' : 'text.secondary',
         }}
       >
         {icon}

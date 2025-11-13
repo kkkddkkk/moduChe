@@ -18,7 +18,8 @@ const BusinessCert = ({
   boss,
   setBoss,
   businessAuthError,
-  setBusinessAuthError
+  setBusinessAuthError,
+  retry=false
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
@@ -69,11 +70,16 @@ const BusinessCert = ({
       return;
     }
     const result = await validateBusiness({ businessNum, startDate, boss });
-
+    console.log(result.data.status.b_stt_cd);
     if (!result.success) {
       alert('사업자 등록 정보를 다시 확인해주세요.');
       setBusinessAuthError({message: result.message, ready: false});
     } else {
+      if(result.data.status.b_stt_cd!=="01"){
+        alert('휴업/폐업 상태의 사업자입니다.');
+        setBusinessAuthError({message: result.message, ready: false});
+        return;
+      }
       alert('사업자 인증이 완료되었습니다.');
       setBusinessAuthError({message: "사업자 인증 완료", ready: true});
       setCertCheck(true);
@@ -148,7 +154,7 @@ const BusinessCert = ({
                 onClick={businessAuth}
                 disabled={certCheck}
               >
-                사업자 인증
+                사업자 {retry?'재':""}인증
               </OneAlignedButton>
             </Grid>
             <Grid size={3} />

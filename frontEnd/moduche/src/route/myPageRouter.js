@@ -4,6 +4,8 @@ const Loading = <div>Loading...</div>;
 const MyPage = lazy(() => import('../pages/MyPage/MyPage'));
 const ManageAccount = lazy(() => import('../pages/MyPage/ManageAccount'));
 const ManageDisability = lazy(() => import('../pages/MyPage/ManageDisability'));
+const ManageFacility = lazy(() => import('../pages/MyPage/ManageFacility'));
+const Test = lazy(() => import('../pages/MyPage/Test'));
 
 const MyPageIndividual = lazy(() =>
   import('../component/account/MyPageIndividual'),
@@ -35,13 +37,21 @@ export default function accoutRouter() {
             </Suspense>
           ),
         },
+        {
+          path: 'facility',
+          element: (
+            <Suspense fallback={Loading}>
+              <ManageFacility />
+            </Suspense>
+          ),
+        },
       ],
     },
     {
-      path: 'account',
+      path: 'test',
       element: (
         <Suspense fallback={Loading}>
-          <ManageAccount />
+          <Test />
         </Suspense>
       ),
     },

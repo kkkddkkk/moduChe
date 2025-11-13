@@ -35,7 +35,15 @@ const Auth = () => {
   useEffect(() => {
     if (!done) return;
     if (checked) navigate(`/myPage/account`,  { replace: true });
+    else{
+      alert("비밀번호가 일치하지 않습니다.");
+      setPasswordError(true);
+    }
   }, [done, checked]);
+
+  useEffect(()=>{
+    setPasswordError(false);
+  },[password])
 
   return (
     <Layout spacing={2} padding={2}>
@@ -53,7 +61,7 @@ const Auth = () => {
             name={'password'}
             placeholder={'비밀번호'}
             error={passwordError}
-            helperText={'비밀번호가 올바르지 않습니다.'}
+            helperText={'비밀번호가 일치하지 않습니다.'}
             show={false}
           />
           <Box sx={{ marginTop: '5%' }} />

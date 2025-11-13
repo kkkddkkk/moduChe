@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AccountResponseDTO {
+public class MyAccountResponseDTO {
 	private String username;
 	private String name;
 	private String email;

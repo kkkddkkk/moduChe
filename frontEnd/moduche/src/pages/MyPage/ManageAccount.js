@@ -26,10 +26,15 @@ import {
   getAccount,
   setAccount,
 } from '../../api/accountAPI/MyPageAPI';
-import { getUsernameFromToken } from '../../utils/auth';
+import {
+  getRoleFromToken,
+  getUsernameFromToken,
+  isLoggedIn,
+} from '../../utils/auth';
 import Loading from '../../component/common/Loading';
 import MyPageButtons from '../../component/myPage/MyPageButtons';
 import { MyPageText } from '../../component/myPage/MyPageTexts';
+import { useNavigate } from 'react-router-dom';
 
 const ManageAccount = () => {
   const theme = useTheme();
@@ -37,6 +42,7 @@ const ManageAccount = () => {
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const isNotMonitor = useMediaQuery(theme.breakpoints.down('md'));
   const accessToken = localStorage.getItem('accessToken');
+  const navigate = useNavigate();
 
   const [emailChange, setEmailChange] = useState(false);
   const [passwordChange, setPasswordChange] = useState(false);
@@ -56,7 +62,6 @@ const ManageAccount = () => {
   const [emailChecked, setEmailChecked] = useState(true);
 
   const [originForm, setOriginForm] = useState(null);
- 
 
   //#region[정규식+검증]
   const regPassword =
@@ -144,146 +149,148 @@ const ManageAccount = () => {
   }, [done]);
 
   return (
-    <Layout space={2}>
-      <Loading open={loadingForSet} text="로딩 중입니다." />
-      {isMobile ? <></> : <Grid size={3} />}
-      <Grid size={isMobile ? 12 : 6}>
-        <CenterTitle>계정 관리</CenterTitle>
-        <Paper>
-          <Layout space={2} padding={2}>
-            <Grid size={12}>
-              <MyPageText icon={<IdCard />}>아이디</MyPageText>
-              <CustomTextField
-                disabled={true}
-                data={getUsernameFromToken(accessToken)}
-                padding={8}
-              />
-            </Grid>
-            <Grid size={12} marginTop={'5%'}>
-              <MyPageText icon={<User />}>이름</MyPageText>
-              <CustomTextField data={name} setData={setName} padding={8} />
-            </Grid>
-            <Grid size={12} marginTop={'5%'}>
-              <MyPageText icon={<Mail />}>이메일</MyPageText>
-            </Grid>
-            <EmailTest
-              email={email}
-              setEmail={setEmail}
-              emailError={emailError}
-              setEmailError={setEmailError}
-              emailChecked={emailChecked}
-              setEmailChecked={setEmailChecked}
-              checkLogic={emailTestAPI}
+    <>
+      <Paper>
+        <Layout space={2} padding={2}>
+          <Loading open={loadingForSet} text="로딩 중입니다." />
+          <Grid size={12}>
+            <MyPageText icon={<IdCard />}>아이디</MyPageText>
+            <CustomTextField
+              disabled={true}
+              data={getUsernameFromToken(accessToken)}
+              padding={8}
             />
+          </Grid>
+          <Grid size={12} marginTop={'5%'}>
+            <MyPageText icon={<User />}>이름</MyPageText>
+            <CustomTextField
+              data={name}
+              setData={setName}
+              padding={8}
+              disabled={
+                getRoleFromToken(accessToken).toLowerCase() === 'facility'
+              }
+            />
+          </Grid>
+          <Grid size={12} marginTop={'5%'}>
+            <MyPageText icon={<Mail />}>이메일</MyPageText>
+          </Grid>
+          <EmailTest
+            email={email}
+            setEmail={setEmail}
+            emailError={emailError}
+            setEmailError={setEmailError}
+            emailChecked={emailChecked}
+            setEmailChecked={setEmailChecked}
+            checkLogic={emailTestAPI}
+          />
 
-            <Grid size={12}>
-              <MyPageText icon={<Lock />}>비밀번호 변경</MyPageText>
-              <Layout space={2}>
-                <Grid size={7}>
-                  <CustomTextField
-                    show={show1}
-                    data={passwordChange ? password : '*********'}
-                    setData={setPassword}
-                    placeholder={passwordChange ? '비밀번호' : '*********'}
-                    error={pwError}
-                    helperText={'6자 이상의 영어+숫자+특수문자로 입력'}
-                    padding={10}
-                    disabled={!passwordChange}
+          <Grid size={12}>
+            <MyPageText icon={<Lock />}>비밀번호 변경</MyPageText>
+            <Layout space={2}>
+              <Grid size={7}>
+                <CustomTextField
+                  show={show1}
+                  data={passwordChange ? password : '*********'}
+                  setData={setPassword}
+                  placeholder={passwordChange ? '비밀번호' : '*********'}
+                  error={pwError}
+                  helperText={'6자 이상의 영어+숫자+특수문자로 입력'}
+                  padding={10}
+                  disabled={!passwordChange}
+                />
+              </Grid>
+              <Grid size={1} paddingBottom={'1.5%'}>
+                {show1 ? (
+                  <EyeOff
+                    style={{ margin: 'auto 0' }}
+                    size={30}
+                    onClick={() => setShow1(false)}
+                    cursor={'pointer'}
                   />
-                </Grid>
-                <Grid size={1} paddingBottom={'1.5%'}>
-                  {show1 ? (
-                    <EyeOff
-                      style={{ margin: 'auto 0' }}
-                      size={30}
-                      onClick={() => setShow1(false)}
-                      cursor={'pointer'}
-                    />
-                  ) : (
-                    <Eye
-                      style={{ margin: 'auto 0' }}
-                      size={30}
-                      onClick={() => setShow1(true)}
-                      cursor={'pointer'}
-                    />
-                  )}
-                </Grid>
-                <Grid size={4}>
-                  {!passwordChange ? (
-                    <OneAlignedButton
-                      buttonWrapperSx={{ width: '100%' }}
-                      buttonSx={{ padding: '8px' }}
-                      onClick={() => setPasswordChange(true)}
-                    >
-                      비밀번호 변경
-                    </OneAlignedButton>
-                  ) : (
-                    <OneAlignedButton
-                      buttonWrapperSx={{ width: '100%' }}
-                      buttonSx={{ padding: '8px' }}
-                      onClick={() => setPasswordChange(false)}
-                      color="error"
-                    >
-                      취소
-                    </OneAlignedButton>
-                  )}
-                </Grid>
-              </Layout>
-            </Grid>
+                ) : (
+                  <Eye
+                    style={{ margin: 'auto 0' }}
+                    size={30}
+                    onClick={() => setShow1(true)}
+                    cursor={'pointer'}
+                  />
+                )}
+              </Grid>
+              <Grid size={4}>
+                {!passwordChange ? (
+                  <OneAlignedButton
+                    buttonWrapperSx={{ width: '100%' }}
+                    buttonSx={{ padding: '8px' }}
+                    onClick={() => setPasswordChange(true)}
+                  >
+                    비밀번호 변경
+                  </OneAlignedButton>
+                ) : (
+                  <OneAlignedButton
+                    buttonWrapperSx={{ width: '100%' }}
+                    buttonSx={{ padding: '8px' }}
+                    onClick={() => setPasswordChange(false)}
+                    color="error"
+                  >
+                    취소
+                  </OneAlignedButton>
+                )}
+              </Grid>
+            </Layout>
+          </Grid>
 
-            {passwordChange ? (
-              <>
-                <Grid size={12} marginTop={'5%'}>
-                  <MyPageText icon={<Check />}>비밀번호 확인</MyPageText>
-                  <Layout space={2}>
-                    <Grid size={7}>
-                      <CustomTextField
-                        show={show2}
-                        data={checkPassword}
-                        setData={setCheckPassword}
-                        placeholder={'비밀번호 확인'}
-                        error={chkPwError}
-                        helperText={'비밀번호가 일치하지 않습니다.'}
-                        padding={10}
+          {passwordChange ? (
+            <>
+              <Grid size={12} marginTop={'5%'}>
+                <MyPageText icon={<Check />}>비밀번호 확인</MyPageText>
+                <Layout space={2}>
+                  <Grid size={7}>
+                    <CustomTextField
+                      show={show2}
+                      data={checkPassword}
+                      setData={setCheckPassword}
+                      placeholder={'비밀번호 확인'}
+                      error={chkPwError}
+                      helperText={'비밀번호가 일치하지 않습니다.'}
+                      padding={10}
+                    />
+                  </Grid>
+                  <Grid size={1} paddingBottom={'1.5%'}>
+                    {show2 ? (
+                      <EyeOff
+                        style={{ margin: 'auto 0' }}
+                        size={30}
+                        onClick={() => setShow2(false)}
+                        cursor={'pointer'}
                       />
-                    </Grid>
-                    <Grid size={1} paddingBottom={'1.5%'}>
-                      {show2 ? (
-                        <EyeOff
-                          style={{ margin: 'auto 0' }}
-                          size={30}
-                          onClick={() => setShow2(false)}
-                          cursor={'pointer'}
-                        />
-                      ) : (
-                        <Eye
-                          style={{ margin: 'auto 0' }}
-                          size={30}
-                          onClick={() => setShow2(true)}
-                          cursor={'pointer'}
-                        />
-                      )}
-                    </Grid>
-                  </Layout>
-                </Grid>
-              </>
-            ) : (
-              <></>
-            )}
-          </Layout>
-        </Paper>
-        <MyPageButtons
-          eraseFunc={() => {
-            setEmail(originForm.email);
-            setEmailChecked(true);
-            setName(originForm.name);
-            setPasswordChange(false);
-          }}
-          saveFunc={handleChangeAccount}
-        />
-      </Grid>
-      {isMobile ? <></> : <Grid size={3} />}
-    </Layout>
+                    ) : (
+                      <Eye
+                        style={{ margin: 'auto 0' }}
+                        size={30}
+                        onClick={() => setShow2(true)}
+                        cursor={'pointer'}
+                      />
+                    )}
+                  </Grid>
+                </Layout>
+              </Grid>
+            </>
+          ) : (
+            <></>
+          )}
+        </Layout>
+      </Paper>
+      <MyPageButtons
+        eraseFunc={() => {
+          setEmail(originForm.email);
+          setEmailChecked(true);
+          setName(originForm.name);
+          setPasswordChange(false);
+        }}
+        saveFunc={handleChangeAccount}
+      />
+    </>
   );
 };
 export default ManageAccount;

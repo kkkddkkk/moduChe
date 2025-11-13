@@ -42,4 +42,22 @@ export const setAccount = async (dto) => {
   }
 };
 
+export const getDisability = async (username) => {
+  try {
+    const res = await api.get(`${MYPAGE_SERVER_HOST}/getDisability?username=${username}`);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+export const setDisability = async (dto) => {
+  try {
+    const res = await api.put(`${MYPAGE_SERVER_HOST}/setDisability`, dto);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
 

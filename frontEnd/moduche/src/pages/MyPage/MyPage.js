@@ -14,16 +14,17 @@ import {
   useMediaQuery,
 } from '@mui/material';
 
-import { useEffect, useMemo } from 'react';
-import { IdCard, User, UserRoundPlus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { IdCard, Landmark, User, UserRoundPlus, X } from 'lucide-react';
 import { CenterTitle } from '../../component/common/Text';
 import {
-  fecilityList,
+  facilityList,
   individualList,
   MeunTemplate,
 } from '../../component/myPage/MyPageMenuList';
 import { getRoleFromToken } from '../../utils/auth';
 import { getUserContext } from '../../context/UserContext';
+import Paper from '../../component/common/Paper';
 
 const MyPage = () => {
   const theme = useTheme();
@@ -32,14 +33,22 @@ const MyPage = () => {
   const isNotMonitor = useMediaQuery(theme.breakpoints.down('md'));
 
   const listWidth = isNotMonitor ? 4 : 2;
-  const DRAWER_WIDTH = !isNotMonitor?'240px' : '80px';
+  const DRAWER_WIDTH = !isNotMonitor ? '240px' : '80px';
   const navigate = useNavigate();
   const location = useLocation();
   const accessToken = localStorage.getItem('accessToken');
   const role = getRoleFromToken(accessToken).toLowerCase();
   const { loggedIn } = getUserContext();
+
+  const [title, setTitle] = useState('');
+  const [roleKor, setRoleKor] = useState('');
   useEffect(() => {
     if (!loggedIn) navigate('/');
+    role === 'individual'
+      ? setRoleKor('일반')
+      : role === 'facility'
+      ? setRoleKor('시설')
+      : setRoleKor('');
   }, []);
 
   // ✅ 메뉴 정의
@@ -47,18 +56,19 @@ const MyPage = () => {
     role == 'individual'
       ? individualList
       : role == 'facility'
-      ? fecilityList
+      ? facilityList
       : [];
 
   const currentKey = useMemo(() => {
     const found = MENU_ITEMS.find((item) =>
       location.pathname.startsWith(item.path),
     );
+    setTitle(found.label);
     return found ? found.key : null;
   }, [location.pathname]);
-  
+
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
       <Drawer
         variant="permanent"
         sx={{
@@ -98,11 +108,11 @@ const MyPage = () => {
                 color: 'primary.main',
               }}
             >
-              <User />
+              {role==="individual"?<User />:role==="facility"?<Landmark/>:<X/>}
             </ListItemIcon>
 
             <ListItemText
-              primary={'일반회원'}
+              primary={`${roleKor}회원`}
               primaryTypographyProps={{
                 fontSize: '1.2rem',
                 fontWeight: 600,
@@ -125,11 +135,16 @@ const MyPage = () => {
           })}
         </List>
       </Drawer>
-      <Layout spacing={2}>
-         <Grid size={12} sx={{ height: '100%' }}>
-          <Outlet />
-        </Grid>
-      </Layout>
+      <Box sx={{ flexGrow: 1 }}>
+        <Layout spacing={2}>
+          {isMobile ? <></> : <Grid size={3} />}
+          <Grid size={isMobile ? 12 : 6} sx={{ height: '100%' }}>
+            <CenterTitle>{title}</CenterTitle>
+            <Outlet />
+          </Grid>
+          {isMobile ? <></> : <Grid size={3} />}
+        </Layout>
+      </Box>
     </Box>
   );
 };
