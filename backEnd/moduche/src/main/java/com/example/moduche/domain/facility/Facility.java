@@ -16,7 +16,10 @@ public class Facility {
   private String facilityName;
   private String facilityType;
   private String facilityAddress;
+  
+  @Column(precision = 38, scale = 15)
   private BigDecimal geoLat;
+  @Column(precision = 38, scale = 15)
   private BigDecimal geoLng;
   private String facilityPhone;
   private String openHours;

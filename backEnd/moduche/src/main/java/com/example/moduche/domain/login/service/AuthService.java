@@ -57,15 +57,23 @@ public class AuthService {
 			return responseDTO;
 		}
 		
-		//refresh token 생성 후 DB에 저장
+		Optional<RefreshToken> tokenOp = refreshTokenRepository.findByUserName(dto.getLoginId());
 		String rawRefreshToken = jwtTokenProvider.createRefreshToken(user);
 		String hashedRefreshToken = DigestUtils.sha256Hex(rawRefreshToken);
-		RefreshToken refreshToken = RefreshToken.builder()
-				.username(user.getUsername())
-				.tokenHash(hashedRefreshToken)
-				.expire(LocalDateTime.now().plusDays(14L))
-				.build();
-		refreshTokenRepository.save(refreshToken);
+		RefreshToken refreshToken;
+		if(tokenOp.isEmpty()) {
+			//refresh token 생성 후 DB에 저장
+			refreshToken = RefreshToken.builder()
+					.username(user.getUsername())
+					.tokenHash(hashedRefreshToken)
+					.expire(LocalDateTime.now().plusDays(14L))
+					.build();
+			refreshTokenRepository.save(refreshToken);
+		}else {
+			refreshToken = tokenOp.get();
+			refreshToken.setExpire(LocalDateTime.now().plusDays(14L));
+			refreshToken.setTokenHash(hashedRefreshToken);
+		}
 		
 		//일치하면 토큰 포함 responseDTO return
 		LoginResponseDTO responseDTO = LoginResponseDTO.builder()

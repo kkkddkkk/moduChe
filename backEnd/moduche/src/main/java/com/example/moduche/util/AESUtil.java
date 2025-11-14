@@ -17,7 +17,7 @@ public class AESUtil {
     }
 
     public String aesEncode(String plainText) throws Exception {
-        SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "AES");
+        SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), "AES");
         IvParameterSpec IV = new IvParameterSpec(secretKey.substring(0, 16).getBytes());
         
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -27,7 +27,7 @@ public class AESUtil {
     }
     
     public String aesDecode(String cipherText) throws Exception {
-        SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "AES");
+        SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), "AES");
         IvParameterSpec IV = new IvParameterSpec(secretKey.substring(0, 16).getBytes());
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.DECRYPT_MODE, keySpec, IV);

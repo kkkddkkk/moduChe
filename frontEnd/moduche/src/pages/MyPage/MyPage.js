@@ -25,6 +25,7 @@ import {
 import { getRoleFromToken } from '../../utils/auth';
 import { getUserContext } from '../../context/UserContext';
 import Paper from '../../component/common/Paper';
+import Auth from '../Account/Auth';
 
 const MyPage = () => {
   const theme = useTheme();
@@ -68,84 +69,93 @@ const MyPage = () => {
   }, [location.pathname]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: DRAWER_WIDTH,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: {
+    <>
+      <Auth />
+      <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
+        <Drawer
+          variant="permanent"
+          sx={{
             width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-            borderRight: '1px solid',
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-            pt: 1,
-          },
-        }}
-        open
-      >
-        <Box sx={{ minHeight: 64, px: 2, fontWeight: 600 }}></Box>
-        <List sx={{ py: 0 }}>
-          <ListItemButton
-            key={'role'}
-            sx={{
-              py: 1.1,
-              mx: 1,
-              mb: 0.5,
-              cursor: 'auto',
-              '&:hover': {
-                backgroundColor: 'transparent', // hover 시 배경색 없음
-              },
-              '&.Mui-selected': {
-                backgroundColor: 'transparent', // selected 효과 없애려면
-              },
-            }}
-          >
-            <ListItemIcon
+            flexShrink: 0,
+            [`& .MuiDrawer-paper`]: {
+              width: DRAWER_WIDTH,
+              boxSizing: 'border-box',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+              pt: 1,
+            },
+          }}
+          open
+        >
+          <Box sx={{ minHeight: 64, px: 2, fontWeight: 600 }}></Box>
+          <List sx={{ py: 0 }}>
+            <ListItemButton
+              key={'role'}
               sx={{
-                minWidth: 40,
-                color: 'primary.main',
+                py: 1.1,
+                mx: 1,
+                mb: 0.5,
+                cursor: 'auto',
+                '&:hover': {
+                  backgroundColor: 'transparent', // hover 시 배경색 없음
+                },
+                '&.Mui-selected': {
+                  backgroundColor: 'transparent', // selected 효과 없애려면
+                },
               }}
             >
-              {role==="individual"?<User />:role==="facility"?<Landmark/>:<X/>}
-            </ListItemIcon>
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color: 'primary.main',
+                }}
+              >
+                {role === 'individual' ? (
+                  <User />
+                ) : role === 'facility' ? (
+                  <Landmark />
+                ) : (
+                  <X />
+                )}
+              </ListItemIcon>
 
-            <ListItemText
-              primary={`${roleKor}회원`}
-              primaryTypographyProps={{
-                fontSize: '1.2rem',
-                fontWeight: 600,
-              }}
-            />
-          </ListItemButton>
-          <Divider />
-
-          {MENU_ITEMS?.map((item) => {
-            const selected = currentKey === item.key;
-            return (
-              <MeunTemplate
-                key={item.key}
-                label={item.label}
-                icon={item.icon}
-                path={item.path}
-                selected={selected}
+              <ListItemText
+                primary={`${roleKor}회원`}
+                primaryTypographyProps={{
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                }}
               />
-            );
-          })}
-        </List>
-      </Drawer>
-      <Box sx={{ flexGrow: 1 }}>
-        <Layout spacing={2}>
-          {isMobile ? <></> : <Grid size={3} />}
-          <Grid size={isMobile ? 12 : 6} sx={{ height: '100%' }}>
-            <CenterTitle>{title}</CenterTitle>
-            <Outlet />
-          </Grid>
-          {isMobile ? <></> : <Grid size={3} />}
-        </Layout>
+            </ListItemButton>
+            <Divider />
+
+            {MENU_ITEMS?.map((item) => {
+              const selected = currentKey === item.key;
+              return (
+                <MeunTemplate
+                  key={item.key}
+                  label={item.label}
+                  icon={item.icon}
+                  path={item.path}
+                  selected={selected}
+                />
+              );
+            })}
+          </List>
+        </Drawer>
+        <Box sx={{ flexGrow: 1 }}>
+          <Layout spacing={2}>
+            {isMobile ? <></> : <Grid size={3} />}
+            <Grid size={isMobile ? 12 : 6} sx={{ height: '100%' }}>
+              <CenterTitle>{title}</CenterTitle>
+              <Outlet />
+            </Grid>
+            {isMobile ? <></> : <Grid size={3} />}
+          </Layout>
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 };
 export default MyPage;

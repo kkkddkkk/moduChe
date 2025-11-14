@@ -70,7 +70,6 @@ const BusinessCert = ({
       return;
     }
     const result = await validateBusiness({ businessNum, startDate, boss });
-    console.log(result.data.status.b_stt_cd);
     if (!result.success) {
       alert('사업자 등록 정보를 다시 확인해주세요.');
       setBusinessAuthError({message: result.message, ready: false});

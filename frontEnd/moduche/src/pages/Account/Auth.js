@@ -34,61 +34,70 @@ const Auth = () => {
 
   useEffect(() => {
     if (!done) return;
-    if (checked) navigate(`/myPage/account`,  { replace: true });
-    else{
-      alert("비밀번호가 일치하지 않습니다.");
+    if (!checked) {
+      alert('비밀번호가 일치하지 않습니다.');
       setPasswordError(true);
     }
   }, [done, checked]);
 
-  useEffect(()=>{
+  useEffect(() => {
     setPasswordError(false);
-  },[password])
+  }, [password]);
 
   return (
-    <Layout spacing={2} padding={2}>
-      <Loading open={loading} text="비밀번호 검증 중입니다." />
-      {!isMobile ? <Grid size={3} /> : <></>}
-      <Grid size={isMobile ? 12 : 6}>
-        <CenterTitle margin="5% 0">비밀번호 확인</CenterTitle>
-        <Paper>
-          <Contents100 sx={{ textAlign: 'center' }} margin="0 0 5% 0">
-            마이페이지 진입을 위해 비밀번호를 한 번 더 확인합니다.
-          </Contents100>
-          <CustomTextField
-            data={password}
-            setData={setPassword}
-            name={'password'}
-            placeholder={'비밀번호'}
-            error={passwordError}
-            helperText={'비밀번호가 일치하지 않습니다.'}
-            show={false}
-          />
-          <Box sx={{ marginTop: '5%' }} />
-          <Layout space={2}>
-            {isNotMonitor ? <></> : <Grid size={3} />}
-            <Grid size={isNotMonitor ? 6 : 3}>
-              <OneAlignedButton
-                buttonWrapperSx={{ width: '100%' }}
-                onClick={() => navigate(-1)}
-              >
-                뒤로가기
-              </OneAlignedButton>
-            </Grid>
-            <Grid size={isNotMonitor ? 6 : 3}>
-              <OneAlignedButton
-                buttonWrapperSx={{ width: '100%' }}
-                onClick={handleCheckPassword}
-              >
-                확인
-              </OneAlignedButton>
-            </Grid>
-            {isNotMonitor ? <></> : <Grid size={3} />}
-          </Layout>
-        </Paper>
-      </Grid>
-      {!isMobile ? <Grid size={3} /> : <></>}
-    </Layout>
+    <Box
+      display={done && checked ? 'none' : 'fixed'}
+      width={'100vw'}
+      height={'100vh'}
+      zIndex={1500}
+      sx={{
+        backgroundColor: theme.palette.background.default,
+      }}
+    >
+      <Layout spacing={2} padding={2}>
+        <Loading open={loading} text="비밀번호 검증 중입니다." />
+        {!isMobile ? <Grid size={3} /> : <></>}
+        <Grid size={isMobile ? 12 : 6}>
+          <CenterTitle margin="5% 0">비밀번호 확인</CenterTitle>
+          <Paper>
+            <Contents100 sx={{ textAlign: 'center' }} margin="0 0 5% 0">
+              마이페이지 진입을 위해 비밀번호를 한 번 더 확인합니다.
+            </Contents100>
+            <CustomTextField
+              data={password}
+              setData={setPassword}
+              name={'password'}
+              placeholder={'비밀번호'}
+              error={passwordError}
+              helperText={'비밀번호가 일치하지 않습니다.'}
+              show={false}
+            />
+            <Box sx={{ marginTop: '5%' }} />
+            <Layout space={2}>
+              {isNotMonitor ? <></> : <Grid size={3} />}
+              <Grid size={isNotMonitor ? 6 : 3}>
+                <OneAlignedButton
+                  buttonWrapperSx={{ width: '100%' }}
+                  onClick={() => navigate(-1)}
+                >
+                  뒤로가기
+                </OneAlignedButton>
+              </Grid>
+              <Grid size={isNotMonitor ? 6 : 3}>
+                <OneAlignedButton
+                  buttonWrapperSx={{ width: '100%' }}
+                  onClick={handleCheckPassword}
+                >
+                  확인
+                </OneAlignedButton>
+              </Grid>
+              {isNotMonitor ? <></> : <Grid size={3} />}
+            </Layout>
+          </Paper>
+        </Grid>
+        {!isMobile ? <Grid size={3} /> : <></>}
+      </Layout>
+    </Box>
   );
 };
 export default Auth;

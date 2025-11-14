@@ -38,6 +38,7 @@ import com.example.moduche.domain.login.repository.RoleRepository;
 import com.example.moduche.domain.login.repository.UserRoleRepository;
 import com.example.moduche.domain.myPage.dto.MyAccountResponseDTO;
 import com.example.moduche.domain.myPage.dto.MyDisabilityDTO;
+import com.example.moduche.domain.myPage.dto.MyFacilityDTO;
 import com.example.moduche.domain.myPage.dto.UpdateAccountRequestDTO;
 import com.example.moduche.repository.UserRepository;
 import com.example.moduche.util.AESUtil;
@@ -63,6 +64,8 @@ public class MyPageService {
 	private final UserRepository userRepository;
 	private final AccessibilityProfileRepository accessibilityProfileRepository;
 	private final DisabilityRepository disabilityRepository;
+	private final FacilityUserRepository facilityUserRepository;
+	private final AESUtil aesUtil;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -72,56 +75,94 @@ public class MyPageService {
 				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 		return passwordEncoder.matches(password, user.getPassword());
 	}
-	
-	//개인정보 가져오기
+
+	// 개인정보 가져오기
 	public MyAccountResponseDTO getAccount(String username) {
 		User user = userRepository.findByUserName(username)
 				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-		
-		MyAccountResponseDTO accountResponseDTO = MyAccountResponseDTO.builder()
-				.username(username).name(user.getName()).email(user.getEmail()).build();
-		
+
+		MyAccountResponseDTO accountResponseDTO = MyAccountResponseDTO.builder().username(username).name(user.getName())
+				.email(user.getEmail()).build();
+
 		return accountResponseDTO;
 	}
-	
-	//개인정보 설정하기
+
+	// 개인정보 설정하기
 	@Transactional
 	public void setAccount(UpdateAccountRequestDTO requestDTO) {
 		String username = requestDTO.getUsername();
 		User user = userRepository.findByUserName(username)
 				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-		if (requestDTO.getName() != null) user.setName(requestDTO.getName());
-		if (requestDTO.getEmail() != null) user.setEmail(requestDTO.getEmail());
-		if (requestDTO.getPassword() != null) user.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
+		if (requestDTO.getName() != null)
+			user.setName(requestDTO.getName());
+		if (requestDTO.getEmail() != null)
+			user.setEmail(requestDTO.getEmail());
+		if (requestDTO.getPassword() != null)
+			user.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
 		user.setUpdatedAt(LocalDateTime.now());
 	}
-	
-	//장애정보 가져오기
+
+	// 장애정보 가져오기
 	public MyDisabilityDTO getDisability(String username) throws Exception {
-		MyDisabilityDTO dto = accessibilityProfileRepository
-				.findMyDisabilityDtoByUsername(username)
+		MyDisabilityDTO dto = accessibilityProfileRepository.findMyDisabilityDtoByUsername(username)
 				.orElseThrow(() -> new Exception("disability not found: " + username));
-		if(dto.getNote()==null) dto.setNote("");
+		if (dto.getNote() == null)
+			dto.setNote("");
 		return dto;
 	}
-	//장애정보 설정하기
+
+	// 장애정보 설정하기
 	@Transactional
 	public void setDisability(MyDisabilityDTO dto) throws Exception {
 		AccessibilityProfile profile = accessibilityProfileRepository.findByUsername(dto.getUsername())
 				.orElseThrow(() -> new Exception("Profile not found: " + dto.getUsername()));
-		if (dto.getPhone() != null) profile.getUser().setPhone(dto.getPhone());
-		if(dto.getBirth()!=null) profile.setBirth(dto.getBirth());
-		if (dto.getSex() != null) profile.setGender(dto.getSex());
-		if(dto.getDisability()!=null) {
+		if (dto.getPhone() != null)
+			profile.getUser().setPhone(dto.getPhone());
+		if (dto.getBirth() != null)
+			profile.setBirth(dto.getBirth());
+		if (dto.getSex() != null)
+			profile.setGender(dto.getSex());
+		if (dto.getDisability() != null) {
 			Disability disability = disabilityRepository.findByCodeEntity(dto.getDisability().getName())
 					.orElseThrow(() -> new Exception("Disability not found: " + dto.getDisability()));
 			profile.setDisability(disability);
 		}
-		if(dto.getDisabilityGrade()!=null) profile.setDisabilityGrade(dto.getDisabilityGrade());
+		if (dto.getDisabilityGrade() != null)
+			profile.setDisabilityGrade(dto.getDisabilityGrade());
 		profile.setQualified(dto.isQualified());
-		if(dto.getNote()!=null) profile.setNote(dto.getNote());	
+		if (dto.getNote() != null)
+			profile.setNote(dto.getNote());
 	}
-	
-	//시설정보 가져오기
+
+	// 시설정보 가져오기
+	public MyFacilityDTO getFacility(String username) throws Exception {
+		MyFacilityDTO dto = facilityUserRepository.findMyFacilityDtoByUserName(username)
+				.orElseThrow(() -> new Exception("NotFound"));
+		String decodedNum = aesUtil.aesDecode(dto.getBusinessNum());
+		dto.setBusinessNum(decodedNum);
+		return dto;
+	}
+
+	// 시설정보 설정하기
+	@Transactional
+	public void setFacility(MyFacilityDTO dto) throws Exception {
+		FacilityUser facilityUser = facilityUserRepository.findByUsername(dto.getUsername())
+				.orElseThrow(() -> new Exception("NotFound"));
+		User user = facilityUser.getUser();
+		Facility facility = facilityUser.getFacility();
+
+		if (dto.getRoleInFac() != null)
+			facilityUser.setRoleInFac(dto.getRoleInFac());
+		if (dto.getPhone() != null)
+			user.setPhone(dto.getPhone());
+		if(dto.getFacilityType()!=null) facility.setFacilityType(dto.getFacilityType());
+		if(dto.getFacilityAddress()!=null) facility.setFacilityAddress(dto.getFacilityAddress());
+		if(dto.getGeoLat()!=null) facility.setGeoLat(dto.getGeoLat());
+		if(dto.getGeoLng()!=null) facility.setGeoLng(dto.getGeoLng());
+		if(dto.getOpenHours()!=null) facility.setOpenHours(dto.getOpenHours());
+		if(dto.getBusinessNum()!=null) facility.setBusiness_num(aesUtil.aesEncode(dto.getBusinessNum()));
+		if(dto.getBoss()!=null) facility.setBoss(dto.getBoss());
+		if(dto.getAccessibilityFeatures()!=null) facility.setAccessibilityFeatures(dto.getAccessibilityFeatures());
+	}
 	
 }

@@ -143,7 +143,7 @@ const Header = () => {
                   <HeaderMenu onClick={logout}>로그아웃</HeaderMenu>
                   <MenuBar />
                   <User style={{ color: menuColor }} />
-                  <HeaderMenu onClick={() => moveTo('auth')}>
+                  <HeaderMenu onClick={() => navigate('/myPage/account')}>
                     {name}님
                   </HeaderMenu>
                 </>

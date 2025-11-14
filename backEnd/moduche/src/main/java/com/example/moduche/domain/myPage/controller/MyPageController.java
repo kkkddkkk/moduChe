@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.moduche.domain.facility.repository.FacilityUserRepository;
 import com.example.moduche.domain.login.dto.ChangePwDTO;
 import com.example.moduche.domain.login.dto.EmailTestDTO;
 import com.example.moduche.domain.login.dto.IdTestDTO;
@@ -28,6 +29,7 @@ import com.example.moduche.domain.login.service.EmailService;
 import com.example.moduche.domain.login.service.SignInService;
 import com.example.moduche.domain.myPage.dto.MyAccountResponseDTO;
 import com.example.moduche.domain.myPage.dto.MyDisabilityDTO;
+import com.example.moduche.domain.myPage.dto.MyFacilityDTO;
 import com.example.moduche.domain.myPage.dto.UpdateAccountRequestDTO;
 import com.example.moduche.domain.myPage.service.MyPageService;
 import com.example.moduche.global.Response;
@@ -48,6 +50,7 @@ public class MyPageController {
 	private final MyPageService myPageService;
 	private final SignInService signInService;
 	private final EmailService emailService;
+	private final FacilityUserRepository facilityUserRepository;
 
 	@PostMapping("/checkPassword") 
 	public Response checkPassword(@RequestBody LoginRequestDTO dto) {
@@ -94,6 +97,18 @@ public class MyPageController {
 		 return new Response(StatusEnum.OK, "계정 정보가 변경되었습니다.", null);
 	}
 	
+	@GetMapping("/getFacility") 
+	public Response getFacility(@RequestParam("username") String username) throws Exception  {
+		MyFacilityDTO dto = myPageService.getFacility(username);
+		
+		 return new Response(StatusEnum.OK, username+"의 시설정보입니다.", dto);
+	}
 	
+	@PutMapping("/setFacility") 
+	public Response setFacility(@RequestBody MyFacilityDTO dto) throws Exception {
+		myPageService.setFacility(dto);
+		
+		 return new Response(StatusEnum.OK, "계정 정보가 변경되었습니다.", null);
+	}
 
 }

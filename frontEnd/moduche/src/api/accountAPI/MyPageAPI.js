@@ -61,3 +61,22 @@ export const setDisability = async (dto) => {
 };
 
 
+export const getFacility = async (username) => {
+  try {
+    const res = await api.get(`${MYPAGE_SERVER_HOST}/getFacility?username=${username}`);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+export const setFacility = async (dto) => {
+  try {
+    const res = await api.put(`${MYPAGE_SERVER_HOST}/setFacility`, dto);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
+
+
