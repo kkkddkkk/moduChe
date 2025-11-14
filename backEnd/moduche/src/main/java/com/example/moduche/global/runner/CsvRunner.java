@@ -28,11 +28,9 @@ public class CsvRunner implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 //        File file = new File("src/main/resources/data/facility.csv"); // CSV 하나 지정
 //        csvService.importCsv(file); // DB 삽입
+//		File file = new File("src/main/resources/data/course.csv");
+//      courseCsvService.importCsv(file);
 
 	}
-    @Override
-    public void run(String... args) throws Exception {
-//        File file = new File("src/main/resources/data/course.csv");
-//        courseCsvService.importCsv(file);
-    }
+ 
 }

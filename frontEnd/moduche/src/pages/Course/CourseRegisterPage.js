@@ -6,6 +6,7 @@ import { useTheme } from "@emotion/react";
 import { Grid, useMediaQuery } from "@mui/material";
 import { createCourse } from "../../api/courseAPI";
 import { useNavigate } from "react-router-dom";
+import { isLoggedIn } from "../../utils/auth";
 
 const CourseRegisterPage = () => {
   const theme = useTheme();
@@ -14,13 +15,19 @@ const CourseRegisterPage = () => {
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
 
   const [form, setForm] = useState({
+    // 기본 정보
     name: "",
     description: "",
     image: null,
-    facility: "",
+
+    // ✅ 시설 정보
+    facilityId: null, // 숫자 PK
+    facilityName: "", // 화면 표시용(선택된 시설명)
+
+    // 강좌 설정
     maxParticipants: "",
-    format: "",
-    courseType: "",
+    format: "", // "OFFLINE" / "ONLINE" 등
+    courseType: "", // type_code
   });
 
   const handleChange = (e) => {
@@ -35,23 +42,44 @@ const CourseRegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // ✅ 1) 로그인 확인
+    if (!isLoggedIn()) {
+      alert("로그인이 필요한 서비스입니다. 로그인 페이지로 이동합니다.");
+      navigate("account/login");
+      return;
+    }
+
+    // ✅ 2) 필수값 체크 (시설/제목/내용 등)
+    if (!form.facilityId) {
+      alert("시설을 선택해 주세요.");
+      return;
+    }
+    if (!form.name.trim()) {
+      alert("강좌명을 입력해 주세요.");
+      return;
+    }
+    if (!form.description.trim()) {
+      alert("강좌 설명을 입력해 주세요.");
+      return;
+    }
+
     try {
-      // 백엔드 DTO 필드에 맞춰 매핑
+      // ✅ 백엔드 DTO 필드에 맞춰 매핑
       const payload = {
         title: form.name,
-        summary: form.description.slice(0, 80), // 일단 앞 80글자 정도 summary로
+        summary: form.description.slice(0, 80),
         description: form.description,
         maxParticipants: Number(form.maxParticipants || 0),
         format: form.format || "OFFLINE",
-        courseType: form.courseType,
-        // 나중에 facilityId / disabilityType 등 추가
+        courseType: form.courseType || null,
+        facilityId: form.facilityId, // ✅ 핵심!
       };
 
-      const saved = await createCourse(payload); // ✅ await 사용
+      const saved = await createCourse(payload);
       console.log("created course:", saved);
 
       alert("강좌가 등록되었습니다.");
-      navigate("/course"); // ✅ 목록 페이지로 이동
+      navigate("/course");
     } catch (err) {
       console.error("강좌 등록 실패", err);
       alert("강좌 등록 중 오류가 발생했습니다.");

@@ -37,11 +37,15 @@ export const getCourseList = async () => {
   return res.data; // ← List<CourseListResponse>
 };
 
-/** 강좌 신규 등록 */
+/** 강좌 신규 등록 (JWT 필요) */
 export const createCourse = async (payload) => {
   try {
-    const res = await axios.post(COURSE_SERVER_HOST, payload);
-    return res.data; // 보통 { courseId: number } 정도 리턴하도록 만들 거임
+    const token = localStorage.getItem("accessToken");
+
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+    const res = await axios.post(COURSE_SERVER_HOST, payload, { headers });
+    return res.data;
   } catch (err) {
     handleApiError(err);
     throw err;
