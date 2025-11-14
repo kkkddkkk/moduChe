@@ -1,3 +1,4 @@
 *.gradle
 backEnd/moduche/.env
 frontEnd/moduche/.env
+frontEnd/moduche/.env.txt

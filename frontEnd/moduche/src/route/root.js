@@ -22,6 +22,9 @@ const AdminCreateWindow = lazy(() =>
 const BannerCreateWindow = lazy(() =>
     import("../pages/Admin/BannerCreateWindow")
 );
+const FacilityCreateWindow = lazy(() =>
+    import("../pages/Admin/FacilityCreateWindow")
+);
 
 const root = createBrowserRouter([
     {
@@ -112,6 +115,14 @@ const root = createBrowserRouter([
                         element: (
                             <Suspense fallback={Loading}>
                                 <BannerCreateWindow />
+                            </Suspense>
+                        ),
+                    },
+                    {
+                        path: "facilities/new",
+                        element: (
+                            <Suspense fallback={Loading}>
+                                <FacilityCreateWindow />
                             </Suspense>
                         ),
                     },

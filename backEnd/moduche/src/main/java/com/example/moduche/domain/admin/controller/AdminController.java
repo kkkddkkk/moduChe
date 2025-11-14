@@ -7,12 +7,14 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/admins")
+@PreAuthorize("hasRole('SUPER_ADMIN')") // 이 클래스의 모든 메서드는 SUPER_ADMIN만
 public class AdminController {
 
     private final AdminAccountService service;
@@ -36,6 +38,7 @@ public class AdminController {
 
     @PostMapping
     public AdminResponse createAdmin(@RequestBody @Valid CreateAdminRequest request) {
+    	System.out.println(">>> /api/admins createAdmin called, username=" + request.username());
         return service.createAdmin(request);
     }
 

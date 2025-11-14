@@ -7,10 +7,13 @@ import com.example.moduche.domain.admin.repository.AdminUserRepository;
 import com.example.moduche.domain.login.Role;
 import com.example.moduche.domain.login.User;
 import com.example.moduche.domain.login.enums.UserStatus;
+import com.example.moduche.domain.login.repository.RoleRepository;
 import com.example.moduche.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 
@@ -19,13 +22,21 @@ public class AdminAccountService {
 
     private final AdminUserRepository repo;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AdminAccountService(AdminUserRepository repo, UserRepository userRepository) {
+    public AdminAccountService(AdminUserRepository repo,
+                               UserRepository userRepository,
+                               RoleRepository roleRepository,
+                               PasswordEncoder passwordEncoder) {
         this.repo = repo;
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    // 관리자 목록 조회
+    // 관리자 목록 조회 (읽기 전용)
+    @Transactional(readOnly = true)
     public Page<AdminResponse> list(String q, String status,
                                     LocalDateTime createdFrom, LocalDateTime createdTo,
                                     Pageable pageable) {
@@ -51,29 +62,32 @@ public class AdminAccountService {
         );
     }
 
-    // 관리자 생성
+    // 관리자 생성: 항상 role_id = 2 (일반 관리자)로 고정
+    @Transactional
     public AdminResponse createAdmin(CreateAdminRequest request) {
         User user = new User();
         user.setUsername(request.username());
-        user.setPassword(request.password());
+        user.setPassword(passwordEncoder.encode(request.password())); // 암호화
         user.setName(request.name());
         user.setEmail(request.email());
         user.setPhone(request.phone());
 
-        // Role ID만 설정
-        Long roleId = request.roleId() != null ? request.roleId() : 2L; // ADMIN 기본 2
-        Role role = new Role();
-        role.setRoleId(roleId);
+        // ★ role_id = 2 강제 지정
+        Long adminRoleId = 2L;
+        Role role = roleRepository.findById(adminRoleId)
+                .orElseThrow(() -> new IllegalStateException("roles 테이블에 role_id=2가 없습니다."));
         user.setRole(role);
 
         user.setStatus(UserStatus.ACTIVE);
         user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
 
         User saved = userRepository.save(user);
         return AdminResponse.fromDto(toDto(saved));
     }
 
     // 관리자 상태 변경
+    @Transactional
     public AdminResponse updateStatus(Long id, String status) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("관리자를 찾을 수 없습니다. id=" + id));
@@ -91,6 +105,7 @@ public class AdminAccountService {
     }
 
     // 관리자 삭제
+    @Transactional
     public void deleteAdmin(Long id) {
         if (!userRepository.existsById(id)) {
             throw new IllegalArgumentException("관리자를 찾을 수 없습니다. id=" + id);

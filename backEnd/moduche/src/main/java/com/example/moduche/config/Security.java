@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,11 +29,14 @@ public class Security {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+        	.cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable()) // REST API라면 CSRF 비활성화
             .authorizeHttpRequests(auth -> auth
+            		.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             	    .requestMatchers("/api/auth/**").permitAll()
             	    .requestMatchers("/").permitAll()
             	    .requestMatchers("/api/signIn/**").permitAll()
+            	    .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
                     .anyRequest().authenticated()
                 )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

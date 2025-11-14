@@ -1,4 +1,3 @@
-// src/pages/Admin/MembersPage.js
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
     Box,
@@ -34,9 +33,30 @@ import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/DeleteForever";
 
 import Paper from "../../component/common/Paper";
-import communityHttp from "../../api/communityAPI/communityHttp";
 
-const USERS_ENDPOINT = "/users"; // baseURL이 /api 라면 최종 /api/users
+// ★ 추가: axios + 공통 변수
+import axios from "axios";
+import { API_SERVER_HOST, AUTH } from "../../component/common/Variables";
+
+// ★ 공통 http 인스턴스 + JWT 자동 첨부
+const http = axios.create({
+    baseURL: API_SERVER_HOST, // http://localhost:8080
+    withCredentials: false,
+});
+
+http.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem(AUTH.TOKEN_KEY);
+        if (token) {
+            config.headers[AUTH.HEADER_KEY] = AUTH.SCHEME + token;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// ★ 기존 /users → 백엔드 기준으로 /api/users
+const USERS_ENDPOINT = "/api/users";
 
 const STATUS_COLOR = {
     ACTIVE: "success",
@@ -90,7 +110,7 @@ export default function MembersPage() {
         fetchingRef.current = true;
         setLoading(true);
         try {
-            const resp = await communityHttp.get(USERS_ENDPOINT, {
+            const resp = await http.get(USERS_ENDPOINT, {
                 params: {
                     page: Math.max(0, p - 1),
                     size: rowsPerPage,
@@ -152,7 +172,7 @@ export default function MembersPage() {
     // --- API: detail
     const fetchUserDetail = async (userId) => {
         try {
-            const resp = await communityHttp.get(`${USERS_ENDPOINT}/${userId}`);
+            const resp = await http.get(`${USERS_ENDPOINT}/${userId}`);
             const u = resp.data;
             const mapped = {
                 uid: formatUid(u.userId),
@@ -237,7 +257,7 @@ export default function MembersPage() {
         const newStatus =
             currentStatus === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
         try {
-            const existingResp = await communityHttp.get(
+            const existingResp = await http.get(
                 `${USERS_ENDPOINT}/${numericId}`
             );
             const existing = existingResp.data;
@@ -253,7 +273,7 @@ export default function MembersPage() {
                     (existing.role && existing.role.roleId) ||
                     null,
             };
-            await communityHttp.put(`${USERS_ENDPOINT}/${numericId}`, payload);
+            await http.put(`${USERS_ENDPOINT}/${numericId}`, payload);
             await fetchUsers(page);
             if (selectedMember?.userId === numericId)
                 await fetchUserDetail(numericId);
@@ -326,7 +346,7 @@ export default function MembersPage() {
         }
 
         try {
-            await communityHttp.delete(`${USERS_ENDPOINT}/${numericId}`);
+            await http.delete(`${USERS_ENDPOINT}/${numericId}`);
             await fetchUsers(Math.max(1, page));
             if (selectedMember?.userId === numericId) setDetailOpen(false);
             closeDeleteDialog();

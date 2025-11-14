@@ -36,7 +36,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import DownloadIcon from "@mui/icons-material/FileDownload";
 
 import Paper from "../../component/common/Paper";
-import { fetchAdmins, patchAdmin, deleteAdmin } from "../../api/admin";
+import { fetchAdmins, patchAdmin, deleteAdmin } from "../../api/admin/index";
 
 const ROLE_LABEL = {
     SUPER_ADMIN: "최고관리자",

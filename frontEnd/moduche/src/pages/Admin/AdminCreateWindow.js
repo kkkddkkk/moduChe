@@ -9,6 +9,7 @@ import {
     Fade,
     InputAdornment,
 } from "@mui/material";
+
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
@@ -22,6 +23,8 @@ import {
     Contents100,
 } from "../../component/common/Text";
 
+import { createAdmin } from "../../api/admin"; // ★ 백엔드 관리자 생성 API
+
 export default function AdminCreateWindow() {
     const [id, setId] = useState("");
     const [password, setPassword] = useState("");
@@ -34,6 +37,7 @@ export default function AdminCreateWindow() {
         severity: "info",
     });
 
+    // 정규식
     const regId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,16}$/;
     const regPassword =
         /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!~@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{6,}$/;
@@ -55,49 +59,47 @@ export default function AdminCreateWindow() {
         [id, password, name, phone, idError, pwError, phoneError]
     );
 
-    const generateUid = () =>
-        `A${String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0")}`;
-    const nowStr = () => {
-        const n = new Date();
-        const pad = (x) => String(x).padStart(2, "0");
-        return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(
-            n.getDate()
-        )} ${pad(n.getHours())}:${pad(n.getMinutes())}`;
-    };
-
-    const handleSubmit = (e) => {
+    // ★ 관리자 생성 실행
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (disabled) return;
+
         const payload = {
-            uid: generateUid(),
-            name,
+            username: id,
+            password: password,
+            name: name,
+            phone: phone,
             email: "",
-            role: "OPERATOR",
-            status: "ACTIVE",
-            createdAt: nowStr(),
-            _raw: { id, password, phone },
+            roleId: 2, // ★ 일반 관리자 역할 ID = 2
         };
+
         try {
+            const saved = await createAdmin(payload); // ★ DB 저장
+
+            // ★ 결과를 부모창으로 전송 → 목록 즉시 반영
             window.opener?.postMessage(
-                { type: "ADMIN_CREATED", payload },
+                { type: "ADMIN_CREATED", payload: saved },
                 window.origin
             );
+
             setToast({
                 open: true,
                 message: "관리자가 생성되었습니다.",
                 severity: "success",
             });
-            setTimeout(() => window.close(), 800);
-        } catch {
+
+            setTimeout(() => window.close(), 700);
+        } catch (err) {
+            console.error("관리자 생성 실패:", err);
             setToast({
                 open: true,
-                message: "데이터 전송 실패",
+                message: "생성 실패. 관리자에게 문의하세요.",
                 severity: "error",
             });
         }
     };
 
-    // ESC 닫기 + 팝업 크기 통일
+    // ESC 닫기 + 팝업 크기 고정
     useEffect(() => {
         const onKey = (e) => e.key === "Escape" && window.close();
         window.addEventListener("keydown", onKey);
@@ -131,10 +133,12 @@ export default function AdminCreateWindow() {
                     >
                         <PersonAddAlt1Icon fontSize="small" /> 새 관리자 추가
                     </StartTitle>
+
                     <SmallerSubTitle>
                         관리자 로그인에 사용할 기본 정보를 입력하세요.
                     </SmallerSubTitle>
 
+                    {/* 아이디 */}
                     <Contents100 bold>아이디</Contents100>
                     <CustomTextField
                         data={id}
@@ -161,12 +165,13 @@ export default function AdminCreateWindow() {
                         }}
                     />
 
+                    {/* 비밀번호 */}
                     <Contents100 bold>비밀번호</Contents100>
                     <CustomTextField
                         data={password}
                         setData={() => {}}
                         onChange={(e) => setPassword(e.target.value)}
-                        type="password"
+                        show={false}
                         placeholder="영문+숫자+특수문자 6자 이상"
                         fontSize={15}
                         padding={10}
@@ -188,6 +193,7 @@ export default function AdminCreateWindow() {
                         }}
                     />
 
+                    {/* 이름 */}
                     <Contents100 bold>이름</Contents100>
                     <CustomTextField
                         data={name}
@@ -210,6 +216,7 @@ export default function AdminCreateWindow() {
                         }}
                     />
 
+                    {/* 전화번호 */}
                     <Contents100 bold>전화번호</Contents100>
                     <CustomTextField
                         data={phone}
@@ -236,6 +243,7 @@ export default function AdminCreateWindow() {
                         }}
                     />
 
+                    {/* 버튼 */}
                     <Stack
                         direction="row"
                         spacing={1.5}
@@ -256,6 +264,7 @@ export default function AdminCreateWindow() {
                 </Stack>
             </Paper>
 
+            {/* 토스트 */}
             <Snackbar
                 open={toast.open}
                 autoHideDuration={2000}
