@@ -14,7 +14,9 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "my_fit_mvm_content")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class MyFitMvmContent extends MyFitBaseEntity {
 
     @Id

@@ -1,0 +1,5 @@
+spring:
+    datasource:
+        url: jdbc:postgresql://aws-1-ap-northeast-2.pooler.supabase.com:5432/moduche_dev
+        username: ${POSTGRES_USER}
+        password: ${POSTGRES_PASSWORD}

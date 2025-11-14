@@ -22,7 +22,9 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "my_fit_measure")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class MyFitMeasure extends MyFitBaseEntity {
 
     @Id

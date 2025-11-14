@@ -6,9 +6,14 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.moduche.domain.login.User;
+import com.example.moduche.domain.myFit.dto.measure.MyFitMeasureRequestDTO;
 import com.example.moduche.domain.myFit.dto.measure.MyFitMeasureResponseDTO;
+import com.example.moduche.domain.myFit.entity.MyFitMeasure;
 import com.example.moduche.domain.myFit.entity.MyFitMeasureResult;
+import com.example.moduche.domain.myFit.repository.MyFitMeasureRepository;
 import com.example.moduche.domain.myFit.repository.MyFitMeasureResultRepository;
+import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,21 +21,95 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 @RequiredArgsConstructor
 public class MyFitMeasureServiceImpl implements MyFitMeasureService {
-	
-	private final MyFitMeasureResultRepository measureResultRepository;
 
-	@Override
-    public List<MyFitMeasureResponseDTO> getAllMeasureResults() {
-        return measureResultRepository.findAll().stream()
-                .map(MyFitMeasureResponseDTO::fromEntity)
-                .collect(Collectors.toList());
-    }
+    private final MyFitMeasureRepository measureRepository;
+    private final MyFitMeasureResultRepository resultRepository;
+    private final UserRepository userRepository;
 
+    /** ì €ìž¥ (POST) */
     @Override
-    public MyFitMeasureResponseDTO getMeasureResultById(Long resultId) {
-        MyFitMeasureResult result = measureResultRepository.findById(resultId)
-                .orElseThrow(() -> new IllegalArgumentException("ÃøÁ¤ °á°ú¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
-        return MyFitMeasureResponseDTO.fromEntity(result);
+    @Transactional
+    public MyFitMeasureResponseDTO saveMeasure(MyFitMeasureRequestDTO dto) {
+
+        User user = null;
+        if (dto.getUserId() != null) {
+            user = userRepository.findById(dto.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found: " + dto.getUserId()));
+        }
+
+        // 1) ì¸¡ì • ë©”íƒ€ ì €ìž¥
+        MyFitMeasure measure = new MyFitMeasure();
+        measure.setUser(user);
+        measure.setCenterName(dto.getCenterName());
+        measure.setMeasurePlaceFlagNm(dto.getMeasurePlaceFlagNm());
+        measure.setMeasureAge(dto.getMeasureAge());
+        measure.setInputFlagNm(dto.getInputFlagNm());
+        measure.setMeasureDate(dto.getMeasureDate());
+
+        // 2) ì¸¡ì • ê²°ê³¼ ì €ìž¥
+        if (dto.getResults() != null) {
+            dto.getResults().forEach(r -> {
+                MyFitMeasureResult result = new MyFitMeasureResult();
+                result.setItemName(r.getItemName());
+                result.setScore(r.getScore());
+                result.setUnit(r.getUnit());
+                result.setGrade(r.getGrade());
+                result.setMeasureDate(dto.getMeasureDate());
+                result.setMeasure(measure);
+
+                measure.getResults().add(result);
+            });
+        }
+        MyFitMeasure savedMeasure = measureRepository.save(measure);
+
+        return convertToResponse(savedMeasure);
     }
 
+    /** ì „ì²´ì¡°íšŒ (GET) */
+    @Override
+    @Transactional(readOnly = true)
+    public List<MyFitMeasureResponseDTO> getAllMeasureResults() {
+        return measureRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
+    }
+
+    /** ë‹¨ê±´ì¡°íšŒ (GET) */
+    @Override
+    @Transactional(readOnly = true)
+    public MyFitMeasureResponseDTO getMeasureResultById(Long resultId) {
+
+        MyFitMeasureResult result = resultRepository.findById(resultId)
+                .orElseThrow(() -> new IllegalArgumentException("Result not found: " + resultId));
+
+        MyFitMeasure measure = result.getMeasure();
+        return convertToResponse(measure);
+    }
+
+    /** ê³µí†µ ë³€í™˜ ë©”ì„œë“œ */
+    private MyFitMeasureResponseDTO convertToResponse(MyFitMeasure measure) {
+        MyFitMeasureResponseDTO dto = new MyFitMeasureResponseDTO();
+
+        dto.setMeasureId(measure.getMeasureId());
+        dto.setUserId(measure.getUser() != null ? measure.getUser().getUserId() : null);
+        dto.setCenterName(measure.getCenterName());
+        dto.setMeasureDate(measure.getMeasureDate());
+
+        dto.setResults(
+                measure.getResults().stream()
+                        .map(r -> {
+                            MyFitMeasureResponseDTO.ResultDTO rd = new MyFitMeasureResponseDTO.ResultDTO();
+                            rd.setResultId(r.getResultId());
+                            rd.setItemName(r.getItemName());
+                            rd.setScore(r.getScore());
+                            rd.setUnit(r.getUnit());
+                            rd.setGrade(r.getGrade());
+                            return rd;
+                        })
+                        .collect(Collectors.toList())
+        );
+
+        return dto;
+    }
 }

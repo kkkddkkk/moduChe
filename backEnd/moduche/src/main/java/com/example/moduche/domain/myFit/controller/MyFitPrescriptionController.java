@@ -19,14 +19,14 @@ public class MyFitPrescriptionController {
 
     private final MyFitPrescriptionService prescriptionService;
 
-    /** ÃøÁ¤ µ¥ÀÌÅÍ¸¦ ±â¹ÝÀ¸·Î ¿îµ¿ Ã³¹æ »ý¼º */
+    /** ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½îµ¿ Ã³ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ */
     @GetMapping
     public ResponseEntity<List<MyFitPrescriptionResponseDTO>> getAllPrescriptions() {
         return ResponseEntity.ok(prescriptionService.getAllPrescriptions());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MyFitPrescriptionResponseDTO> getPrescriptionById(@PathVariable Long id) {
+    public ResponseEntity<MyFitPrescriptionResponseDTO> getPrescriptionById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(prescriptionService.getPrescriptionById(id));
     }
 }
