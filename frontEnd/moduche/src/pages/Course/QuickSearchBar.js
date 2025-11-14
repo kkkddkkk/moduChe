@@ -111,14 +111,14 @@ export default function QuickSearchAirbnb_WidthAnim() {
           width: "100%",
           maxWidth: expanded ? 820 + EXPAND_W + 140 : 820,
           px: `${SIDE_PAD}px`,
-          py: 1.25,
+          py: 2, // 🔥 두께 ↑
           borderRadius: 9999,
           boxShadow: expanded ? 8 : 2,
           transition:
             "max-width .26s ease, box-shadow .24s ease, transform .24s ease",
           cursor: "pointer",
           "&:focus-within": { boxShadow: 8, transform: "translateY(-1px)" },
-          overflow: "hidden", // 내부 잔상 잘림
+          overflow: "hidden",
           bgcolor: "rgba(255,255,255,.92)",
         }}
       >

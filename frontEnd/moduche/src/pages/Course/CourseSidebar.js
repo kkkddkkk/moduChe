@@ -1,15 +1,33 @@
+// CourseSidebar.jsx
 import { Box, Grid, Typography } from "@mui/material";
 import { Users } from "lucide-react";
 import { OneAlignedButton } from "../../component/common/Button";
 import Paper from "../../component/common/Paper";
 import SectionBox from "./SectionBox";
 
+/**
+ * 서버 데이터 바인딩 가이드
+ * props:
+ * - hasSidebar: boolean
+ * - sessions: [{ id, label, remaining? }]   // ← header.sessions 그대로 사용
+ * - sessionId: string
+ * - date: string
+ * - price?: number | string                  // 없으면 표시 안 함
+ * - capacity?: number                        // header.maxParticipants 전달 권장
+ * - refundPolicy?: string                    // 기본 문구 제공
+ * - onEnroll?: (payload) => void             // 수강신청 클릭 시 콜백 (선택)
+ */
 export default function CourseSidebar({
   hasSidebar,
-  spotsLeft,
   sessions,
   sessionId,
   date,
+
+  // 선택 props
+  price,
+  capacity,
+  refundPolicy = "첫 수업 24시간 전 100% 환불",
+  onEnroll,
 }) {
   if (!hasSidebar) {
     return (
@@ -20,6 +38,45 @@ export default function CourseSidebar({
       </Box>
     );
   }
+
+  // 현재 선택된 세션
+  const selected = sessions?.find((s) => s.id === sessionId);
+  const remaining = selected?.remaining; // number | undefined
+
+  // 정원/잔여 표기 계산
+  // capacity와 remaining 둘 다 있으면 "enrolled/capacity" 계산해서 노출
+  const enrolled =
+    typeof capacity === "number" && typeof remaining === "number"
+      ? Math.max(0, capacity - remaining)
+      : undefined;
+
+  const capacityLine =
+    typeof capacity === "number" && typeof enrolled === "number"
+      ? `${enrolled}/${capacity}`
+      : typeof capacity === "number"
+      ? `0/${capacity}`
+      : "—";
+
+  const spotsLeftLine =
+    typeof remaining === "number"
+      ? `${remaining} spots left`
+      : "좌석 정보 없음";
+
+  const priceLine =
+    typeof price === "number"
+      ? `${price.toLocaleString()} KRW`
+      : typeof price === "string"
+      ? price
+      : null;
+
+  const handleEnroll = () => {
+    if (onEnroll) {
+      onEnroll({
+        sessionId,
+        date,
+      });
+    }
+  };
 
   return (
     <Box
@@ -37,8 +94,8 @@ export default function CourseSidebar({
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            gap: 3, // ✅ 각 섹션 간 기본 간격 확보
-            minHeight: { xs: 380, md: 460 }, // ✅ 세로 높이 여유
+            gap: 3,
+            minHeight: { xs: 380, md: 460 },
           }}
         >
           {/* 상단 가격/정원 요약 */}
@@ -48,21 +105,24 @@ export default function CourseSidebar({
             alignItems="flex-start"
           >
             <Grid item>
-              <Typography
-                variant="h5"
-                fontWeight="bold"
-                sx={{ fontSize: "2rem" }}
-              >
-                120,000 KRW
-              </Typography>
+              {priceLine && (
+                <Typography
+                  variant="h5"
+                  fontWeight="bold"
+                  sx={{ fontSize: "2rem" }}
+                >
+                  {priceLine}
+                </Typography>
+              )}
               <Typography
                 variant="caption"
                 color="text.secondary"
                 sx={{ fontSize: "1rem" }}
               >
-                첫 수업 24시간 전 100% 환불
+                {refundPolicy}
               </Typography>
             </Grid>
+
             <Grid item textAlign="right">
               <Typography
                 variant="body2"
@@ -74,19 +134,22 @@ export default function CourseSidebar({
                   fontSize: "2rem",
                 }}
               >
-                <Users style={{ width: 16, height: 16 }} /> 9/16
+                <Users style={{ width: 16, height: 16 }} /> {capacityLine}
               </Typography>
               <Typography
                 variant="caption"
                 sx={{
-                  color: "success.main",
+                  color:
+                    typeof remaining === "number" && remaining <= 3
+                      ? "error.main"
+                      : "success.main",
                   fontWeight: 600,
                   display: "block",
                   mt: 0.5,
                   fontSize: "1rem",
                 }}
               >
-                {spotsLeft} spots left
+                {spotsLeftLine}
               </Typography>
             </Grid>
           </Grid>
@@ -99,7 +162,7 @@ export default function CourseSidebar({
               borderRadius: 2,
               bgcolor: "grey.50",
               mt: 0.5,
-              mb: 1.0, // ✅ 버튼과의 간격 확보
+              mb: 1.0,
             }}
           >
             <Grid container justifyContent="space-between">
@@ -114,7 +177,7 @@ export default function CourseSidebar({
                 variant="body2"
                 sx={{ fontWeight: 600, fontSize: "1.3rem" }}
               >
-                {sessions.find((s) => s.id === sessionId)?.label}
+                {selected?.label ?? "—"}
               </Typography>
             </Grid>
             <Grid container justifyContent="space-between" sx={{ mt: 1 }}>
@@ -129,7 +192,7 @@ export default function CourseSidebar({
                 variant="body2"
                 sx={{ fontWeight: 600, fontSize: "1.3rem" }}
               >
-                {date}
+                {date || "—"}
               </Typography>
             </Grid>
           </Paper>
@@ -138,16 +201,14 @@ export default function CourseSidebar({
           <Box>
             <OneAlignedButton
               size="large"
-              buttonSx={{
-                width: "100%",
-                py: 1.3, // ✅ 버튼 세로 여유
-                fontWeight: 600,
-              }}
-              buttonWrapperSx={{
-                width: "100%",
-              }}
+              onClick={handleEnroll}
+              disabled={typeof remaining === "number" && remaining <= 0}
+              buttonSx={{ width: "100%", py: 1.3, fontWeight: 600 }}
+              buttonWrapperSx={{ width: "100%" }}
             >
-              수강 신청
+              {typeof remaining === "number" && remaining <= 0
+                ? "마감"
+                : "수강 신청"}
             </OneAlignedButton>
 
             <Typography
@@ -159,7 +220,7 @@ export default function CourseSidebar({
                 textAlign: "center",
                 fontSize: "0.95rem",
                 lineHeight: 1.45,
-              }} // ✅ 버튼 아래 간격 강화
+              }}
             >
               신청 시 정책에 동의하게 됩니다.
             </Typography>

@@ -1,6 +1,7 @@
 package com.example.moduche.domain.course;
 
 import com.example.moduche.domain.facility.Facility;
+import com.example.moduche.domain.tag.Tag;
 import com.example.moduche.domain.login.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,10 +12,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "course", indexes = {
-    @Index(name = "idx_course_created_at_desc", columnList = "created_at"),
-    @Index(name = "idx_course_status", columnList = "status")
-})
+@Table(
+	    name = "course",
+	    schema = "moduche",
+	    indexes = {
+	        @Index(name = "idx_course_created_at_desc", columnList = "created_at"),
+	        @Index(name = "idx_course_status", columnList = "status")
+	    }
+	)
 @EntityListeners(AuditingEntityListener.class)
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
@@ -26,7 +31,7 @@ public class Course {
 
     /** 관계들 */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "facility_id", foreignKey = @ForeignKey(name = "fk_course_facility"))
+    @JoinColumn(name = "facility_id", foreignKey = @ForeignKey(name = "fk_course_facility"),nullable = true )
     private Facility facility;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -95,4 +100,11 @@ public class Course {
     @PreUpdate void preUpdate() { /* updatedAt은 Auditing이 처리 */ }
     public enum CourseFormat { ONLINE, OFFLINE, HYBRID }
     public enum CourseStatus { DRAFT, PUBLISHED, ARCHIVED, DELETED }
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+      name = "course_tag",
+      joinColumns = @JoinColumn(name = "course_id"),
+      inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private java.util.Set<Tag> tags = new java.util.LinkedHashSet<>();
 }
