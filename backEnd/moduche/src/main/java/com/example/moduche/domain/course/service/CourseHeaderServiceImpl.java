@@ -30,9 +30,20 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
 
     @Override
     public CourseHeaderResponse getHeader(Long courseId) {
-        Course c = courseRepository.findHeaderById(courseId)
-                .orElseThrow(() -> new NoSuchElementException("Course not found: " + courseId));
+    	
+    	System.out.println(">>> getHeader called with id = " + courseId);
 
+        var opt = courseRepository.findHeaderById(courseId);
+        System.out.println(">>> findHeaderById(" + courseId + ") present = " + opt.isPresent());
+
+        Course c = opt.orElseThrow(() -> {
+            System.out.println(">>> NO course found with id = " + courseId);
+            return new NoSuchElementException("Course not found: " + courseId);
+        });
+
+        System.out.println(">>> building header response for courseId = " + c.getCourseId());
+
+    	
         // 1) 세션 로드
         List<CourseSession> sessions = sessionRepository
                 .findByCourse_CourseIdOrderByStartDateAsc(courseId);
@@ -109,7 +120,7 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
         String bylineOrg = (c.getFacility() != null)
                 ? nvl(c.getFacility().getFacilityName(), "Organization")
                 : "Organization";
-
+        System.out.println("=== DEBUG: returning header for courseId = " + c.getCourseId());
         return new CourseHeaderResponse(
                 c.getTitle(),
                 bylineName,

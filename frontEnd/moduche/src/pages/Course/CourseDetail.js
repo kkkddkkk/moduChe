@@ -8,71 +8,118 @@ import CourseDescription from "./CourseDescription";
 import QuickSearchBar from "./QuickSearchBar";
 import CourseSidebar from "./CourseSidebar";
 
-// ★ API 클라이언트
-import { getCourseHeader } from "../../api/courseAPI"; // 앞서 만든 함수
-import { mapHeaderToProps } from "../../api/coursemappers/courseMapper"; // 선택: 매퍼 사용 시
+// API 클라이언트
+import { getCourseHeader } from "../../api/courseAPI";
+import { mapHeaderToProps } from "../../api/coursemappers/courseMapper";
 
-// (예) 라우터에서 코스 ID 받는다고 가정
-export default function CourseDetail({ courseId = "1" }) {
+export default function CourseDetail({ courseId = "4" }) {
   const [loading, setLoading] = useState(true);
-  const [ui, setUi] = useState(null); // 헤더/사이드바에 뿌릴 UI 데이터 묶음
+  const [ui, setUi] = useState(null);
+  const [error, setError] = useState(null);
+
   const [sessionId, setSessionId] = useState("");
   const [date, setDate] = useState("");
   const [spotsLeft, setSpotsLeft] = useState(0);
 
-  // 1) 서버에서 헤더 데이터 가져오기
+  /** 1) 서버에서 헤더 데이터 가져오기 */
   useEffect(() => {
     let alive = true;
+
     (async () => {
       try {
+        setError(null);
+        setLoading(true);
+
+        console.log("📡 [CourseDetail] 요청 courseId =", courseId);
+
         const data = await getCourseHeader(courseId);
+        console.log("📨 [CourseDetail] 서버 응답 =", data);
+
         if (!alive) return;
 
-        // 매퍼로 UI-friendly 구조 변환
-        const mapped = mapHeaderToProps(data); // title/byline/period/sessions/dates...
+        const mapped = mapHeaderToProps(data);
+        console.log("🎨 [CourseDetail] mapped UI =", mapped);
+
         setUi(mapped);
 
-        // 2) 기본 선택값 주입
+        /** 기본값 처리 */
         const sid = mapped.defaultSessionId || mapped.sessions?.[0]?.id || "";
         const first = (sid && mapped.datesBySession[sid]?.[0]) || "";
+
         setSessionId(sid);
         setDate(first);
 
-        // 3) 사이드바 잔여좌석 (없으면 0)
-        //   - 서버 remaining이 세션별이면 sid 바뀔 때 업데이트하는 쪽이 더 정확함.
         const remainForSid =
           mapped.sessions?.find((s) => s.id === sid)?.remaining ?? 0;
         setSpotsLeft(remainForSid);
+      } catch (e) {
+        console.error("❌ [CourseDetail] 헤더 로드 실패:", e);
+        if (alive) setError(e);
       } finally {
         if (alive) setLoading(false);
       }
     })();
+
     return () => {
       alive = false;
     };
   }, [courseId]);
 
-  // 세션 변경 시 사이드바 남은 좌석 갱신 (세션별 remaining을 쓴다고 가정)
+  /** 2) 세션 변경 시 좌석/날짜 갱신 */
   useEffect(() => {
     if (!ui || !sessionId) return;
+
     const r = ui.sessions?.find((s) => s.id === sessionId)?.remaining ?? 0;
     setSpotsLeft(r);
-    // 날짜 기본값도 세션 바뀌면 첫 번째로
+
     const first = ui.datesBySession?.[sessionId]?.[0] || "";
     if (first) setDate(first);
   }, [sessionId, ui]);
 
-  if (loading || !ui) {
+  /** ====================
+   *  렌더링 분기 처리
+   * ==================== */
+
+  /** 로딩 상태 */
+  if (loading) {
     return (
       <Layout>
         <Toolbar />
         <Container maxWidth="xl">
-          <div>로딩중…</div>
+          <div style={{ padding: 20 }}>로딩중…</div>
         </Container>
       </Layout>
     );
   }
 
+  /** 에러 상태 */
+  if (error) {
+    return (
+      <Layout>
+        <Toolbar />
+        <Container maxWidth="xl">
+          <h2>강좌 정보를 불러오지 못했습니다.</h2>
+          <pre style={{ whiteSpace: "pre-wrap", color: "red" }}>
+            {String(error.message || error)}
+          </pre>
+        </Container>
+      </Layout>
+    );
+  }
+
+  /** 데이터 없음 */
+  if (!ui) {
+    return (
+      <Layout>
+        <Toolbar />
+        <Container maxWidth="xl">
+          <h2>강좌 데이터가 없습니다.</h2>
+        </Container>
+      </Layout>
+    );
+  }
+
+  /** 정상 렌더링 */
   const hasImage = true;
   const hasHeader = true;
   const hasDetail = true;
@@ -117,7 +164,7 @@ export default function CourseDetail({ courseId = "1" }) {
               minHeight: 0,
             }}
           >
-            {/* 상단: 이미지 | 헤더 */}
+            {/* 이미지 + 헤더 영역 */}
             <Box
               sx={{
                 display: "flex",
@@ -146,7 +193,7 @@ export default function CourseDetail({ courseId = "1" }) {
                   setDate={setDate}
                   showMeta={false}
                   emphasizeByline={true}
-                  // 서버 데이터 바인딩
+                  /* 백엔드 데이터 */
                   titleText={ui.titleText}
                   bylineName={ui.bylineName}
                   bylineOrg={ui.bylineOrg}
@@ -159,11 +206,10 @@ export default function CourseDetail({ courseId = "1" }) {
               </Box>
             </Box>
 
-            {/* 상세 */}
+            {/* 상세 설명 */}
             <Box sx={{ flex: 1, minHeight: 240, display: "flex" }}>
               <Box sx={{ flex: 1 }}>
                 <CourseDescription hasDetail={hasDetail} />
-                {/* 필요하면 CourseDescription에도 서버 description/tags/address 주입 */}
               </Box>
             </Box>
           </Box>

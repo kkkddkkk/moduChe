@@ -14,7 +14,8 @@ public class CourseHeaderController {
     private final CourseHeaderService headerService;
 
     @GetMapping("/{id}/header")
-    public ResponseEntity<CourseHeaderResponse> getHeader(@PathVariable Long id) {
+    public ResponseEntity<CourseHeaderResponse> getHeader(@PathVariable("id") Long id) {
         return ResponseEntity.ok(headerService.getHeader(id));
     }
+
 }

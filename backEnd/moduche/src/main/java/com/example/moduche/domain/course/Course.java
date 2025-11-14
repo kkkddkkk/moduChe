@@ -12,10 +12,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "course", indexes = {
-    @Index(name = "idx_course_created_at_desc", columnList = "created_at"),
-    @Index(name = "idx_course_status", columnList = "status")
-})
+@Table(
+	    name = "course",
+	    schema = "moduche",
+	    indexes = {
+	        @Index(name = "idx_course_created_at_desc", columnList = "created_at"),
+	        @Index(name = "idx_course_status", columnList = "status")
+	    }
+	)
 @EntityListeners(AuditingEntityListener.class)
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
@@ -27,7 +31,7 @@ public class Course {
 
     /** 관계들 */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "facility_id", foreignKey = @ForeignKey(name = "fk_course_facility"))
+    @JoinColumn(name = "facility_id", foreignKey = @ForeignKey(name = "fk_course_facility"),nullable = true )
     private Facility facility;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
