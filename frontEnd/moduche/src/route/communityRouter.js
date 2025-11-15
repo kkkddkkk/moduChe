@@ -4,46 +4,12 @@ const Loading = <div>Loading...</div>;
 const Home = lazy(() => import("../pages/Community/CommunityHomePage"));
 const Details = lazy(() => import("../pages/Community/CommunityDetailPage"));
 const Register = lazy(() => import("../pages/Community/CommunityRegisterPage"));
-
 const Manage = lazy(() => import("../pages/Community/CommunityManagePage"));
-const MemberManage = lazy(() => import("../pages/Community/CommunityMemberPage"));
+const MemberManage = lazy(() =>
+    import("../pages/Community/CommunityMemberPage")
+);
 
 export default function communityRouter() {
-  return [
-    {
-      path: "home",
-      element: (
-        <Suspense fallback={Loading}>
-          <Home />
-        </Suspense>
-      ),
-    },
-    {
-      path: "details/:id",
-      element: (
-        <Suspense fallback={Loading}>
-          <Details />
-        </Suspense>
-      ),
-    },
-    {
-      path: "register",
-      element: (
-        <Suspense fallback={Loading}>
-          <Register />
-        </Suspense>
-      ),
-    },
-    {
-      path: "manage",
-      element: (
-        <Suspense fallback={Loading}>
-          <Manage />
-        </Suspense>
-      ),
-    },
-  ];
-}
     return [
         {
             path: "home",
@@ -59,7 +25,7 @@ export default function communityRouter() {
                 <Suspense fallback={Loading}>
                     <Details />
                 </Suspense>
-            )
+            ),
         },
         {
             path: "register",
@@ -67,15 +33,7 @@ export default function communityRouter() {
                 <Suspense fallback={Loading}>
                     <Register />
                 </Suspense>
-            )
-        },
-        {
-            path: "register2",
-            element: (
-                <Suspense fallback={Loading}>
-                    <Register2 />
-                </Suspense>
-            )
+            ),
         },
         {
             path: "manage",
@@ -83,7 +41,7 @@ export default function communityRouter() {
                 <Suspense fallback={Loading}>
                     <Manage />
                 </Suspense>
-            )
+            ),
         },
         {
             path: "member-manage",
@@ -91,7 +49,7 @@ export default function communityRouter() {
                 <Suspense fallback={Loading}>
                     <MemberManage />
                 </Suspense>
-            )
-        }
-    ]
+            ),
+        },
+    ];
 }
