@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { SignInText } from './SignInText';
 import { Circle, Minus } from 'lucide-react';
 import EmailTest from './EmailTest';
+import { emailTest } from '../../api/accountAPI/signInAPI';
 
 const PersonalInfo = ({
   name,
@@ -165,6 +166,7 @@ const PersonalInfo = ({
           setEmailError={setEmailError}
           emailChecked={emailChecked}
           setEmailChecked={setEmailChecked}
+          checkLogic={emailTest}
         />
         <SignInText title={'전화번호'} />
         <Grid size={12} marginBottom={'5%'}>

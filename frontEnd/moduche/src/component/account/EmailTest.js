@@ -1,12 +1,13 @@
 import { OneAlignedButton } from '../common/Button';
 import { useEffect, useState } from 'react';
 import { useTheme } from '@emotion/react';
-import { Grid, TextField, useMediaQuery } from '@mui/material';
-import { codeTest, emailTest } from '../../api/accountAPI';
+import { Box, Grid, TextField, useMediaQuery } from '@mui/material';
 import Layout from '../common/Layout';
 import CustomTextField from '../common/CustomTextField';
 import { useApi } from '../../hook/useAPI';
 import Loading from '../common/Loading';
+import { emailTest } from '../../api/accountAPI/signInAPI';
+import { codeTest } from '../../api/accountAPI/EmailAPI';
 
 const EmailTest = ({
   email,
@@ -15,6 +16,8 @@ const EmailTest = ({
   setEmailError,
   emailChecked,
   setEmailChecked,
+  checkLogic,
+  setData,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -27,14 +30,17 @@ const EmailTest = ({
 
   const [codeError, setCodeError] = useState(false);
   const [disableEmail, setDisableEmail] = useState(false);
+  const [emailHelperText, setEmailHelperText] =
+    useState('이메일 형식이 올바르지 않습니다.');
 
-  const { callApi: checkEmailAPI, loading } = useApi(emailTest);
+  const { callApi: checkEmailAPI, loading } = useApi(checkLogic);
 
   const regEmail = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   useEffect(() => {
     //이메일 검증
     setEmailChecked(false);
+    setEmailHelperText('이메일 형식이 올바르지 않습니다.');
     if (email.length > 0 && !regEmail.test(email)) {
       setEmailError(true);
     } else {
@@ -48,11 +54,15 @@ const EmailTest = ({
     alert(res.message);
     if (res.status == 'OK') {
       setIsSent(true);
+      if (setData) {
+        setData(res.data);
+      }
     } else {
       setEmailError(true);
+      setEmailHelperText(res.message);
       return;
     }
-    
+
     setCount(300);
 
     if (timerId) clearInterval(timerId); // 이전 타이머 제거
@@ -87,9 +97,13 @@ const EmailTest = ({
       alert('확인되었습니다.');
       setCodeError(false);
       setDisableEmail(true);
-    } else {
+    } else if (res.data === 'NOT_FOUND') {
       setEmailChecked(false);
       alert('인증번호가 일치하지 않습니다.');
+      setCodeError(true);
+    } else {
+      setEmailChecked(false);
+      alert('만료된 인증번호입니다.');
       setCodeError(true);
     }
   };
@@ -103,7 +117,7 @@ const EmailTest = ({
           setData={setEmail}
           placeholder={'이메일'}
           error={emailError}
-          helperText={'이메일 형식이 올바르지 않습니다.'}
+          helperText={emailHelperText}
           padding={10}
           disabled={disableEmail}
         />

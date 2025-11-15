@@ -20,7 +20,8 @@ public interface DisabilityRepository extends JpaRepository<Disability, Long>{
     //김도경: disabilityCode로 Disability 찾기(dto)
     @Query("SELECT new com.example.moduche.domain.login.dto.DisabilityDTO"+
     "(d.disabilityId, d.disabilityCode) " +
-    "FROM Disability d WHERE LOWER(d.disabilityCode) LIKE LOWER(CONCAT('%', :disabilityCode, '%'))")
+    "FROM Disability d WHERE LOWER(d.disabilityCode) LIKE LOWER(CONCAT('%', :disabilityCode, '%')) "+
+    "ORDER BY d.disabilityCode ASC")
      List<DisabilityDTO> findByDisabilityCode(@Param("disabilityCode") String disabilityCode);
     
     //김도경: disabilitycode로 disability 찾기

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.example.moduche.domain.facility.Facility;
 import com.example.moduche.domain.facility.dto.FacilityListForSignInDTO;
 import com.example.moduche.domain.login.EmailVerification;
+import com.example.moduche.domain.myPage.dto.MyFacilityDTO;
 
 @Repository
 public interface FacilityRepository extends JpaRepository<Facility, Long>{
@@ -20,4 +21,6 @@ public interface FacilityRepository extends JpaRepository<Facility, Long>{
     "(f.facilityId, f.facilityName, f.facilityAddress) " +
     "FROM Facility f WHERE LOWER(f.facilityName) LIKE LOWER(CONCAT('%', :name, '%'))")
      List<FacilityListForSignInDTO> findAllNameAndLoca(@Param("name") String name);
+    
+
 }

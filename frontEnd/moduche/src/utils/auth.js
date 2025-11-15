@@ -2,6 +2,7 @@ import { jwtDecode } from "jwt-decode";
 
 //토큰 가져오기
 export const decodeToken = (token) => {
+  if(token===null) return null;
   try {
     return jwtDecode(token);
   } catch {

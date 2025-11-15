@@ -1,10 +1,7 @@
 package com.example.moduche.domain.login.controller;
 
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,15 +10,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.moduche.domain.facility.dto.FacilityListForSignInDTO;
-import com.example.moduche.domain.login.EmailVerification;
 import com.example.moduche.domain.login.dto.DisabilityDTO;
 import com.example.moduche.domain.login.dto.EmailTestDTO;
 import com.example.moduche.domain.login.dto.FacilitySignInDTO;
 import com.example.moduche.domain.login.dto.IdTestDTO;
 import com.example.moduche.domain.login.dto.IndividualSignInDTO;
-import com.example.moduche.domain.login.dto.VerifyRequestDTO;
-import com.example.moduche.domain.login.dto.VerifyResponseDTO;
-import com.example.moduche.domain.login.enums.VerifyStatus;
 import com.example.moduche.domain.login.repository.EmailVerificationRepository;
 import com.example.moduche.domain.login.service.EmailService;
 import com.example.moduche.domain.login.service.SignInService;
@@ -35,9 +28,9 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/signIn")
 public class SignInController {
 
-	private final EmailVerificationRepository emailVerificationRepository;
 	private final EmailService emailService;
 	private final SignInService signInService;
+	private final EmailVerificationRepository emailVerificationRepository;
 
 	@PostMapping("/idTest") // 아이디 중복검사
 	public Response idTest(@RequestBody IdTestDTO dto) {
@@ -48,28 +41,13 @@ public class SignInController {
 		return new Response(pass ? StatusEnum.OK : StatusEnum.CONFLICT, pass ? available : unavailable, null);
 	}
 
-	@PostMapping("/emailTest") // 이메일 발송
+	@PostMapping("/emailTest") // 이메일 중복검사 후 발송
 	public Response sendEmail(@RequestBody EmailTestDTO dto) {
 		boolean pass = signInService.emailTest(dto.getEmail());
 		String available = "인증 코드가 발송되었습니다.";
 		String unavailable = "이미 가입된 이메일입니다.";
-		if(pass) return new Response(StatusEnum.OK, available, signInService.sendCodeToEmail(dto.getEmail()));
+		if(pass) return new Response(StatusEnum.OK, available, emailService.sendCodeToEmail(dto.getEmail()));
 		else return new Response(StatusEnum.CONFLICT,unavailable, null);
-	}
-
-	@PostMapping("/test") // 인증코드 검증
-	public Response test(@RequestBody VerifyResponseDTO dto) {
-		VerifyStatus status = signInService.verifyTest(dto.getEmail(), dto.getCode());
-		Optional<EmailVerification> entityOp = emailVerificationRepository.findByEmail(dto.getEmail());
-
-		if (entityOp.isEmpty()) {
-			return new Response(StatusEnum.NO_CONTENT, "메일 주소 불일치", status);
-		} else {
-			EmailVerification entity = entityOp.get();
-			entity.setVerifyStatus(status);
-			emailVerificationRepository.save(entity);
-		}
-		return new Response(StatusEnum.OK, "인증 로직 성공", status);
 	}
 	
 	@GetMapping("/getFacilityList")
@@ -90,6 +68,8 @@ public class SignInController {
 	@PostMapping("/individual")
 	public Response individual(@RequestBody IndividualSignInDTO dto) throws Exception {
 		Long userId = signInService.individual(dto);
+		//인증코드 삭제
+		emailVerificationRepository.deleteByEmail(dto.getEmail());
 		return new Response(StatusEnum.OK, "회원가입 로직 성공",userId);
 	}
 	
@@ -97,6 +77,8 @@ public class SignInController {
 	@PostMapping("/facility")
 	public Response facility(@RequestBody FacilitySignInDTO dto) throws Exception {
 		Long userId = signInService.facility(dto);
+		//인증코드 삭제
+		emailVerificationRepository.deleteByEmail(dto.getEmail());
 		return new Response(StatusEnum.OK, "회원가입 로직 성공",userId);
 	}
 }

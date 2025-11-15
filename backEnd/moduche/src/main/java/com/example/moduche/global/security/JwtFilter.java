@@ -49,7 +49,7 @@ public class JwtFilter extends OncePerRequestFilter {
     	
     	if(token != null && jwtTokenProvider.validateToken(token)) {
     		String username = jwtTokenProvider.getUsername(token);
-    		String role = jwtTokenProvider.getRole(token);
+    		String role = "ROLE_"+jwtTokenProvider.getRole(token);
     		
     		List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
     		
