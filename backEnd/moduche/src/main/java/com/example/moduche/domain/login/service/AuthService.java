@@ -1,13 +1,9 @@
 package com.example.moduche.domain.login.service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +12,7 @@ import com.example.moduche.domain.login.RefreshToken;
 import com.example.moduche.domain.login.User;
 import com.example.moduche.domain.login.dto.LoginRequestDTO;
 import com.example.moduche.domain.login.dto.LoginResponseDTO;
+import com.example.moduche.domain.login.repository.EmailVerificationRepository;
 import com.example.moduche.domain.login.repository.RefreshTokenRepository;
 import com.example.moduche.global.security.JwtTokenProvider;
 import com.example.moduche.repository.UserRepository;
@@ -33,6 +30,7 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
+	private final EmailVerificationRepository emailVerificationRepository;
 	
 	//로그인 시도
 	public LoginResponseDTO login(LoginRequestDTO dto) {
@@ -59,15 +57,23 @@ public class AuthService {
 			return responseDTO;
 		}
 		
-		//refresh token 생성 후 DB에 저장
+		Optional<RefreshToken> tokenOp = refreshTokenRepository.findByUserName(dto.getLoginId());
 		String rawRefreshToken = jwtTokenProvider.createRefreshToken(user);
 		String hashedRefreshToken = DigestUtils.sha256Hex(rawRefreshToken);
-		RefreshToken refreshToken = RefreshToken.builder()
-				.username(user.getUsername())
-				.tokenHash(hashedRefreshToken)
-				.expire(LocalDateTime.now().plusDays(14L))
-				.build();
-		refreshTokenRepository.save(refreshToken);
+		RefreshToken refreshToken;
+		if(tokenOp.isEmpty()) {
+			//refresh token 생성 후 DB에 저장
+			refreshToken = RefreshToken.builder()
+					.username(user.getUsername())
+					.tokenHash(hashedRefreshToken)
+					.expire(LocalDateTime.now().plusDays(14L))
+					.build();
+			refreshTokenRepository.save(refreshToken);
+		}else {
+			refreshToken = tokenOp.get();
+			refreshToken.setExpire(LocalDateTime.now().plusDays(14L));
+			refreshToken.setTokenHash(hashedRefreshToken);
+		}
 		
 		//일치하면 토큰 포함 responseDTO return
 		LoginResponseDTO responseDTO = LoginResponseDTO.builder()
@@ -119,7 +125,7 @@ public class AuthService {
 		
 		String newAccessToken = jwtTokenProvider.createAccessToken(user);
 		responseDTO.setAccessToken(newAccessToken);
-		responseDTO.setAllSuccess(false);
+		responseDTO.setAllSuccess(true);
 		responseDTO.setMessage("accessToken이 재발급되었습니다.");
 		
 		return responseDTO;
@@ -129,4 +135,12 @@ public class AuthService {
 	public void deleteToken(String username) {
 		refreshTokenRepository.deleteByUserName(username);
 	}
+	
+	//비밀번호 변경
+	@Transactional
+	public void changePw(String username, String password) {
+		User user = userRepository.findByUserName(username).orElseThrow();
+		user.setPassword(passwordEncoder.encode(password));
+	}
+
 }

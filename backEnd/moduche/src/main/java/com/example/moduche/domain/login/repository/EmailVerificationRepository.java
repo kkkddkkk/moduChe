@@ -16,8 +16,15 @@ import com.example.moduche.domain.login.EmailVerification;
 public interface EmailVerificationRepository extends JpaRepository<EmailVerification, Long>{
 
 	//김도경: 만료된 코드 row 전체 삭제
+	@Modifying 
     @Query("DELETE FROM EmailVerification e WHERE e.expireTime <= :now")
-    int deleteExpiredCodes(@Param("now") LocalDateTime now);
+    void deleteExpiredCodes(@Param("now") LocalDateTime now);
+	
+	//김도경: 이메일로 row 삭제
+	@Transactional
+	@Modifying 
+    @Query("DELETE FROM EmailVerification e WHERE e.email = :email")
+    void deleteByEmail(@Param("email") String email);
     
     //김도경: 이메일로 row 찾기
     @Query("SELECT e FROM EmailVerification e WHERE e.email = :email")
