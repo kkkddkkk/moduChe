@@ -12,6 +12,14 @@ code {
     monospace;
 }
 
+.ql-toolbar svg, 
+.ql-picker svg, 
+.ql-editor svg {
+  width: 16px !important;
+  height: 16px !important;
+  display: inline-block !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

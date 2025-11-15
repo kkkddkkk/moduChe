@@ -4,12 +4,18 @@ import { CommunityRegisterFields } from "../../component/community/CommunityRegi
 import { Grid, useMediaQuery, useTheme } from "@mui/material";
 import { registerCommunity } from "../../api/communityAPI/communityAPI";
 import { useNavigate } from "react-router-dom";
+import ConfirmModal from "../../component/community/ConfirmModal";
 
 const CommunityRegisterPage = () => {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
     const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
+
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [modalTitle, setModalTitle] = useState("안내");
+    const [modalContent, setModalContent] = useState("내용");
+    const [modalEvent, setModalEvent] = useState(() => {});
 
     const [form, setForm] = useState({
         // 기본 정보
@@ -53,18 +59,85 @@ const CommunityRegisterPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // 해시태그 문자열 가공.
-        const processedTags = Array.isArray(form.hashtags)
-            ? form.hashtags.map((tag) => tag.replace(/^#/, "")).join(" ")
-            : form.hashtags;
+        // 동아리 이름 검사.
+        if (!form.name || form.name.trim().length > 30) {
+            setModalTitle("입력 오류");
+            setModalContent("동아리 이름은 30자 이내로 입력해주세요.");
+            setModalEvent(() => () => setOpenConfirm(false));
+            setOpenConfirm(true);
+            return;
+        }
 
-        // scheduleDetail 문자열 구성.
+        // 설립 목적 검사.
+        if (!form.purpose || form.purpose.trim().length > 30) {
+            setModalTitle("입력 오류");
+            setModalContent("설립 목적 및 취지는 30자 이내로 입력해주세요.");
+            setModalEvent(() => () => setOpenConfirm(false));
+            setOpenConfirm(true);
+            return;
+        }
+
+        // 활동 위치 검사.
+        if (!form.address || !form.addressDetail) {
+            setModalTitle("입력 누락");
+            setModalContent("활동 위치 및 상세 위치를 모두 입력해주세요.");
+            setModalEvent(() => () => setOpenConfirm(false));
+            setOpenConfirm(true);
+            return;
+        }
+
+        // 활동 일정 상세 검사.
         const scheduleDetail =
             form.scheduleType === "정기"
                 ? `${form.selectedWeeks.join(", ")} ${form.selectedDays.join(
                       ", "
                   )}`
                 : form.customDate;
+
+        if (!scheduleDetail || scheduleDetail.trim() === "") {
+            setModalTitle("입력 누락");
+            setModalContent("활동 일정 상세를 반드시 입력해주세요.");
+            setModalEvent(() => () => setOpenConfirm(false));
+            setOpenConfirm(true);
+            return;
+        }
+
+        // 제목 길이 검사.
+        if (!form.title || form.title.trim().length > 30) {
+            setModalTitle("입력 오류");
+            setModalContent("홍보글 제목은 30자 이내로 입력해주세요.");
+            setModalEvent(() => () => setOpenConfirm(false));
+            setOpenConfirm(true);
+            return;
+        }
+
+        // 해시태그 검사.
+        if (!form.hashtags || form.hashtags.length === 0) {
+            setModalTitle("입력 누락");
+            setModalContent("해시태그를 하나 이상 입력해주세요.");
+            setModalEvent(() => () => setOpenConfirm(false));
+            setOpenConfirm(true);
+            return;
+        }
+
+        // 이미지 검사.
+        if (
+            !form.representativeImage &&
+            (!form.images || form.images.length === 0)
+        ) {
+            setModalTitle("입력 누락");
+            setModalContent(
+                "대표 이미지 또는 활동 이미지를 최소 1개 이상 업로드해주세요."
+            );
+            setModalEvent(() => () => setOpenConfirm(false));
+            setOpenConfirm(true);
+            return;
+        }
+
+        // 해시태그 문자열 가공.
+        const processedTags = Array.isArray(form.hashtags)
+            ? form.hashtags.map((tag) => tag.replace(/^#/, "")).join(" ")
+            : form.hashtags;
 
         // SON DTO 생성.
         const dto = {
@@ -89,27 +162,27 @@ const CommunityRegisterPage = () => {
             new Blob([JSON.stringify(dto)], { type: "application/json" })
         );
 
-        if (form.representativeImage)
-            formData.append("representativeImage", form.representativeImage);
-
-        if (form.images?.length > 0) {
-            form.images.forEach((img) => formData.append("images", img));
-        }
-
-        console.log("최종 전송 FormData:", dto);
-
-        for (let pair of formData.entries()) {
-            console.log(pair[0], pair[1]);
-        }
+        form.images.forEach((img) => {
+            if (img.file) {
+                formData.append("images", img.file);
+            }
+        });
 
         // API 호출.
         try {
             const res = await registerCommunity(formData);
-            console.log("서버 응답:", res);
-            navigate("/community/home"); //임시.
+            setModalTitle("등록 완료");
+            setModalContent("동아리 등록 요청이 정상적으로 제출되었습니다.");
+            setModalEvent(() => () => {
+                setOpenConfirm(false);
+                navigate("/community/home");
+            });
+            setOpenConfirm(true);
         } catch (err) {
-            console.error("등록 실패:", err);
-            alert("등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            setModalTitle("등록 실패");
+            setModalContent("등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            setModalEvent(() => () => setOpenConfirm(false));
+            setOpenConfirm(true);
         }
     };
 
@@ -118,6 +191,7 @@ const CommunityRegisterPage = () => {
             <Grid size={isMobile || isTablet ? 0 : 2} />
             <Grid size={isMobile || isTablet ? 12 : 8}>
                 <RegisterFormBase
+                    type={"COMMUNITY"}
                     form={form}
                     setForm={setForm}
                     onChange={handleChange}
@@ -131,6 +205,14 @@ const CommunityRegisterPage = () => {
                             onChange={handleChange}
                         />
                     }
+                />
+
+                <ConfirmModal
+                    open={openConfirm}
+                    title={modalTitle}
+                    content={modalContent}
+                    onConfirm={modalEvent}
+                    onClose={() => setOpenConfirm(false)}
                 />
             </Grid>
 

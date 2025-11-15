@@ -1,49 +1,67 @@
 import { useEffect, useState } from "react";
-import { Toolbar } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import PostDetailComponent from "../../component/community/PostDetailComponent";
-
 import {
     fetchCommunityPostDetail,
     fetchCommunityPostComments,
+    createCommunityPostComment,
+    deleteCommunityPostComment,
 } from "../../api/communityAPI/communityAPI";
+import { getUsernameFromToken } from "../../utils/auth";
+import ConfirmModal from "../../component/community/ConfirmModal";
 
 const CommunityDetailPage = () => {
     const { id: postId } = useParams();
     const navigate = useNavigate();
 
-    // 상태 정의
+    const currentUser = getUsernameFromToken(
+        localStorage.getItem("accessToken")
+    );
+
+    //게시글 및 댓글 상태.
     const [post, setPost] = useState(null);
     const [comments, setComments] = useState([]);
+    const [inputValue, setInputValue] = useState("");
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
-    // 게시글 상세 조회
+    //확인 팝업.
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [modalTitle, setModalTitle] = useState("안내");
+    const [modalContent, setModalContent] = useState("내용");
+    const [modalEvent, setModalEvent] = useState(() => {});
+    const [targetCommentId, setTargetCommentId] = useState(null);
+    const [deleting, setDeleting] = useState(false);
+
+    //게시글 상세 불러오기.
     const loadPostDetail = async () => {
         try {
-            const data = await fetchCommunityPostDetail(postId, true);
+            const data = await fetchCommunityPostDetail(postId);
             setPost(data);
         } catch (err) {
-            console.error("게시물 정보를 불러오지 못했습니다:", err);
-            alert("게시물 정보를 불러오지 못했습니다.");
-            navigate("/community"); // 예외 시 목록으로 이동
+            console.error("게시글 정보를 불러오지 못했습니다:", err);
+            navigate("/community");
         }
     };
 
-    console.log(post);
-    // 댓글 목록 조회
-    const loadComments = async (pageNum = 0) => {
+    //댓글 목록 불러오기.
+    const loadComments = async (reset = false) => {
+        if (loading) return;
+        setLoading(true);
         try {
-            setLoading(true);
-            const data = await fetchCommunityPostComments(postId, pageNum, 10);
-            if (pageNum === 0) {
-                setComments(data.content);
-            } else {
-                setComments((prev) => [...prev, ...data.content]);
-            }
-            setHasMore(!data.last);
-            setPage(data.number);
+            const res = await fetchCommunityPostComments(
+                postId,
+                reset ? 0 : page,
+                10
+            );
+            const newComments = res?.content ?? [];
+            setComments((prev) =>
+                reset ? newComments : [...prev, ...newComments]
+            );
+            setHasMore(!res.last);
+            setPage((prev) => (reset ? 1 : prev + 1));
         } catch (err) {
             console.error("댓글 조회 실패:", err);
         } finally {
@@ -51,38 +69,87 @@ const CommunityDetailPage = () => {
         }
     };
 
-    // 마운트 시 게시글 + 댓글 1페이지 불러오기
-    useEffect(() => {
-        if (postId) {
-            loadPostDetail();
-            loadComments(0);
+    const confirmDeleteComment = async (commentId) => {
+        if (!commentId || deleting) return;
+        setDeleting(true);
+        try {
+            await deleteCommunityPostComment(commentId, currentUser);
+            setComments((prev) =>
+                prev.filter((c) => c.commentId !== commentId)
+            );
+        } catch (err) {
+            console.error("댓글 삭제 실패:", err);
+            alert("댓글 삭제에 실패했습니다.");
+        } finally {
+            setDeleting(false);
+            setOpenConfirm(false);
+            setTargetCommentId(null);
         }
-    }, [postId]);
-
-    // 댓글 더보기 버튼 클릭
-    const handleLoadMoreComments = () => {
-        if (!loading && hasMore) {
-            loadComments(page + 1);
+    };
+    //댓글 작성.
+    const handleSubmitComment = async (userId) => {
+        if (!inputValue.trim() || submitting) return;
+        setSubmitting(true);
+        try {
+            const newComment = await createCommunityPostComment(
+                postId,
+                userId,
+                inputValue.trim()
+            );
+            setComments((prev) => [...prev, newComment]);
+            setInputValue("");
+        } catch (err) {
+            console.error("댓글 작성 실패:", err);
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    return (
-        <>
-            {post ? (
-                <PostDetailComponent
-                    data={post}
-                    comments={comments}
-                    onLoadMoreComments={handleLoadMoreComments}
-                    hasMore={hasMore}
-                    loading={loading}
+    const handleDeleteComment = (commentId) => {
+        setTargetCommentId(commentId);
+        setModalTitle("댓글 삭제");
+        setModalContent("해당 댓글을 삭제하시겠습니까?");
+        setModalEvent(() => () => confirmDeleteComment(commentId));
+        setOpenConfirm(true);
+    };
 
-                />
-            ) : (
-                <p style={{ textAlign: "center", marginTop: "2rem" }}>
-                    로딩 중...
-                </p>
-            )}
+    const handleReportComment = () => {};
+
+    //마운트 시 게시글 + 댓글 1페이지 로드.
+    useEffect(() => {
+        if (postId) {
+            loadPostDetail();
+            loadComments(true);
+        }
+    }, [postId]);
+
+    return post ? (
+        <>
+            <PostDetailComponent
+                data={post}
+                comments={comments}
+                hasMore={hasMore}
+                loading={loading}
+                inputValue={inputValue}
+                onChange={setInputValue}
+                onSubmit={handleSubmitComment}
+                currentUserId={currentUser}
+                onDeleteComment={(id) => handleDeleteComment(id)}
+                onReportComment={(id) => handleReportComment(id)}
+                onLoadMore={loadComments}
+                submitting={submitting}
+            />
+
+            <ConfirmModal
+                open={openConfirm}
+                title={modalTitle}
+                content={modalContent}
+                onConfirm={modalEvent}
+                onClose={() => setOpenConfirm(false)}
+            />
         </>
+    ) : (
+        <p style={{ textAlign: "center", marginTop: "2rem" }}>로딩 중...</p>
     );
 };
 

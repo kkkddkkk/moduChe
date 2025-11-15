@@ -7,6 +7,7 @@ const Register = lazy(() => import("../pages/Community/CommunityRegisterPage"));
 const Register2 = lazy(() => import("../pages/Community/CourseRegisterPage"));
 
 const Manage = lazy(() => import("../pages/Community/CommunityManagePage"));
+const MemberManage = lazy(() => import("../pages/Community/CommunityMemberPage"));
 
 
 export default function communityRouter() {
@@ -48,6 +49,14 @@ export default function communityRouter() {
             element: (
                 <Suspense fallback={Loading}>
                     <Manage />
+                </Suspense>
+            )
+        },
+        {
+            path: "member-manage",
+            element: (
+                <Suspense fallback={Loading}>
+                    <MemberManage />
                 </Suspense>
             )
         }

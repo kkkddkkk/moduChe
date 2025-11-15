@@ -12,8 +12,9 @@ import lombok.*;
 @Builder
 public class CommunityPostCommentDTO {
 	private Long commentId; // 댓글 식별 번호.
+    private Long postId;
+	private String userId; // 작성자 로그인 아이디.
 	private String authorName; // 작성자 이름.
-	private Long authorId; // 작성자 아이디.
 	private String content; // 내용.
 	private LocalDateTime createdAt; // 작성일.
 }

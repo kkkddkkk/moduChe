@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
@@ -51,5 +52,9 @@ public class AWSService {
 	public String toPreSignedUrl(String objectKey, Duration ttl) {
 		URL url = signer.sign(objectKey, ttl);
 		return url.toString();
+	}
+
+	public void deletePhoto(String key) {
+		s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
 	}
 }

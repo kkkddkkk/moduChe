@@ -22,6 +22,8 @@ import { RegisterTitle } from "./RegisterTitle";
 import { OneAlignedButton } from "../common/Button";
 import { CalendarCheck, ClipboardList } from "lucide-react";
 import { PreviewRounded } from "@mui/icons-material";
+import { useUser } from '../../context/UserContext';
+
 
 export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
     const theme = useTheme();
@@ -32,6 +34,8 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
     const [selectedDays, setSelectedDays] = useState([]);
     const [selectedWeeks, setSelectedWeeks] = useState([]);
     const [customDate, setCustomDate] = useState("");
+
+    const {name} = useUser();
 
     useEffect(() => {
         if (form) {
@@ -83,6 +87,8 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
         setForm((prev) => ({ ...prev, customDate: value }));
     };
 
+    console.log(name);
+
     return (
         <>
             <Grid size={isMobile || isTablet ? 12 : 6}>
@@ -124,12 +130,16 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
                     <Grid size={12} sx={{ mb: 3 }}>
                         <RegisterTitle title={"설립자 이름"} />
                         <CustomTextField
-                            data={form.founder || ""}
-                            setData={(value) =>
-                                setForm((prev) => ({ ...prev, founder: value }))
-                            }
-                            placeholder="이름"
+                            data={name || "미확인"}
+                            setData={() => {}}
+                            disabled={true}
                             padding={10}
+                            sx={{
+                                "& .MuiInputBase-input.Mui-disabled": {
+                                    WebkitTextFillColor: "#555", // 시각적으로 회색 톤
+                                    cursor: "not-allowed",
+                                },
+                            }}
                         />
                     </Grid>
                     {/* 동아리 이름 */}
