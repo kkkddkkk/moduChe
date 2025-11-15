@@ -9,6 +9,8 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CommunityPostPhoto {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

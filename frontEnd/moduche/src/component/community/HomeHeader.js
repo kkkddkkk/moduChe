@@ -22,7 +22,6 @@ const HomeHeader = () => {
                     "0 0 10px 2px rgba(11, 36, 71, 0.5), 0 0 10px 2px rgba(11, 36, 71, 0.5)",
                 borderBottomLeftRadius: 35,
                 borderBottomRightRadius: 35,
-                mb: 3,
             }}
         >
             <Box
@@ -47,20 +46,21 @@ const HomeHeader = () => {
                         color: "white",
                     }}
                 >
-                    동아리 둘러보기
+                    {"동아리 둘러보기"}
                 </Typography>
             </Box>
 
             <Typography
                 sx={{
                     opacity: 0.9,
-                    fontSize: isMobile ? 15 : isTablet ? 18 : 21,
+                    fontSize: isMobile ? 12 : isTablet ? 18 : 21,
                     textAlign: "right",
                     whiteSpace: "nowrap",
                     color: "white",
                 }}
             >
-                함께하는 운동, 즐거운 모임을 찾아보세요
+                
+                {isMobile ? "함께하는 즐거운 운동" : "함께하는 운동, 즐거운 모임을 찾아보세요"}
             </Typography>
         </Box>
     );

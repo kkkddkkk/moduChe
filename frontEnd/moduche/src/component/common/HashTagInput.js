@@ -17,9 +17,8 @@ export const HashTagInput = ({ form, setForm }) => {
     const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
     const [input, setInput] = useState("");
 
-    // ✅ form.hashtags 기본값 보정
+    //form.hashtags 기본값 보정
     const hashtags = Array.isArray(form?.hashtags) ? form.hashtags : [];
-
     const handleKeyDown = (e) => {
         if (e.key === " " || e.key === "Enter") {
             e.preventDefault();

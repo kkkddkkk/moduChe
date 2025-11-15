@@ -6,6 +6,7 @@ const Details = lazy(() => import("../pages/Community/CommunityDetailPage"));
 const Register = lazy(() => import("../pages/Community/CommunityRegisterPage"));
 
 const Manage = lazy(() => import("../pages/Community/CommunityManagePage"));
+const MemberManage = lazy(() => import("../pages/Community/CommunityMemberPage"));
 
 export default function communityRouter() {
   return [
@@ -42,4 +43,55 @@ export default function communityRouter() {
       ),
     },
   ];
+}
+    return [
+        {
+            path: "home",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Home />
+                </Suspense>
+            ),
+        },
+        {
+            path: "details/:id",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Details />
+                </Suspense>
+            )
+        },
+        {
+            path: "register",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Register />
+                </Suspense>
+            )
+        },
+        {
+            path: "register2",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Register2 />
+                </Suspense>
+            )
+        },
+        {
+            path: "manage",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Manage />
+                </Suspense>
+            )
+        },
+        {
+            path: "member-manage",
+            element: (
+                <Suspense fallback={Loading}>
+                    <MemberManage />
+                </Suspense>
+            )
+        }
+    ]
 }

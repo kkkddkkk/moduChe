@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Box,
     Button,
@@ -19,6 +19,14 @@ export const ImageUpload = ({ form, setForm }) => {
     const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
     const [images, setImages] = useState([]);
 
+    //이미지 초회 렌더링
+    useEffect(() => {
+        if (!form?.images) return;
+
+        // form.images는 [{file, url}] 형식이라고 가정
+        setImages(form.images);
+    }, [form.images]);
+
     // 이미지 추가.
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
@@ -28,14 +36,14 @@ export const ImageUpload = ({ form, setForm }) => {
             file,
             url: URL.createObjectURL(file),
         }));
+
         const updatedImages = [...images, ...newImages];
 
         setImages(updatedImages);
 
         setForm((prev) => ({
             ...prev,
-            images: updatedImages.map((img) => img.file),
-            representativeImage: updatedImages[0]?.file || null,
+            images: updatedImages,
         }));
 
         e.target.value = null;
@@ -44,15 +52,14 @@ export const ImageUpload = ({ form, setForm }) => {
     // 이미지 삭제.
     const handleDelete = (index) => {
         const updatedImages = images.filter((_, i) => i !== index);
+
         setImages(updatedImages);
 
         setForm((prev) => ({
             ...prev,
-            images: updatedImages.map((img) => img.file),
-            representativeImage: updatedImages[0]?.file || null,
+            images: updatedImages,
         }));
     };
-
     const isMax = images.length >= 3;
 
     return (

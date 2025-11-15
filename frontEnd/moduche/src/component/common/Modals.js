@@ -1,92 +1,186 @@
-import { Box, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Modal, Slide } from '@mui/material'
+import {
+    Box,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Grid,
+    IconButton,
+    Modal,
+    Slide,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import Layout from './Layout';
+import Layout from "./Layout";
 
 export const NormalModal = ({ open, close, title, children }) => {
-  return (
-    <Dialog open={open} onClose={close} fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            minHeight: "50vh",
-            borderRadius: 3,
-          },
-        },
-      }}>
-      <DialogTitle align='center' sx={{ padding: 3 }}>{title}</DialogTitle>
-      <DialogActions>
-        <IconButton
-          aria-label="close"
-          onClick={close}
-          sx={{ position: "absolute", right: 8, top: 8 }}
+    return (
+        <Dialog
+            open={open}
+            onClose={close}
+            fullWidth
+            slotProps={{
+                paper: {
+                    sx: {
+                        minHeight: "50vh",
+                        borderRadius: 3,
+                    },
+                },
+            }}
         >
-          <CloseIcon />
-        </IconButton>
-      </DialogActions>
-      <DialogContent>
-        {children}
-      </DialogContent>
-    </Dialog>
-  )
+            <DialogTitle align="center" sx={{ padding: 3 }}>
+                {title}
+            </DialogTitle>
+            <DialogActions>
+                <IconButton
+                    aria-label="close"
+                    onClick={close}
+                    sx={{ position: "absolute", right: 8, top: 8 }}
+                >
+                    <CloseIcon />
+                </IconButton>
+            </DialogActions>
+            <DialogContent>{children}</DialogContent>
+        </Dialog>
+    );
 };
 
-export const SlideModal = ({ open, close, title, children, position, height = "40", width = "30", headerHeight = 0 }) => {
+export const NormalModalExpand = ({
+    open,
+    close,
+    title,
+    children,
+    content,
+}) => {
+    return (
+        <Dialog
+            open={open}
+            onClose={close}
+            fullWidth
+            slotProps={{
+                paper: {
+                    sx: {
+                        minHeight: "50vh",
+                        maxHeight: "70vh",
+                        borderRadius: 3,
+                    },
+                },
+            }}
+        >
+            {!title && (
+                <DialogTitle align="center" sx={{ padding: 3 }}>
+                    {title}
+                </DialogTitle>
+            )}
 
-  const slideDirection = (position) => {
-    switch (position) {
-      case "right": return "left";
-      case "left": return "right";
-      case "top": return "down";
-      case "bottom": return "up";
-      default: return "";
-    }
-  }
-  return (
-    <Modal open={open} onClose={close} >
-      <Slide direction={slideDirection(position)} in={open} mountOnEnter unmountOnExit>
-        <Box sx={{
-          height: position === "left" || position === "right" ? "100vh" : `${height}vh`,
-          width: position === "left" || position === "right" ? `${width}vw` : "100vw",
-          position: "fixed",
-          left: position === "left" ? 0 : "",
-          right: position === "right" ? 0 : "",
-          top: position === "top" ? (headerHeight !== 0 ? `${headerHeight}px` : 0) : "",
-          bottom: position === "bottom" ? 0 : "",
-          bgcolor: "background.paper",
-          display: "flex",
-          justifyContent: "-moz-initial",
-          alignItems: "stretch",
-          flexDirection: "column",
-          flexWrap: "wrap",
-        }}>
-          <Layout space={2} padding={2}>
-            <Grid size={12} margin={position === "left" || position === "right" ? "5% 0" : "3% 0"} display={"flex"} justifyContent={"center"}>
-              {title}
-            </Grid>
-            <Grid size={12}>
-              <Layout>
-                {children}
-              </Layout>
-            </Grid>
-          </Layout>
-          <DialogActions>
-            <IconButton
-              aria-label="close"
-              onClick={close}
-              sx={{
-                position: "absolute",
-                right: position!=="right"?8:false,
-                top: position!=="top"?8:false,
-                left: position==="right"?8:false,
-                bottom: position==="top"?8:false
-              }}
+            <DialogActions>
+                <IconButton
+                    aria-label="close"
+                    onClick={close}
+                    sx={{ position: "absolute", right: 8, top: 8 }}
+                >
+                    <CloseIcon />
+                </IconButton>
+            </DialogActions>
+
+            <DialogContent>{content ?? children}</DialogContent>
+        </Dialog>
+    );
+};
+
+export const SlideModal = ({
+    open,
+    close,
+    title,
+    children,
+    position,
+    height = "40",
+    width = "30",
+    headerHeight = 0,
+}) => {
+    const slideDirection = (position) => {
+        switch (position) {
+            case "right":
+                return "left";
+            case "left":
+                return "right";
+            case "top":
+                return "down";
+            case "bottom":
+                return "up";
+            default:
+                return "";
+        }
+    };
+    return (
+        <Modal open={open} onClose={close}>
+            <Slide
+                direction={slideDirection(position)}
+                in={open}
+                mountOnEnter
+                unmountOnExit
             >
-              <CloseIcon />
-            </IconButton>
-          </DialogActions>
-
-        </Box>
-      </Slide>
-    </Modal>
-  )
+                <Box
+                    sx={{
+                        height:
+                            position === "left" || position === "right"
+                                ? "100vh"
+                                : `${height}vh`,
+                        width:
+                            position === "left" || position === "right"
+                                ? `${width}vw`
+                                : "100vw",
+                        position: "fixed",
+                        left: position === "left" ? 0 : "",
+                        right: position === "right" ? 0 : "",
+                        top:
+                            position === "top"
+                                ? headerHeight !== 0
+                                    ? `${headerHeight}px`
+                                    : 0
+                                : "",
+                        bottom: position === "bottom" ? 0 : "",
+                        bgcolor: "background.paper",
+                        display: "flex",
+                        justifyContent: "-moz-initial",
+                        alignItems: "stretch",
+                        flexDirection: "column",
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <Layout space={2} padding={2}>
+                        <Grid
+                            size={12}
+                            margin={
+                                position === "left" || position === "right"
+                                    ? "5% 0"
+                                    : "3% 0"
+                            }
+                            display={"flex"}
+                            justifyContent={"center"}
+                        >
+                            {title}
+                        </Grid>
+                        <Grid size={12}>
+                            <Layout>{children}</Layout>
+                        </Grid>
+                    </Layout>
+                    <DialogActions>
+                        <IconButton
+                            aria-label="close"
+                            onClick={close}
+                            sx={{
+                                position: "absolute",
+                                right: position !== "right" ? 8 : false,
+                                top: position !== "top" ? 8 : false,
+                                left: position === "right" ? 8 : false,
+                                bottom: position === "top" ? 8 : false,
+                            }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </DialogActions>
+                </Box>
+            </Slide>
+        </Modal>
+    );
 };
