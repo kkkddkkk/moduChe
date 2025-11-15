@@ -33,10 +33,13 @@ const Auth = () => {
   };
 
   useEffect(() => {
+    document.body.style.overflow ='hidden';
     if (!done) return;
     if (!checked) {
       alert('비밀번호가 일치하지 않습니다.');
       setPasswordError(true);
+    }else{
+      document.body.style.overflow ='auto';
     }
   }, [done, checked]);
 

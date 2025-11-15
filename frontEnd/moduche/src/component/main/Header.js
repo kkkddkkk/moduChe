@@ -15,7 +15,12 @@ import { SlideModal } from '../common/Modals';
 import { useEffect, useRef, useState } from 'react';
 import CustomTextField from '../common/CustomTextField';
 import { useNavigate } from 'react-router-dom';
-import { getUsernameFromToken, isLoggedIn, isTokenExpired } from '../../utils/auth';
+import {
+  getRoleFromToken,
+  getUsernameFromToken,
+  isLoggedIn,
+  isTokenExpired,
+} from '../../utils/auth';
 import { User } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useApi } from '../../hook/useAPI';
@@ -29,11 +34,12 @@ const Header = () => {
   const [openSearch, setOpenSearch] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [search, setSearch] = useState('');
+  const [role, setRole] = useState('');
   const navigate = useNavigate();
 
   const accessToken = localStorage.getItem('accessToken');
   const { loggedIn, setLoggedIn } = useUser();
-  const name = localStorage.getItem("name");
+  const name = localStorage.getItem('name');
 
   const menuColor = theme.palette.primary.main;
 
@@ -42,6 +48,9 @@ const Header = () => {
       setHeaderHeight(headerRef.current.clientHeight);
     }
     setLoggedIn(isLoggedIn());
+    if(isLoggedIn()){
+      setRole(getRoleFromToken(accessToken).toLowerCase());
+    }
   }, []);
 
   const moveTo = (item) => {
@@ -98,11 +107,18 @@ const Header = () => {
       </IconButton>
     );
   };
+  const moveToMyPage = () => {
+    if (role.includes('admin')) {
+      navigate('/admin/dashboard');
+      return;
+    }
+    navigate('/myPage/account');
+  };
 
   return (
     <>
       <AppBar position="sticky" ref={headerRef} sx={{ zIndex: 1500 }}>
-        <Loading open={loading} text='로그아웃 처리 중입니다.'/>
+        <Loading open={loading} text="로그아웃 처리 중입니다." />
         <Toolbar sx={{ backgroundColor: theme.palette.background.default }}>
           <Box component={'div'} flexGrow={1}>
             <Box
@@ -143,7 +159,7 @@ const Header = () => {
                   <HeaderMenu onClick={logout}>로그아웃</HeaderMenu>
                   <MenuBar />
                   <User style={{ color: menuColor }} />
-                  <HeaderMenu onClick={() => navigate('/myPage/account')}>
+                  <HeaderMenu onClick={moveToMyPage}>
                     {name}님
                   </HeaderMenu>
                 </>
