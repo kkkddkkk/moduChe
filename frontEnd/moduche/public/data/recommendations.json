@@ -1,0 +1,34 @@
+[
+    {
+        "disabilityType": "시각장애",
+        "recommendMvmNm": "실내 자전거",
+        "intensity": "중강도",
+        "frequency": "주 3-5회",
+        "duration": "30-60분",
+        "videoUrl": "https://www.youtube.com/watch?v=iScU_s5a9eI"
+    },
+    {
+        "disabilityType": "시각장애",
+        "recommendMvmNm": "요가",
+        "intensity": "저강도",
+        "frequency": "주 2-3회",
+        "duration": "45-60분",
+        "videoUrl": "https://www.youtube.com/watch?v=4pLUleLdwY4"
+    },
+    {
+        "disabilityType": "지체장애",
+        "recommendMvmNm": "수중 에어로빅",
+        "intensity": "저-중강도",
+        "frequency": "주 2-3회",
+        "duration": "30-45분",
+        "videoUrl": "https://www.youtube.com/watch?v=m7z11p_s28A"
+    },
+    {
+        "disabilityType": "지체장애",
+        "recommendMvmNm": "밴드 저항 운동",
+        "intensity": "저강도",
+        "frequency": "주 3-4회",
+        "duration": "20-30분",
+        "videoUrl": "https://www.youtube.com/watch?v=r5o0i1c2b_o"
+    }
+]

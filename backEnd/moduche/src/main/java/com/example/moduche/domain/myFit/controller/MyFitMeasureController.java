@@ -1,5 +1,6 @@
 package com.example.moduche.domain.myFit.controller;
 
+import com.example.moduche.domain.myFit.dto.measure.MyFitMeasureRequestDTO;
 import com.example.moduche.domain.myFit.dto.measure.MyFitMeasureResponseDTO;
 import com.example.moduche.domain.myFit.service.MyFitMeasureService;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,8 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,15 +22,21 @@ public class MyFitMeasureController {
 
     private final MyFitMeasureService measureService;
 
-    /** ÃøÁ¤ µ¥ÀÌÅÍ ÀúÀå */
+    /** âœ… ì „ì²´ ì¶”ì²œ ìš´ë™ ì¡°íšŒ */
     @GetMapping
     public ResponseEntity<List<MyFitMeasureResponseDTO>> getAllMeasures() {
         return ResponseEntity.ok(measureService.getAllMeasureResults());
     }
 
-    /** Æ¯Á¤ »ç¿ëÀÚ ÃøÁ¤ °á°ú Á¶È¸ */
+    /** âœ… ID ê¸°ì¤€ ì¶”ì²œ ìš´ë™ ìƒì„¸ ì¡°íšŒ */
     @GetMapping("/{id}")
     public ResponseEntity<MyFitMeasureResponseDTO> getMeasureById(@PathVariable Long id) {
         return ResponseEntity.ok(measureService.getMeasureResultById(id));
+    }
+    
+    @PostMapping
+    public ResponseEntity<MyFitMeasureResponseDTO> saveMeasure(
+            @RequestBody MyFitMeasureRequestDTO dto) {
+        return ResponseEntity.ok(measureService.saveMeasure(dto));
     }
 }

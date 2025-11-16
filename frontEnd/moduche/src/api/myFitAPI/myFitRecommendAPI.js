@@ -3,7 +3,7 @@ import api from "../axiosInstance";
 // 특정 장애 유형 기준 추천 운동 리스트
 export const getRecommendationsByDisability = async (disabilityType) => {
     const response = await api.get(
-        `/myfit/recommend?disability=${disabilityType}`
+        `/myfit/recommend/disability?disability=${disabilityType}`
     );
     return response.data;
 };

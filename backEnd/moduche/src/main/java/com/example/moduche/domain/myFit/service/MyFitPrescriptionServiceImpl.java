@@ -1,21 +1,21 @@
 package com.example.moduche.domain.myFit.service;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
+import com.example.moduche.domain.myFit.dto.prescription.MyFitPrescriptionRequestDTO;
 import com.example.moduche.domain.myFit.dto.prescription.MyFitPrescriptionResponseDTO;
 import com.example.moduche.domain.myFit.entity.MyFitPrescription;
 import com.example.moduche.domain.myFit.repository.MyFitPrescriptionRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MyFitPrescriptionServiceImpl implements MyFitPrescriptionService {
-	
-	private final MyFitPrescriptionRepository prescriptionRepository;
+
+    private final MyFitPrescriptionRepository prescriptionRepository;
 
     @Override
     public List<MyFitPrescriptionResponseDTO> getAllPrescriptions() {
@@ -27,7 +27,22 @@ public class MyFitPrescriptionServiceImpl implements MyFitPrescriptionService {
     @Override
     public MyFitPrescriptionResponseDTO getPrescriptionById(Long id) {
         MyFitPrescription prescription = prescriptionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("√≥πÊ ¡§∫∏∏¶ √£¿ª ºˆ æ¯Ω¿¥œ¥Ÿ."));
+                .orElseThrow(() -> new IllegalArgumentException("Ìï¥Îãπ Ï≤òÎ∞©ÏùÑ Ï∞æÏùÑ Ïàò ÏóÜÏäµÎãàÎã§."));
         return MyFitPrescriptionResponseDTO.fromEntity(prescription);
+    }
+
+    @Override
+    @Transactional
+    public MyFitPrescriptionResponseDTO generatePrescription(MyFitPrescriptionRequestDTO requestDTO) {
+        MyFitPrescription prescription = new MyFitPrescription();
+        prescription.setTroblTyNm(requestDTO.getDisability());
+        // TODO: Implement business logic to generate prescription content based on requestDTO
+        prescription.setPrescriptionContent(
+            String.format("Generated prescription for disability '%s' with cardio=%.2f and strength=%.2f",
+                requestDTO.getDisability(), requestDTO.getCardio(), requestDTO.getStrength())
+        );
+
+        MyFitPrescription savedPrescription = prescriptionRepository.save(prescription);
+        return MyFitPrescriptionResponseDTO.fromEntity(savedPrescription);
     }
 }

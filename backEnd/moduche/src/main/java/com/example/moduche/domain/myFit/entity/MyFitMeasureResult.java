@@ -2,6 +2,7 @@ package com.example.moduche.domain.myFit.entity;
 
 import java.time.LocalDate;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +19,9 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "my_fit_measure_result")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class MyFitMeasureResult extends MyFitBaseEntity {
 
     @Id
@@ -37,4 +41,7 @@ public class MyFitMeasureResult extends MyFitBaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "measure_id")
     private MyFitMeasure measure;
+    
+    @OneToOne(mappedBy = "measureResult", cascade = CascadeType.ALL, orphanRemoval = true)
+    private MyFitPrescription prescription;
 }

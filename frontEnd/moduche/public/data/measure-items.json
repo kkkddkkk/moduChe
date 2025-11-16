@@ -1,0 +1,26 @@
+[
+    {
+        "itemName": "악력",
+        "unit": "kg"
+    },
+    {
+        "itemName": "윗몸일으키기",
+        "unit": "회"
+    },
+    {
+        "itemName": "앉아 윗몸 앞으로 굽히기",
+        "unit": "cm"
+    },
+    {
+        "itemName": "왕복 오래달리기",
+        "unit": "회"
+    },
+    {
+        "itemName": "50m 달리기",
+        "unit": "초"
+    },
+    {
+        "itemName": "제자리 멀리뛰기",
+        "unit": "cm"
+    }
+]

@@ -1,16 +1,13 @@
 package com.example.moduche.domain.myFit.controller;
 
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.example.moduche.domain.myFit.dto.prescription.MyFitPrescriptionRequestDTO;
 import com.example.moduche.domain.myFit.dto.prescription.MyFitPrescriptionResponseDTO;
 import com.example.moduche.domain.myFit.service.MyFitPrescriptionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/myfit/prescription")
@@ -19,14 +16,21 @@ public class MyFitPrescriptionController {
 
     private final MyFitPrescriptionService prescriptionService;
 
-    /** √¯¡§ µ•¿Ã≈Õ∏¶ ±‚π›¿∏∑Œ øÓµø √≥πÊ ª˝º∫ */
+    /** Ï†ÑÏ≤¥ Ï≤òÎ∞© Ï°∞Ìöå */
     @GetMapping
     public ResponseEntity<List<MyFitPrescriptionResponseDTO>> getAllPrescriptions() {
         return ResponseEntity.ok(prescriptionService.getAllPrescriptions());
     }
 
+    /** ID Í∏∞Ï§Ä Ï≤òÎ∞© Ï°∞Ìöå */
     @GetMapping("/{id}")
-    public ResponseEntity<MyFitPrescriptionResponseDTO> getPrescriptionById(@PathVariable Long id) {
+    public ResponseEntity<MyFitPrescriptionResponseDTO> getPrescriptionById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(prescriptionService.getPrescriptionById(id));
+    }
+
+    /** Ï≤òÎ∞© ÏÉùÏÑ± */
+    @PostMapping
+    public ResponseEntity<MyFitPrescriptionResponseDTO> generatePrescription(@RequestBody MyFitPrescriptionRequestDTO requestDTO) {
+        return ResponseEntity.ok(prescriptionService.generatePrescription(requestDTO));
     }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,7 +20,9 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "my_fit_prescription")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class MyFitPrescription extends MyFitBaseEntity {
 
     @Id
@@ -33,7 +36,7 @@ public class MyFitPrescription extends MyFitBaseEntity {
     @Column(columnDefinition = "TEXT")
     private String prescriptionContent;
     
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "result_id")
     private MyFitMeasureResult measureResult;
     

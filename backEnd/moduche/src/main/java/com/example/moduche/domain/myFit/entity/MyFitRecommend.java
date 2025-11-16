@@ -19,7 +19,9 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "my_fit_recommend")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class MyFitRecommend extends MyFitBaseEntity {
 
     @Id
@@ -39,6 +41,6 @@ public class MyFitRecommend extends MyFitBaseEntity {
     @JoinColumn(name = "prescription_id")
     private MyFitPrescription prescription;
 
-    @OneToMany(mappedBy = "recommend", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "recommend", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MyFitMvmContent> contents = new ArrayList<>();
 }
