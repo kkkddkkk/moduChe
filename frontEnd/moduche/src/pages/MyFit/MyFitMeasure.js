@@ -29,8 +29,13 @@ const MyFitMeasure = () => {
     // ---------------------------
     const fetchResults = async () => {
         try {
-            const data = await getAllMeasureResults();
-            setMeasureResults(data);
+            // 백엔드에서 중첩된 구조의 데이터를 반환 (List<MyFitMeasureResponseDTO>)
+            const nestedData = await getAllMeasureResults();
+
+            // flatMap을 사용하여 중첩된 results 배열을 단일 배열로 평탄화
+            const flatData = nestedData.flatMap(measure => measure.results || []);
+            
+            setMeasureResults(flatData);
         } catch (error) {
             setError("측정 결과를 불러오는 데 실패했습니다.");
             console.error("Error fetching measure results:", error);
@@ -77,13 +82,25 @@ const MyFitMeasure = () => {
     // ---------------------------
     const handleSave = async () => {
         try {
-            await saveMeasureResult({
-                itemName: form.itemName,
-                score: form.score,
-                unit: form.unit,
-                grade: null, // 옵션: grade 계산 로직 이후 추가 가능
+            // 백엔드 MyFitMeasureRequestDTO 구조에 맞게 요청 데이터를 구성
+            const requestData = {
+                userId: 1, // TODO: 실제 사용자 ID로 교체 필요
+                centerName: "모두체", // TODO: 실제 센터 이름으로 교체 필요
+                measurePlaceFlagNm: "체력인증센터", // 예시값
+                measureAge: 30, // 예시값
+                inputFlagNm: "직접입력", // 예시값
                 measureDate: new Date().toISOString().slice(0, 10),
-            });
+                results: [ // 결과를 배열로 감싸기
+                    {
+                        itemName: form.itemName,
+                        score: parseFloat(form.score), // 숫자로 변환
+                        unit: form.unit,
+                        grade: null, // 옵션: grade 계산 로직 이후 추가 가능
+                    },
+                ],
+            };
+
+            await saveMeasureResult(requestData);
 
             alert("저장되었습니다.");
 
