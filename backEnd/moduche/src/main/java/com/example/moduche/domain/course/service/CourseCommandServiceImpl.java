@@ -13,6 +13,9 @@ import com.example.moduche.global.security.JwtTokenProvider;
 import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,39 +27,45 @@ public class CourseCommandServiceImpl implements CourseCommandService {
     private final CourseTypeRepository courseTypeRepository;
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
-    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     @Transactional
-    public CourseCreateResponse createCourse(CourseCreateRequest dto) {
+    public CourseCreateResponse createCourse(CourseCreateRequest req) {
 
-    	 String username = jwtTokenProvider.getUsername(username);
-         if (username == null) {
-             throw new IllegalStateException("인증 정보가 없습니다. (username null)");
-         }
+        // 1) SecurityContext에서 인증 정보 꺼내기
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("인증 정보가 없습니다. (SecurityContext authentication null)");
+        }
 
-         // 2) username 기반으로 User 조회 (❌ findById 쓰지 말 것)
-         User creator = userRepository.findByUserName(username)
-                 .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다: " + username));
+        String username = authentication.getName();
 
-         // 3) 코스 타입 조회 (null 안 들어가게 방어)
-         CourseType courseType = null;
-         if (req.getCourseType() != null && !req.getCourseType().isBlank()) {
-             courseType = courseTypeRepository.findById(req.getCourseType())
-                     .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 코스 타입: " + req.getCourseType()));
-         }
+        // 2) username 기반 User 조회
+        User creator = userRepository.findByUserName(username)
+                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다: " + username));
 
-        // 4) Course 엔티티 생성
+        // 3) 코스 타입 조회 (nullable)
+        CourseType courseType = null;
+        if (req.getTypeCode() != null && !req.getTypeCode().isBlank()) {
+            courseType = courseTypeRepository.findById(req.getTypeCode())
+                    .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 코스 타입: " + req.getTypeCode()));
+        }
+
+        // 4) Facility 조회
+        Facility facility = facilityRepository.findById(req.getFacilityId())
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 시설 ID: " + req.getFacilityId()));
+
+        // 5) Course 엔티티 생성
         Course course = Course.builder()
-                .title(dto.getTitle())
-                .summary(dto.getSummary())
-                .description(dto.getDescription())
+                .title(req.getTitle())
+                .summary(req.getSummary())
+                .description(req.getDescription())
                 .createdBy(creator)
                 .facility(facility)
                 .courseType(courseType)
-                .maxParticipants(dto.getMaxParticipants())
-                .format(Course.CourseFormat.valueOf(dto.getFormat()))
-                .status(Course.CourseStatus.valueOf(dto.getStatus()))
+                .maxParticipants(req.getMaxParticipants())
+                .format(Course.CourseFormat.valueOf(req.getFormat()))
+                .status(Course.CourseStatus.valueOf(req.getStatus()))
                 .viewCount(0L)
                 .build();
 
@@ -65,3 +74,5 @@ public class CourseCommandServiceImpl implements CourseCommandService {
         return new CourseCreateResponse(course.getCourseId(), "강좌 생성 완료");
     }
 }
+
+
