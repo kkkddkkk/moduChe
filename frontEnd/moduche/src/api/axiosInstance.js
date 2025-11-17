@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isLoggedIn } from '../utils/auth';
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api',
@@ -12,13 +13,16 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-// 응답 인터셉터 / (예) 에러 핸들링
 const apiNoInterceptor = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080/api',
   headers: {
@@ -27,11 +31,13 @@ const apiNoInterceptor = axios.create({
   withCredentials: true, // 쿠키/세션 인증 필요시
 });
 
+// 응답 인터셉터 / (예) 에러 핸들링
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isTokenError = error.response?.status === 401 || error.response?.status === 403;
+    const isTokenError = !isLoggedIn();
+      // error.response?.status === 401 || error.response?.status === 403;
 
     // 401이면서 재시도 안 한 요청만
     if (isTokenError && !originalRequest._retry) {

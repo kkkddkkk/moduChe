@@ -27,6 +27,10 @@ const FacilityCreateWindow = lazy(() =>
   import('../pages/Admin/FacilityCreateWindow'),
 );
 
+const NoticeCreateWindow = lazy(() =>
+  import('../pages/Admin/NoticeCreateWindow'),
+);
+
 const root = createBrowserRouter([
   {
     path: '/',
@@ -132,6 +136,22 @@ const root = createBrowserRouter([
             element: (
               <Suspense fallback={Loading}>
                 <FacilityCreateWindow />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'notices/new',
+            element: (
+              <Suspense fallback={Loading}>
+                <NoticeCreateWindow />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'notices/update/:noticeId',
+            element: (
+              <Suspense fallback={Loading}>
+                <NoticeCreateWindow />
               </Suspense>
             ),
           },
