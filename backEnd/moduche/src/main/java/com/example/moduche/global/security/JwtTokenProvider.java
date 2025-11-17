@@ -98,4 +98,6 @@ public class JwtTokenProvider {
         return Jwts.parserBuilder().setSigningKey(getSigningKey()).build()
                 .parseClaimsJws(token).getBody().getExpiration();
     }
+
+	
 }
