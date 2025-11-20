@@ -48,7 +48,7 @@ const Header = () => {
       setHeaderHeight(headerRef.current.clientHeight);
     }
     setLoggedIn(isLoggedIn());
-    if(isLoggedIn()){
+    if (isLoggedIn()) {
       setRole(getRoleFromToken(accessToken).toLowerCase());
     }
   }, []);
@@ -120,7 +120,13 @@ const Header = () => {
       <AppBar position="sticky" ref={headerRef} sx={{ zIndex: 1500 }}>
         <Loading open={loading} text="로그아웃 처리 중입니다." />
         <Toolbar sx={{ backgroundColor: theme.palette.background.default }}>
-          <Box component={'div'} flexGrow={1}>
+          <Box
+            component={'div'}
+            display={'flex'}
+            justifyContent={'space-between'}
+            alignItems={'center'}
+            flexGrow={1}
+          >
             <Box
               component={'img'}
               src={`/logo/MODUCHE_LOGO.png`}
@@ -135,47 +141,51 @@ const Header = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
-          </Box>
-
-          <HeaderMenu onClick={clickSearchButton}>검색하기</HeaderMenu>
-          <HeaderIcon onClick={clickSearchButton}>
-            <SearchIcon sx={{ color: menuColor, fontWeight: 'bold' }} />
-          </HeaderIcon>
-          {!isMdUp ? (
-            <HeaderIcon>
-              {' '}
-              <MenuIcon />
-            </HeaderIcon>
-          ) : (
+            <HeaderMenu onClick={()=>navigate(`/notice`)}>공지사항</HeaderMenu>
             <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center', // 세로 가운데 정렬
-                gap: 1, // 항목 간 간격
-              }}
+              display={'flex'}
+              justifyContent={'center'}
+              alignItems={'center'}
             >
-              {loggedIn ? (
-                <>
-                  <HeaderMenu onClick={logout}>로그아웃</HeaderMenu>
-                  <MenuBar />
-                  <User style={{ color: menuColor }} />
-                  <HeaderMenu onClick={moveToMyPage}>
-                    {name}님
-                  </HeaderMenu>
-                </>
+              <HeaderMenu onClick={clickSearchButton}>검색하기</HeaderMenu>
+              <HeaderIcon onClick={clickSearchButton}>
+                <SearchIcon sx={{ color: menuColor, fontWeight: 'bold' }} />
+              </HeaderIcon>
+              {!isMdUp ? (
+                <HeaderIcon>
+                  {' '}
+                  <MenuIcon />
+                </HeaderIcon>
               ) : (
-                <>
-                  <HeaderMenu onClick={() => moveTo('login')}>
-                    로그인
-                  </HeaderMenu>
-                  <MenuBar />
-                  <HeaderMenu onClick={() => moveTo('joinUs')}>
-                    회원가입
-                  </HeaderMenu>
-                </>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center', // 세로 가운데 정렬
+                    gap: 1, // 항목 간 간격
+                  }}
+                >
+                  {loggedIn ? (
+                    <>
+                      <HeaderMenu onClick={logout}>로그아웃</HeaderMenu>
+                      <MenuBar />
+                      <User style={{ color: menuColor }} />
+                      <HeaderMenu onClick={moveToMyPage}>{name}님</HeaderMenu>
+                    </>
+                  ) : (
+                    <>
+                      <HeaderMenu onClick={() => moveTo('login')}>
+                        로그인
+                      </HeaderMenu>
+                      <MenuBar />
+                      <HeaderMenu onClick={() => moveTo('joinUs')}>
+                        회원가입
+                      </HeaderMenu>
+                    </>
+                  )}
+                </Box>
               )}
             </Box>
-          )}
+          </Box>
         </Toolbar>
       </AppBar>
       <SlideModal

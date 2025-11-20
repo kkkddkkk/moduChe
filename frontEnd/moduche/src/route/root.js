@@ -8,6 +8,7 @@ import myFitRouter from './myFitRouter';
 import myPageRouter from './myPageRouter';
 import adminRouter from './adminRouter';
 import communityRouter from './communityRouter';
+import noticeRouter from './noticeRouter';
 
 const Loading = <div>Loading...</div>;
 const Main = lazy(() => import('../pages/Main/Main'));
@@ -52,6 +53,15 @@ const root = createBrowserRouter([
             <Main />
           </Suspense>
         ),
+      },
+      {
+        path: 'notice',
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: noticeRouter(),
       },
       {
         path: 'account',

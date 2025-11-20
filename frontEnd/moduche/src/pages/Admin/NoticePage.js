@@ -1,5 +1,5 @@
 // src/pages/Admin/FacilityPage.js
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -18,21 +18,14 @@ import {
   InputAdornment,
   Button,
   Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   useTheme,
 } from '@mui/material';
 
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import DownloadIcon from '@mui/icons-material/FileDownload';
 import AddIcon from '@mui/icons-material/AddBusiness';
 
-import axios from 'axios';
-import { API_SERVER_HOST, AUTH } from '../../component/common/Variables';
 import Paper from '../../component/common/Paper';
 import { fetchNotice } from '../../api/admin/NoticeAPI';
 import { useApi } from '../../hook/useAPI';
@@ -44,12 +37,6 @@ function FacilityPage() {
   const theme = useTheme();
 
   // 라벨 매핑
-  const FACILITY_TYPE_LABEL = {
-    REHAB_CENTER: '필라테스',
-    AQUA_THERAPY: '수중 재활',
-    SPORTS_GYM: '장애인 체육관',
-  };
-
   const STATUS_LABEL = {
     PINNED: '상단 고정',
     ACTIVATED: '일반',
@@ -63,15 +50,8 @@ function FacilityPage() {
   };
 
   const customStatus = (isPinned, isVisible) => {
-    if (isPinned) {
-      console.log('PINNED');
-      console.log(isPinned);
-      return 'PINNED';
-    } else {
-      console.log(isVisible ? 'ACTIVATED' : 'DEACTIVATED');
-      console.log(isVisible);
-      return isVisible ? 'ACTIVATED' : 'DEACTIVATED';
-    }
+    if (isPinned) return 'PINNED';
+    else return isVisible ? 'ACTIVATED' : 'DEACTIVATED';
   };
 
   // 필터 상태
@@ -82,21 +62,43 @@ function FacilityPage() {
   // 페이지네이션
   const [page, setPage] = useState(1);
   const rowsPerPage = 5;
+  const [totalPage, setTotalPage] = useState(0);
 
-  // 상세 다이얼로그용 상태
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
   const { callApi: fetchNoticeAPI } = useApi(fetchNotice);
   const fetch = async () => {
-    const res = await fetchNoticeAPI(page - 1, rowsPerPage);
-    const content = res.data.content;
+    let isVisible = null;
+    let isPinned = null;
+    switch (statusFilter) {
+      case 'PINNED': {
+        isVisible = true;
+        isPinned = true;
+        break;
+      }
+      case 'ACTIVATED': {
+        isVisible = true;
+        isPinned = false;
+        break;
+      }
+      case 'DEACTIVATED': {
+        isVisible = false;
+        isPinned = false;
+        break;
+      }
+    }
+    const res = await fetchNoticeAPI(
+      page - 1,
+      rowsPerPage,
+      keyword,
+      isVisible,
+      isPinned,
+    );
+    const content = res.data.notices;
     setList(content);
-    console.log(content);
+    setTotalPage(res.data.totalPages);
   };
-  // keyword 바뀌면 재검색
   useEffect(() => {
     fetch();
-  }, [keyword]);
+  }, [page]);
 
   const handleRefresh = () => {
     fetch();
@@ -128,7 +130,7 @@ function FacilityPage() {
     const top = (viewportH - h) / 2 / (systemZoom || 1) + dualScreenTop;
 
     window.open(
-      `/admin-window/notices/${update?`update/${noticeId}`:"new"}`,
+      `/admin-window/notices/${update ? `update/${noticeId}` : 'new'}`,
       'NoticeCreateWindow',
       `scrollbars=yes,width=${w},height=${h},top=${top},left=${left},noopener,noreferrer`,
     );
@@ -184,17 +186,6 @@ function FacilityPage() {
     });
   }, [list, keyword, statusFilter, typeFilter]);
 
-  const pagedList = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredList.slice(start, start + rowsPerPage);
-  }, [filteredList, page]);
-
-  const pageCount = Math.ceil(filteredList.length / rowsPerPage) || 1;
-
-  useEffect(() => {
-    setPage(1);
-  }, [keyword, statusFilter, typeFilter, list]);
-
   const activeCount = useMemo(
     () => filteredList.filter((f) => f.status === 'ACTIVE').length,
     [filteredList],
@@ -204,485 +195,413 @@ function FacilityPage() {
     [filteredList],
   );
 
-  // 상세 다이얼로그 내부 한 줄
-  const DetailRow = ({ label, value }) => (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{ py: 0.75, borderBottom: '1px solid', borderColor: 'divider' }}
-    >
-      <Typography
-        sx={{
-          width: 90,
-          minWidth: 90,
-          fontSize: '0.85rem',
-          color: 'text.secondary',
-          fontWeight: 600,
-        }}
-      >
-        {label}
-      </Typography>
-      <Typography
-        sx={{
-          flexGrow: 1,
-          fontSize: '0.9rem',
-          wordBreak: 'break-all',
-        }}
-      >
-        {value || '-'}
-      </Typography>
-    </Stack>
-  );
-
   return (
-    <>
-      <Paper
+    <Paper
+      sx={{
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: 2,
+        boxShadow: 1,
+      }}
+    >
+      {/* 상단 영역 */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="h5"
+          fontWeight={700}
+          sx={{
+            lineHeight: 1.3,
+            color: 'primary.main',
+            mb: 1,
+            textAlign: { xs: 'left', sm: 'center' },
+          }}
+        >
+          공지사항 관리
+        </Typography>
+
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            lineHeight: 1.5,
+            textAlign: { xs: 'left', sm: 'center' },
+          }}
+        >
+          DB notice 테이블 기준으로 시설 정보를 조회·관리합니다.
+        </Typography>
+      </Box>
+
+      <Divider sx={{ mb: 3 }} />
+
+      {/* 옵션 바 */}
+      <Box
         sx={{
-          p: 3,
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: { xs: 'column', md: 'row' },
+          flexWrap: 'wrap',
+          alignItems: { xs: 'stretch', md: 'center' },
+          justifyContent: 'space-between',
+          rowGap: 2,
+          columnGap: 2,
+          p: 2,
+          mb: 2,
+          border: '1px solid',
+          borderColor: 'divider',
           borderRadius: 2,
-          boxShadow: 1,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+          bgcolor: (theme) =>
+            theme.palette.mode === 'dark'
+              ? theme.palette.background.default
+              : theme.palette.grey[50],
         }}
       >
-        {/* 상단 영역 */}
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            sx={{
-              lineHeight: 1.3,
-              color: 'primary.main',
-              mb: 1,
-              textAlign: { xs: 'left', sm: 'center' },
-            }}
-          >
-            공지사항 관리
-          </Typography>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              lineHeight: 1.5,
-              textAlign: { xs: 'left', sm: 'center' },
-            }}
-          >
-            DB notice 테이블 기준으로 시설 정보를 조회·관리합니다.
-          </Typography>
-        </Box>
-
-        <Divider sx={{ mb: 3 }} />
-
-        {/* 옵션 바 */}
+        {/* 왼쪽 필터 영역 */}
         <Box
           sx={{
             display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
             flexWrap: 'wrap',
-            alignItems: { xs: 'stretch', md: 'center' },
-            justifyContent: 'space-between',
-            rowGap: 2,
-            columnGap: 2,
-            p: 2,
-            mb: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2,
-            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-            bgcolor: (theme) =>
-              theme.palette.mode === 'dark'
-                ? theme.palette.background.default
-                : theme.palette.grey[50],
+            alignItems: 'center',
+            rowGap: 1.5,
+            columnGap: 1.5,
+            minWidth: 0,
           }}
         >
-          {/* 왼쪽 필터 영역 */}
-          <Box
+          <TextField
+            select
+            label="상태"
+            size="small"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
             sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              rowGap: 1.5,
-              columnGap: 1.5,
-              minWidth: 0,
-            }}
-          >
-            <TextField
-              select
-              label="상태"
-              size="small"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              sx={{
-                minWidth: 130,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  backgroundColor: 'background.paper',
-                  '& fieldset': { borderColor: 'divider' },
-                  '&:hover fieldset': {
-                    borderColor: 'primary.light',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                  },
+              minWidth: 130,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                backgroundColor: 'background.paper',
+                '& fieldset': { borderColor: 'divider' },
+                '&:hover fieldset': {
+                  borderColor: 'primary.light',
                 },
-                '& .MuiInputLabel-root': {
-                  fontSize: '0.75rem',
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
                 },
-              }}
-            >
-              <MenuItem value="ALL">전체</MenuItem>
-              <MenuItem value="PINNED">상단 고정</MenuItem>
-              <MenuItem value="ACTIVATED">활성화</MenuItem>
-              <MenuItem value="DEACTIVATED">비활성화</MenuItem>
-            </TextField>
-
-            <TextField
-              size="small"
-              placeholder="제목 / 공지ID / 내용 검색"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              sx={{
-                minWidth: { xs: '100%', md: 260 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 5,
-                  backgroundColor: 'background.paper',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                  '& fieldset': {
-                    borderColor: 'transparent',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: 'primary.light',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon
-                      sx={{
-                        color: 'text.disabled',
-                        fontSize: 20,
-                      }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
-
-          {/* 오른쪽: 통계 + 액션 */}
-          <Stack
-            direction="row"
-            alignItems="center"
-            flexWrap="wrap"
-            spacing={1.5}
-            sx={{
-              width: { xs: '100%', md: 'auto' },
-              justifyContent: {
-                xs: 'space-between',
-                md: 'flex-end',
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: '0.75rem',
               },
             }}
           >
-            <Box sx={{ textAlign: 'right', mr: 1 }}>
-              <Typography
-                sx={{
-                  fontSize: '0.8rem',
-                  color: 'text.secondary',
-                  fontWeight: 400,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                총 {filteredList.length}건
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  color: 'text.primary',
-                }}
-              >
-                활성화 {activeCount}건 / 비활성화 {recruitingCount}건
-              </Typography>
-            </Box>
+            <MenuItem value="ALL">전체</MenuItem>
+            <MenuItem value="PINNED">상단 고정</MenuItem>
+            <MenuItem value="ACTIVATED">활성화</MenuItem>
+            <MenuItem value="DEACTIVATED">비활성화</MenuItem>
+          </TextField>
 
-            <Button
-              size="small"
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleCreateOrUpdateNotice}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                px: 1.5,
-                py: 1,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              새 공지 등록
-            </Button>
-
-            <Tooltip title="새로고침">
-              <IconButton
-                size="small"
-                onClick={handleRefresh}
-                sx={{
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  '&:hover': {
-                    bgcolor: 'primary.main',
-                    color: '#fff',
-                    borderColor: 'primary.main',
-                  },
-                  width: 32,
-                  height: 32,
-                }}
-              >
-                <RefreshIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
+          <TextField
+            size="small"
+            placeholder="제목 / 공지ID / 내용 검색"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            sx={{
+              minWidth: { xs: '100%', md: 260 },
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 5,
+                backgroundColor: 'background.paper',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                '& fieldset': {
+                  borderColor: 'transparent',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'primary.light',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                },
+              },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: 'text.disabled',
+                      fontSize: 20,
+                    }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button variant="contained" onClick={handleRefresh}>
+            검색
+          </Button>
         </Box>
 
-        {/* 테이블 (연락처 컬럼 없음) */}
-        <Box
+        {/* 오른쪽: 통계 + 액션 */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          flexWrap="wrap"
+          spacing={1.5}
           sx={{
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            boxShadow: 0,
-            maxHeight: 480,
-            overflow: 'auto',
-            '&::-webkit-scrollbar': { width: 6, height: 6 },
-            '&::-webkit-scrollbar-thumb': {
-              bgcolor: 'rgba(0,0,0,0.2)',
-              borderRadius: 3,
+            width: { xs: '100%', md: 'auto' },
+            justifyContent: {
+              xs: 'space-between',
+              md: 'flex-end',
             },
           }}
         >
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow
-                sx={{
-                  backgroundColor: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? theme.palette.grey[900]
-                      : theme.palette.grey[100],
-                  '& th': {
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                    fontSize: '0.8rem',
-                    color: 'text.primary',
-                  },
-                }}
-              >
-                <TableCell sx={{ minWidth: 60, textAlign: 'center' }}>
-                  공지ID
-                </TableCell>
-                <TableCell sx={{ minWidth: 300, textAlign: 'center' }}>
-                  제목
-                </TableCell>
-                <TableCell sx={{ minWidth: 100, textAlign: 'center' }}>
-                  작성(수정)일
-                </TableCell>
-                <TableCell sx={{ minWidth: 60, textAlign: 'center' }}>
-                  조회수
-                </TableCell>
-                <TableCell sx={{ minWidth: 90, textAlign: 'center' }}>
-                  작성자
-                </TableCell>
-                <TableCell sx={{ minWidth: 90, textAlign: 'center' }}>
-                  상태
-                </TableCell>
-                <TableCell align="right" sx={{ minWidth: 80 }}>
-                  액션
+          <Box sx={{ textAlign: 'right', mr: 1 }}>
+            <Typography
+              sx={{
+                fontSize: '0.8rem',
+                color: 'text.secondary',
+                fontWeight: 400,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              총 {filteredList.length}건
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                color: 'text.primary',
+              }}
+            >
+              활성화 {activeCount}건 / 비활성화 {recruitingCount}건
+            </Typography>
+          </Box>
+
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleCreateOrUpdateNotice(false)}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              px: 1.5,
+              py: 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            새 공지 등록
+          </Button>
+
+          <Tooltip title="새로고침">
+            <IconButton
+              size="small"
+              onClick={handleRefresh}
+              sx={{
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': {
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  borderColor: 'primary.main',
+                },
+                width: 32,
+                height: 32,
+              }}
+            >
+              <RefreshIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Box>
+
+      {/* 테이블 (연락처 컬럼 없음) */}
+      <Box
+        sx={{
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: 0,
+          maxHeight: 480,
+          overflow: 'auto',
+          '&::-webkit-scrollbar': { width: 6, height: 6 },
+          '&::-webkit-scrollbar-thumb': {
+            bgcolor: 'rgba(0,0,0,0.2)',
+            borderRadius: 3,
+          },
+        }}
+      >
+        <Table stickyHeader size="small">
+          <TableHead>
+            <TableRow
+              sx={{
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.grey[900]
+                    : theme.palette.grey[100],
+                '& th': {
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  fontSize: '0.8rem',
+                  color: 'text.primary',
+                },
+              }}
+            >
+              <TableCell sx={{ minWidth: 60, textAlign: 'center' }}>
+                공지ID
+              </TableCell>
+              <TableCell sx={{ minWidth: 300, textAlign: 'center' }}>
+                제목
+              </TableCell>
+              <TableCell sx={{ minWidth: 100, textAlign: 'center' }}>
+                작성(수정)일
+              </TableCell>
+              <TableCell sx={{ minWidth: 60, textAlign: 'center' }}>
+                조회수
+              </TableCell>
+              <TableCell sx={{ minWidth: 90, textAlign: 'center' }}>
+                작성자
+              </TableCell>
+              <TableCell sx={{ minWidth: 90, textAlign: 'center' }}>
+                상태
+              </TableCell>
+              <TableCell align="right" sx={{ minWidth: 80 }}>
+                액션
+              </TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {list.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={8}
+                  align="center"
+                  sx={{
+                    py: 6,
+                    color: 'text.secondary',
+                  }}
+                >
+                  조건에 맞는 공지가 없습니다.
                 </TableCell>
               </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {pagedList.length === 0 ? (
-                <TableRow>
+            ) : (
+              list.map((row) => (
+                <TableRow
+                  key={row.noticeId}
+                  hover
+                  sx={{
+                    '&:last-of-type td': {
+                      borderBottom: 0,
+                    },
+                    transition: 'background-color 0.15s ease-in-out',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.03)',
+                    },
+                  }}
+                >
                   <TableCell
-                    colSpan={8}
                     align="center"
                     sx={{
-                      py: 6,
+                      fontFamily: 'monospace',
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    {row.noticeId}
+                  </TableCell>
+
+                  <TableCell
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    {row.title}
+                  </TableCell>
+
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: '0.8rem',
+                      whiteSpace: 'nowrap',
                       color: 'text.secondary',
                     }}
                   >
-                    조건에 맞는 공지가 없습니다.
+                    {row.updatedAt
+                      ? dateFormat(row.updatedAt)
+                      : dateFormat(row.createdAt)}
                   </TableCell>
-                </TableRow>
-              ) : (
-                pagedList.map((row) => (
-                  <TableRow
-                    key={row.noticeId}
-                    hover
+
+                  <TableCell
+                    align="center"
                     sx={{
-                      '&:last-of-type td': {
-                        borderBottom: 0,
-                      },
-                      transition: 'background-color 0.15s ease-in-out',
-                      '&:hover': {
-                        backgroundColor: 'rgba(0,0,0,0.03)',
-                      },
+                      fontSize: '0.8rem',
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontFamily: 'monospace',
-                        fontSize: '0.8rem',
-                      }}
-                    >
-                      {row.noticeId}
-                    </TableCell>
+                    {row.viewCount}
+                  </TableCell>
 
-                    <TableCell
-                      sx={{
-                        fontWeight: 500,
-                        fontSize: '0.9rem',
-                      }}
-                    >
-                      {row.title}
-                    </TableCell>
+                  <TableCell
+                    align="center"
+                    sx={{
+                      fontSize: '0.75rem',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    {row.createdByName}
+                  </TableCell>
 
-                    <TableCell
-                      align="center"
+                  <TableCell align="center">
+                    <Chip
+                      label={
+                        STATUS_LABEL[customStatus(row.pinned, row.visible)]
+                      }
+                      size="small"
+                      color={
+                        STATUS_COLOR[customStatus(row.pinned, row.visible)] ||
+                        'default'
+                      }
                       sx={{
-                        fontSize: '0.8rem',
-                        whiteSpace: 'nowrap',
-                        color: 'text.secondary',
+                        fontWeight: 600,
+                        fontSize: '0.7rem',
+                        px: 1,
                       }}
-                    >
-                      {row.updatedAt
-                        ? dateFormat(row.updatedAt)
-                        : dateFormat(row.createdAt)}
-                    </TableCell>
+                    />
+                  </TableCell>
 
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: '0.8rem',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {row.viewCount}
-                    </TableCell>
-
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: '0.75rem',
-                        color: 'text.secondary',
-                      }}
-                    >
-                      {row.createdByName}
-                    </TableCell>
-
-                    <TableCell align="center">
-                      <Chip
-                        label={
-                          STATUS_LABEL[customStatus(row.pinned, row.visible)]
-                        }
+                  <TableCell align="right">
+                    <Tooltip title="상세 보기">
+                      <IconButton
                         size="small"
-                        color={
-                          STATUS_COLOR[customStatus(row.pinned, row.visible)] ||
-                          'default'
-                        }
-                        sx={{
-                          fontWeight: 600,
-                          fontSize: '0.7rem',
-                          px: 1,
-                        }}
-                      />
-                    </TableCell>
+                        onClick={() => handleView(row.noticeId)}
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Box>
 
-                    <TableCell align="right">
-                      <Tooltip title="상세 보기">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleView(row.noticeId)}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </Box>
-
-        {/* 페이지네이션 */}
-        <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
-          <Pagination
-            count={pageCount}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            color="primary"
-            size="small"
-            siblingCount={1}
-            boundaryCount={1}
-            showFirstButton
-            showLastButton
-          />
-        </Stack>
-      </Paper>
-
-      {/* 시설 상세 다이얼로그 */}
-      <Dialog
-        open={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ fontWeight: 700, pb: 1.5 }}>
-          시설 상세 정보
-        </DialogTitle>
-        <DialogContent dividers sx={{ px: 3 }}>
-          {selected ? (
-            <Box sx={{ pt: 1 }}>
-              <DetailRow label="공지ID" value={selected.facilityId} />
-              <DetailRow label="제목" value={selected.facilityName} />
-              <DetailRow
-                label="작성(수정)일"
-                value={
-                  FACILITY_TYPE_LABEL[selected.facilityType] ||
-                  selected.facilityType
-                }
-              />
-              <DetailRow label="조회수" value={selected.facilityAddress} />
-              <DetailRow label="상태" value={selected.facilityPhone} />
-              <DetailRow label="작성자" value={selected.openHours} />
-            </Box>
-          ) : (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-              선택된 공지가 없습니다.
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 1.5 }}>
-          <Button
-            onClick={() => setDetailOpen(false)}
-            variant="contained"
-            size="small"
-          >
-            닫기
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+      {/* 페이지네이션 */}
+      <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
+        <Pagination
+          count={totalPage}
+          page={page}
+          onChange={(_, value) => setPage(value)}
+          color="primary"
+          size="small"
+          siblingCount={1}
+          boundaryCount={1}
+          showFirstButton
+          showLastButton
+        />
+      </Stack>
+    </Paper>
   );
 }
 

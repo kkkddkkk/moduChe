@@ -56,5 +56,5 @@ export const handleApiError = (error) => {
   }
 
   console.error(error); // 디버깅용
-  return alert(message);
+  return;
 };

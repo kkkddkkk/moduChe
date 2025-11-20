@@ -23,8 +23,15 @@ import { BellPlus, Info } from 'lucide-react';
 import { ImageUpload } from '../../component/common/ImageUpload';
 import { getUsernameFromToken } from '../../utils/auth';
 import { useApi } from '../../hook/useAPI';
-import { createNotice, fetchNoticeDetail } from '../../api/admin/NoticeAPI';
+import {
+  createNotice,
+  deleteNotice,
+  fetchNoticeDetail,
+  modifyNotice,
+} from '../../api/admin/NoticeAPI';
 import { useParams } from 'react-router-dom';
+import Loading from '../../component/common/Loading';
+import { extractKeyFromUrl } from '../../component/community/utility/communityUtility';
 
 export default function NoticeCreateWindow() {
   const params = useParams();
@@ -33,9 +40,11 @@ export default function NoticeCreateWindow() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [imageForm, setImageForm] = useState({ images: [] });
+  const [originImageForm, setOriginImageForm] = useState({ images: [] });
   const [status, setStatus] = useState('ACTIVATED');
   const [isPinned, setIsPinned] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [loaded, setLoaded] = useState(false);
 
   const theme = useTheme();
   const accessToken = localStorage.getItem('accessToken');
@@ -52,21 +61,58 @@ export default function NoticeCreateWindow() {
     [title, content],
   );
 
-  const { callApi: fetchNoticeDetailAPI } = useApi(fetchNoticeDetail);
+  const {
+    callApi: fetchNoticeDetailAPI,
+    loading,
+    done,
+    setDone,
+  } = useApi(fetchNoticeDetail);
+
+  const { callApi: modifyNoticeAPI, modifyLoading } = useApi(modifyNotice);
+
   useEffect(() => {
-    if (noticeId === null) return;
+    if (!noticeId) {
+      setLoaded(true);
+      return;
+    }
     const fetch = async () => {
-      const res = fetchNoticeDetailAPI(noticeId);
-      console.log(res.data);
+      const res = await fetchNoticeDetailAPI(noticeId);
+      const data = res.data;
+      setTitle(data.title);
+      setContent(data.content);
+      setImageForm({
+        images: data.imgUrls.map((url) => ({
+          file: null,
+          url: url,
+        })),
+      });
+
+      setOriginImageForm({
+        images: data.imgUrls.map((url) => ({
+          file: null,
+          url: url,
+        })),
+      });
+
+      setStatus(
+        data.isPinned ? 'PINNED' : data.isVisible ? 'ACTIVATED' : 'DEACTIVATED',
+      );
     };
     fetch();
   }, []);
+
+  useEffect(() => {
+    if (!done) return;
+    setLoaded(true);
+    setDone(false);
+  }, [done]);
 
   useEffect(() => {
     setIsPinned(status === 'PINNED');
     setIsVisible(status === 'ACTIVATED' || status === 'PINNED');
   }, [status]);
 
+  //제출
   const { callApi: createNoticeAPI } = useApi(createNotice);
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,8 +124,25 @@ export default function NoticeCreateWindow() {
       content: content,
       isPinned: isPinned,
       isVisible: isVisible,
-      imgUrls: imageForm.images.map((img) => img.url),
     };
+
+    if (noticeId === null) {
+      dto.imgUrls = imageForm.images.map((img) => img.url);
+    } else {
+      dto.newPhotos = imageForm.images
+        .filter(
+          (img) =>
+            !originImageForm.images.some((origin) => origin.url === img.url),
+        )
+        .map((img) => img.url);
+
+      dto.deletePhotos = originImageForm.images
+        .filter(
+          (origin) => !imageForm.images.some((img) => img.url === origin.url),
+        )
+        .map((origin) => extractKeyFromUrl(origin.url));
+      dto.noticeId = noticeId;
+    }
 
     // multipart/form-data 구성.
     const formData = new FormData();
@@ -94,7 +157,11 @@ export default function NoticeCreateWindow() {
       }
     });
 
-    const res = await createNoticeAPI(formData);
+    if (noticeId === null) {
+      const res = await createNoticeAPI(formData);
+    } else {
+      const res = await modifyNoticeAPI(formData);
+    }
 
     try {
       window.opener?.postMessage(
@@ -103,7 +170,34 @@ export default function NoticeCreateWindow() {
       );
       setToast({
         open: true,
-        message: '공지가 등록되었습니다.',
+        message: `공지가 ${!noticeId ? '등록' : '수정'}되었습니다.`,
+        severity: 'success',
+      });
+      setTimeout(() => window.close(), 700);
+    } catch (err) {
+      console.error('postMessage 실패:', err);
+      setToast({
+        open: true,
+        message: '데이터 전송 실패',
+        severity: 'error',
+      });
+    }
+  };
+
+  //삭제
+  const { callApi: deleteNoticeAPI } = useApi(deleteNotice);
+  const handleDelete = async () => {
+    if (!window.confirm('공지사항을 삭제하시겠습니까?')) return;
+    await deleteNoticeAPI(noticeId);
+
+    try {
+      window.opener?.postMessage(
+        { type: 'NOTIFY_DELETED', noticeId },
+        window.origin,
+      );
+      setToast({
+        open: true,
+        message: `공지가 삭제 되었습니다.`,
         severity: 'success',
       });
       setTimeout(() => window.close(), 700);
@@ -121,7 +215,7 @@ export default function NoticeCreateWindow() {
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && window.close();
     window.addEventListener('keydown', onKey);
-    document.title = '새 공지 등록';
+    document.title = !noticeId ? '새 공지 등록' : '공지 수정';
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
@@ -136,16 +230,20 @@ export default function NoticeCreateWindow() {
         p: 2,
       }}
     >
+      <Loading open={loading || modifyLoading} text="로딩 중 입니다." />
       <Paper
         elevation={4}
         sx={{ width: 800, maxWidth: '100%', borderRadius: 3, p: 3 }}
       >
         <Stack spacing={2}>
           <StartTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BellPlus fontSize="large" /> 새 공지 등록
+            <BellPlus fontSize="large" />{' '}
+            {!noticeId ? '새 공지 등록' : '공지 수정'}
           </StartTitle>
 
-          <SmallerSubTitle>페이지 공지사항을 등록합니다.</SmallerSubTitle>
+          <SmallerSubTitle>
+            페이지 공지사항을 {!noticeId ? '등록' : '수정'}합니다.
+          </SmallerSubTitle>
 
           {/* 시설명 */}
           <Contents100 bold>제목</Contents100>
@@ -171,10 +269,12 @@ export default function NoticeCreateWindow() {
               overflow: 'hidden',
             }}
           >
-            <RichTextEditor
-              value={content}
-              onChange={(value) => setContent(value)}
-            />
+            {loaded && (
+              <RichTextEditor
+                value={content}
+                onChange={(value) => setContent(value)}
+              />
+            )}
           </Box>
 
           <Contents100 bold>이미지 첨부</Contents100>
@@ -198,19 +298,24 @@ export default function NoticeCreateWindow() {
           <Stack
             direction="row"
             spacing={1.5}
-            justifyContent="flex-end"
+            justifyContent="space-between"
             sx={{ pt: 1 }}
           >
-            <Button variant="text" onClick={() => window.close()}>
-              취소
+            <Button variant="contained" onClick={handleDelete} color="error">
+              삭제
             </Button>
-            <Button
-              variant="contained"
-              disabled={disabled}
-              onClick={handleSubmit}
-            >
-              등록
-            </Button>
+            <Box display={'flex'} gap={2}>
+              <Button variant="text" onClick={() => window.close()}>
+                취소
+              </Button>
+              <Button
+                variant="contained"
+                disabled={disabled}
+                onClick={handleSubmit}
+              >
+                {!noticeId ? '등록' : '수정'}
+              </Button>
+            </Box>
           </Stack>
         </Stack>
       </Paper>
