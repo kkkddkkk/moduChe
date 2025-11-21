@@ -1,4 +1,4 @@
-package com.example.moduche.domain.notice.dto;
+package com.example.moduche.domain.admin.dto;
 
 import java.util.List;
 
@@ -19,10 +19,12 @@ import lombok.ToString;
 @Builder
 @Data
 @ToString
-public class NoticePageResponseDTO {
-    private List<FetchNoticeDTO> notices; // 실제 공지 리스트
+public class AdminCommunityPageResponseDTO {
+    private List<FetchCommunityDTO> communities; // 실제 동아리 리스트
     private long totalElements;           // 전체 데이터 수
     private int totalPages;               // 총 페이지 수
     private int currentPage;              // 현재 페이지
-    private Long activatedElements;        //활성화된 데이터 수
+    private Long activedElements;        //활성화된 데이터 수
+    private Long registeredElements;    //등록 신청 중 데이터 수
+
 }

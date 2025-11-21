@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.moduche.domain.notice.Notice;
 import com.example.moduche.domain.notice.dto.NoticeDTO;
 import com.example.moduche.domain.notice.dto.NoticePageResponseDTO;
+import com.example.moduche.domain.notice.repository.NoticeRepository;
 import com.example.moduche.domain.notice.dto.FetchNoticeDTO;
 import com.example.moduche.domain.notice.dto.ModifyNoticeDTO;
 import com.example.moduche.domain.notice.service.NoticeService;
@@ -31,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class NoticeController {
 
 	private final NoticeService noticeService;
+	private final NoticeRepository noticeRepository;
 
 	@GetMapping("/fetchNotice")
 	public Response fetchNotice(@RequestParam(name = "page", defaultValue = "0") int page,
@@ -45,6 +47,7 @@ public class NoticeController {
 	            .totalElements(notices.getTotalElements())
 	            .totalPages(notices.getTotalPages())
 	            .currentPage(notices.getNumber() + 1) // 0-based → 1-based
+	            .activatedElements(noticeRepository.findActivatedNum())
 	            .build();
 
 		return new Response(StatusEnum.OK, "", dto);

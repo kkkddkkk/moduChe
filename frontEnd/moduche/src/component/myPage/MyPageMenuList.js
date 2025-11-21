@@ -33,7 +33,7 @@ export const individualList = [
     key: 'community',
     label: '이용 중인 동호회 관리',
     icon: <Users />,
-    path: '/myPage/community',
+    path: '/myPage/communityI',
   },
 ];
 
@@ -60,7 +60,7 @@ export const facilityList = [
     key: 'community',
     label: '동아리 관리',
     icon: <Users />,
-    path: '/myPage/community',
+    path: '/myPage/communityF',
   },
 ];
 

@@ -11,6 +11,14 @@ const MyPageIndividual = lazy(() =>
   import('../component/account/MyPageIndividual'),
 );
 
+const CommunityManagePage = lazy(() =>
+  import('../pages/Community/CommunityManagePage'),
+);
+
+const CommunityMemberPage = lazy(() =>
+  import('../pages/Community/CommunityMemberPage'),
+);
+
 export default function accoutRouter() {
   return [
     {
@@ -45,6 +53,22 @@ export default function accoutRouter() {
             </Suspense>
           ),
         },
+        {
+          path: 'communityI',
+          element: (
+            <Suspense fallback={Loading}>
+              <CommunityMemberPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'communityF',
+          element: (
+            <Suspense fallback={Loading}>
+              <CommunityManagePage />
+            </Suspense>
+          ),
+        },
       ],
     },
     {
@@ -65,14 +89,6 @@ export default function accoutRouter() {
     },
     {
       path: 'course',
-      element: (
-        <Suspense fallback={Loading}>
-          <MyPageIndividual />
-        </Suspense>
-      ),
-    },
-    {
-      path: 'community',
       element: (
         <Suspense fallback={Loading}>
           <MyPageIndividual />

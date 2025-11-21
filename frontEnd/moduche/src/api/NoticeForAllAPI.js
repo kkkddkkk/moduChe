@@ -16,3 +16,14 @@ export const fetchNotice = async (page = 0, size = 10, keyword = null) => {
     handleApiError(err);
   }
 };
+
+export const fetchNoticeDetail = async (noticeId) => {
+  try {
+    const res = await api.get(`${NOTICE_SERVER_HOST}/fetchNoticeDetail`, {
+      params: { noticeId },
+    });
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};

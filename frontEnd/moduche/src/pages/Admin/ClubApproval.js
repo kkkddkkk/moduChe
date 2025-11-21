@@ -30,6 +30,7 @@ import Paper from '../../component/common/Paper';
 import { fetchNotice } from '../../api/admin/NoticeAPI';
 import { useApi } from '../../hook/useAPI';
 import { dateFormat, numberFormat } from '../../component/common/Functions';
+import { fetchCommunity } from '../../api/admin/CommunityAPI';
 
 function FacilityPage() {
   // DB에서 가져올 시설 리스트
@@ -38,24 +39,25 @@ function FacilityPage() {
 
   // 라벨 매핑
   const STATUS_LABEL = {
-    PINNED: '상단 고정',
-    ACTIVATED: '일반',
-    DEACTIVATED: '비활성화',
+    REGISTERED: '승인대기',
+    ACTIVE: '활동',
+    INACTIVE: '비활동',
+    BANNED: '정지',
+    DELETED: '활동 종료'
   };
 
   const STATUS_COLOR = {
-    PINNED: 'warning',
-    ACTIVATED: 'text.primary',
-    DEACTIVATED: 'error',
+    REGISTERED: 'warning',
+    ACTIVE: 'success',
+    INACTIVE: 'text.secondary',
+    BANNED: 'error',
+    DELETED: 'text.secondary',
   };
 
-  const customStatus = (isPinned, isVisible) => {
-    if (isPinned) return 'PINNED';
-    else return isVisible ? 'ACTIVATED' : 'DEACTIVATED';
-  };
 
   const [totalElement, setTotalElement] = useState('');
   const [activeCount, setActiveCount] = useState('');
+  const [registeredCount, setRegisterCount] = useState('');
 
   // 필터 상태
   const [keyword, setKeyword] = useState('');
@@ -67,37 +69,19 @@ function FacilityPage() {
   const rowsPerPage = 5;
   const [totalPage, setTotalPage] = useState(0);
 
-  const { callApi: fetchNoticeAPI } = useApi(fetchNotice);
+  const { callApi: fetchCommunityAPI } = useApi(fetchCommunity);
   const fetch = async () => {
-    let isVisible = null;
-    let isPinned = null;
-    switch (statusFilter) {
-      case 'PINNED': {
-        isVisible = true;
-        isPinned = true;
-        break;
-      }
-      case 'ACTIVATED': {
-        isVisible = true;
-        isPinned = false;
-        break;
-      }
-      case 'DEACTIVATED': {
-        isVisible = false;
-        isPinned = false;
-        break;
-      }
-    }
-    const res = await fetchNoticeAPI(
+    const res = await fetchCommunityAPI(
       page - 1,
       rowsPerPage,
       keyword,
-      isVisible,
-      isPinned,
+      statusFilter
     );
-    const content = res.data.notices;
+    const content = res.data.communities;
+    console.log(res.data);
     setTotalElement(res.data.totalElements);
-    setActiveCount(res.data.activatedElements);
+    setActiveCount(res.data.activedElements);
+    setRegisterCount(res.data.registeredElements);
     setList(content);
     setTotalPage(res.data.totalPages);
   };
@@ -188,7 +172,7 @@ function FacilityPage() {
             textAlign: { xs: 'left', sm: 'center' },
           }}
         >
-          공지사항 관리
+          동아리 관리
         </Typography>
 
         <Typography
@@ -199,7 +183,7 @@ function FacilityPage() {
             textAlign: { xs: 'left', sm: 'center' },
           }}
         >
-          DB notice 테이블 기준으로 시설 정보를 조회·관리합니다.
+          DB community 테이블 기준으로 시설 정보를 조회·관리합니다.
         </Typography>
       </Box>
 
@@ -262,15 +246,17 @@ function FacilityPage() {
               },
             }}
           >
-            <MenuItem value="ALL">전체</MenuItem>
-            <MenuItem value="PINNED">상단 고정</MenuItem>
-            <MenuItem value="ACTIVATED">활성화</MenuItem>
-            <MenuItem value="DEACTIVATED">비활성화</MenuItem>
+            <MenuItem value={'ALL'}>전체</MenuItem>
+            <MenuItem value="REGISTERED">승인대기</MenuItem>
+            <MenuItem value="ACTIVE">활동</MenuItem>
+            <MenuItem value="INACTIVE">비활동</MenuItem>
+            <MenuItem value="BANNED">정지</MenuItem>
+            <MenuItem value="DELETED">활동 종료</MenuItem>
           </TextField>
 
           <TextField
             size="small"
-            placeholder="제목 / 공지ID / 내용 검색"
+            placeholder="동아리명 / ID / 운영기관 검색"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             sx={{
@@ -341,27 +327,10 @@ function FacilityPage() {
                 color: 'text.primary',
               }}
             >
-              활성화 {numberFormat(activeCount)}건 / 비활성화 {numberFormat(totalElement-activeCount)}건
+              승인대기 {numberFormat(registeredCount)}건 / 활성화 {numberFormat(activeCount)}건 / 비활성화{' '}
+              {numberFormat(totalElement - activeCount - registeredCount)}건
             </Typography>
           </Box>
-
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleCreateOrUpdateNotice(false)}
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              px: 1.5,
-              py: 1,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            새 공지 등록
-          </Button>
 
           <Tooltip title="새로고침">
             <IconButton
@@ -419,19 +388,19 @@ function FacilityPage() {
               }}
             >
               <TableCell sx={{ minWidth: 60, textAlign: 'center' }}>
-                공지ID
+                동아리ID
               </TableCell>
               <TableCell sx={{ minWidth: 300, textAlign: 'center' }}>
-                제목
+                동아리명
               </TableCell>
               <TableCell sx={{ minWidth: 100, textAlign: 'center' }}>
-                작성(수정)일
+                개설일
               </TableCell>
               <TableCell sx={{ minWidth: 60, textAlign: 'center' }}>
-                조회수
+                운영자명
               </TableCell>
               <TableCell sx={{ minWidth: 90, textAlign: 'center' }}>
-                작성자
+                운영 기관
               </TableCell>
               <TableCell sx={{ minWidth: 90, textAlign: 'center' }}>
                 상태
@@ -459,7 +428,7 @@ function FacilityPage() {
             ) : (
               list.map((row) => (
                 <TableRow
-                  key={row.noticeId}
+                  key={row.communityId}
                   hover
                   sx={{
                     '&:last-of-type td': {
@@ -478,7 +447,7 @@ function FacilityPage() {
                       fontSize: '0.8rem',
                     }}
                   >
-                    {row.noticeId}
+                    {row.communityId}
                   </TableCell>
 
                   <TableCell
@@ -487,7 +456,7 @@ function FacilityPage() {
                       fontSize: '0.9rem',
                     }}
                   >
-                    {row.title}
+                    {row.name}
                   </TableCell>
 
                   <TableCell
@@ -498,9 +467,7 @@ function FacilityPage() {
                       color: 'text.secondary',
                     }}
                   >
-                    {row.updatedAt
-                      ? dateFormat(row.updatedAt)
-                      : dateFormat(row.createdAt)}
+                    {dateFormat(row.createdAt)}
                   </TableCell>
 
                   <TableCell
@@ -510,7 +477,7 @@ function FacilityPage() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {row.viewCount}
+                    {row.username}
                   </TableCell>
 
                   <TableCell
@@ -520,17 +487,17 @@ function FacilityPage() {
                       color: 'text.secondary',
                     }}
                   >
-                    {row.createdByName}
+                    {row.founder}
                   </TableCell>
 
                   <TableCell align="center">
                     <Chip
                       label={
-                        STATUS_LABEL[customStatus(row.pinned, row.visible)]
+                        STATUS_LABEL[row.status]
                       }
                       size="small"
                       color={
-                        STATUS_COLOR[customStatus(row.pinned, row.visible)] ||
+                        STATUS_COLOR[row.status] ||
                         'default'
                       }
                       sx={{

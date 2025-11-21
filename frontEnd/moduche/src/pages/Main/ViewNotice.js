@@ -28,7 +28,7 @@ import Loading from '../../component/common/Loading';
 import { useUser } from '../../context/UserContext';
 import { logIn } from '../../api/accountAPI/AuthAPI';
 import CustomTable from '../../component/common/CustomTable';
-import { fetchNotice } from '../../api/NoticeForAllAPI';
+import { fetchNotice, fetchNoticeDetail } from '../../api/NoticeForAllAPI';
 import { dateFormat } from '../../component/common/Functions';
 import { ArrowLeft, ArrowRight, Check, SearchIcon, Star } from 'lucide-react';
 import Paper from '../../component/common/Paper';
@@ -42,77 +42,97 @@ const ViewNotice = () => {
 
   const { noticeId } = useParams();
 
-  const [list, setList] = useState([]);
+  const [form, setForm] = useState(null);
 
-  const [keyword, setKeyword] = useState('');
-  const [page, setPage] = useState(1);
-  const rowsPerPage = 5;
-  const [totalPage, setTotalPage] = useState(0);
+  const [prevDisable, setPrevDisable] = useState(false);
+  const [nextDisable, setNextDisable] = useState(false);
 
-  const { callApi: fetchNoticeAPI, loading } = useApi(fetchNotice);
+  const { callApi: fetchNoticeAPI, loading } = useApi(fetchNoticeDetail);
 
   const fetch = async () => {
-    const res = await fetchNoticeAPI(page - 1, rowsPerPage, keyword);
-    const notices = res.data.notices;
-    const mapped = notices.map((n) => ({
-      noticeId: n.noticeId,
-      제목: n.title,
-      게시일: n.createdAt,
-      조회수: n.viewCount,
-      작성자: n.createdByName,
-      '고정 여부': n.pinned,
-    }));
-    setList(mapped);
-    setTotalPage(res.data.totalPages);
+    const res = await fetchNoticeAPI(noticeId);
+    setForm(res.data);
+    if (res.data.prevId === null) setPrevDisable(true);
+    else setPrevDisable(false);
+    if (res.data.nextId === null) setNextDisable(true);
+    else setNextDisable(false);
   };
 
-  const handleClickNotice = (id, column, data) => {
-    console.log(id);
-    navigate(`/notice/view/${id}`);
+  useEffect(() => {
+    fetch();
+  }, [noticeId]);
+
+  const formatPinned = (data) => {
+    return data ? (
+      <Box>
+        <Star
+          color={theme.palette.warning.main}
+          fill={theme.palette.warning.main}
+        />
+      </Box>
+    ) : (
+      <></>
+    );
+  };
+
+  const NoticeBox = ({ children, sub }) => {
+    return (
+      <Box
+        display={'flex'}
+        width={'100%'}
+        justifyContent={'space-between'}
+        padding={sub ? '0 2% 2% 2%' : '2%'}
+      >
+        {children}
+      </Box>
+    );
   };
 
   return (
     <Layout padding={2}>
-      {isMobile ? <></> : <Grid size={isTablet ? 2 : 2} />}
+      {isMobile ? <></> : <Grid size={isTablet ? 2 : 3} />}
       <Loading open={loading} text="로딩 중입니다." />
-      <Grid size={isMobile ? 12 : isTablet ? 8 : 8}>
+      <Grid size={isMobile ? 12 : isTablet ? 8 : 6} marginBottom={'5%'}>
         <CenterTitle>공지사항</CenterTitle>
         <Paper>
           <Layout space={2}>
             <Grid size={12}>
-              <Box
-                display={'flex'}
-                width={'100%'}
-                justifyContent={'space-between'}
-              >
-                <Box>이름</Box>
-                <Box>pinned 여부</Box>
-              </Box>
+              <NoticeBox>
+                <Contents>제목: {form?.title}</Contents>
+                {formatPinned(form?.isPinned)}
+              </NoticeBox>
               <Divider />
-              <Box
-                display={'flex'}
-                width={'100%'}
-                justifyContent={'space-between'}
-              >
-                <Box>작성자: </Box>
-                <Box>작성일: </Box>
-              </Box>
-              <Box
-                display={'flex'}
-                width={'100%'}
-                justifyContent={'space-between'}
-              >
-                <Box>조회수: </Box>
-              </Box>
+              <NoticeBox>
+                <Contents>작성자: {form?.createdByName}</Contents>
+                <Contents>작성일: {dateFormat(form?.createdAt)}</Contents>
+              </NoticeBox>
+              <NoticeBox sub>
+                <Contents>조회수: {form?.viewCount}</Contents>
+              </NoticeBox>
               <Divider />
-              <Box
-                display={'flex'}
-                width={'100%'}
-                justifyContent={'space-between'}
-              >
-                내용
-              </Box>
-              <Divider />
+              <NoticeBox>
+                <Box
+                  sx={{
+                    width: '100%',
+                    backgroundColor: theme.palette.background.default,
+                    minHeight: '30vh',
+                    borderRadius: '10px',
+                    padding: '5%',
+                  }}
+                >
+                  {form?.imgUrls.map((url) => (
+                    <Box
+                      sx={{ width: '100%', marginBottom: '5%' }}
+                      component={'img'}
+                      src={url}
+                    />
+                  ))}
+
+                  <Box
+                    dangerouslySetInnerHTML={{ __html: form?.content || '' }}
+                  />
+                </Box>
+              </NoticeBox>
             </Grid>
           </Layout>
         </Paper>
@@ -121,7 +141,7 @@ const ViewNotice = () => {
             display: 'flex',
             justifyContent: 'space-between',
             margin: 2,
-            gap: 16,
+            gap: isMobile ? 1 : isTablet ? 4 : 16,
             mt: '5%',
           }}
         >
@@ -129,7 +149,8 @@ const ViewNotice = () => {
             buttonWrapperSx={{ width: '100%' }}
             buttonSx={{ padding: '8px' }}
             startIcon={<ArrowLeft size={18} />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/notice/view/${form?.prevId}`)}
+            disabled={prevDisable}
           >
             이전 게시물
           </OneAlignedButton>
@@ -137,21 +158,22 @@ const ViewNotice = () => {
             buttonWrapperSx={{ width: '100%' }}
             buttonSx={{ padding: '8px' }}
             startIcon={<Check size={18} />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/notice`)}
           >
-            확인
+            목록으로
           </OneAlignedButton>
           <OneAlignedButton
             buttonWrapperSx={{ width: '100%' }}
             buttonSx={{ padding: '8px' }}
             startIcon={<ArrowRight size={18} />}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/notice/view/${form?.nextId}`)}
+            disabled={nextDisable}
           >
             다음 게시물
           </OneAlignedButton>
         </Box>
       </Grid>
-      {isMobile ? <></> : <Grid size={isTablet ? 2 : 2} />}
+      {isMobile ? <></> : <Grid size={isTablet ? 2 : 3} />}
     </Layout>
   );
 };

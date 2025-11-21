@@ -23,6 +23,7 @@ import com.example.moduche.domain.notice.dto.FetchNoticeForAllDTO;
 import com.example.moduche.domain.notice.dto.ModifyNoticeDTO;
 import com.example.moduche.domain.notice.dto.NoticeDTO;
 import com.example.moduche.domain.notice.dto.NoticePageResponseDTO;
+import com.example.moduche.domain.notice.dto.ViewNoticeForAllDTO;
 import com.example.moduche.domain.notice.repository.NoticePhotoRepository;
 import com.example.moduche.domain.notice.repository.NoticeRepository;
 import com.example.moduche.global.AWS.service.AWSService;
@@ -49,14 +50,24 @@ public class NoticeForAllService {
 	}
 	
 	//공지 상세보기
-	public NoticeDTO getNoticeDetail(Long noticeId) {
-		Optional<NoticeDTO> noticeDTOOp = noticeRepository.findNoticeDetail(noticeId);
+	public ViewNoticeForAllDTO getNoticeDetail(Long noticeId) {
+		Notice notice = noticeRepository.findById(noticeId).orElseThrow();
+		notice.setViewCount(notice.getViewCount()+1);
+		
+		Optional<ViewNoticeForAllDTO> noticeDTOOp = noticeRepository.findNoticeForAllDetail(noticeId);
 		if(noticeDTOOp.isEmpty()) return null;
-		NoticeDTO noticeDTO = noticeDTOOp.get();
+		ViewNoticeForAllDTO dto = noticeDTOOp.get();
 		List<String> keys = noticePhotoRepository.findPhotosByNoticeId(noticeId);
 		List<String> urls = keys.stream().map(k -> awsService.toPreSignedUrl(k, Duration.ofMinutes(20))).toList();
-		noticeDTO.setImgUrls(urls);
-		return noticeDTO;
+		dto.setImgUrls(urls);
+		
+		List<Long> prev = noticeRepository.findPreviousNotice(dto.getCreatedAt(), PageRequest.of(0, 1));
+		List<Long> next = noticeRepository.findNextNotice(dto.getCreatedAt(), PageRequest.of(0, 1));
+		dto.setPrevId(prev.size()>0?prev.get(0):null);
+		dto.setNextId(next.size()>0?next.get(0):null);
+	
+		
+		return dto;
 	}
 	
 }

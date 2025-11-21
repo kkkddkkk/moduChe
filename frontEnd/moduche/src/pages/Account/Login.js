@@ -167,16 +167,6 @@ const Login = () => {
             아이디/비밀번호 찾기
           </LoginText>
         </Box>
-        <Divider>
-          <Contents color={theme.palette.text.secondary} fontSize={18}>
-            &nbsp;또는&nbsp;
-          </Contents>
-        </Divider>
-        <Box width={'100%'} display={'flex'} justifyContent={'space-around'}>
-          <NaverLoginButton />
-          <KakaoLoginButton />
-          <GoogleLoginButton />
-        </Box>
       </Grid>
       {isMobile ? <></> : <Grid size={isTablet ? 2 : 4} />}
     </Layout>

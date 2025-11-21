@@ -146,7 +146,6 @@ const ManageDisability = () => {
       qualified: qualified,
       note: note,
     };
-    console.log(dto);
     await setDisabilityAPI(dto);
   };
 

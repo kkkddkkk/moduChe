@@ -15,6 +15,7 @@ const CalculatePage = lazy(() => import('../pages/Admin/CalculatePage'));
 const BannersPage = lazy(() => import('../pages/Admin/BannersPage'));
 const FacilityPage = lazy(() => import('../pages/Admin/FacilityPage'));
 const NoticePage = lazy(() => import('../pages/Admin/NoticePage'));
+const ClubApproval = lazy(() => import('../pages/Admin/ClubApproval'));
 
 export default function adminRouter() {
   return [
@@ -86,6 +87,14 @@ export default function adminRouter() {
           element: (
             <Suspense fallback={Loading}>
               <NoticePage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'club-approval',
+          element: (
+            <Suspense fallback={Loading}>
+              <ClubApproval />
             </Suspense>
           ),
         },

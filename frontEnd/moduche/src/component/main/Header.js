@@ -141,7 +141,22 @@ const Header = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
-            <HeaderMenu onClick={()=>navigate(`/notice`)}>공지사항</HeaderMenu>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center', // 세로 가운데 정렬
+                gap: 1, // 항목 간 간격
+              }}
+            >
+              <HeaderMenu onClick={() => navigate(`/notice`)}>
+                공지사항
+              </HeaderMenu>
+              <MenuBar />
+              <HeaderMenu onClick={() => navigate(`/community/home`)}>
+                동아리
+              </HeaderMenu>
+            </Box>
+
             <Box
               display={'flex'}
               justifyContent={'center'}

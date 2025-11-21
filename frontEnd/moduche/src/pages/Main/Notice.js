@@ -89,7 +89,6 @@ const Notice = () => {
   };
 
   const handleClickNotice = (id, column, data) => {
-    console.log(id);
     navigate(`/notice/view/${id}`);
   };
 
