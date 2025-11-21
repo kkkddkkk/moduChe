@@ -22,8 +22,8 @@ import { RegisterTitle } from "./RegisterTitle";
 import { OneAlignedButton } from "../common/Button";
 import { CalendarCheck, ClipboardList } from "lucide-react";
 import { PreviewRounded } from "@mui/icons-material";
-import { useUser } from '../../context/UserContext';
-
+import { useUser } from "../../context/UserContext";
+import { getCoords } from "./utility/communityUtility";
 
 export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
     const theme = useTheme();
@@ -35,7 +35,7 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
     const [selectedWeeks, setSelectedWeeks] = useState([]);
     const [customDate, setCustomDate] = useState("");
 
-    const {name} = useUser();
+    const name = localStorage.getItem("name");
 
     useEffect(() => {
         if (form) {
@@ -43,6 +43,17 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
             setSelectedDays(form.selectedDays ?? []);
             setSelectedWeeks(form.selectedWeeks ?? []);
             setCustomDate(form.customDate ?? "");
+        }
+    }, []);
+
+    useEffect(() => {
+        //우편번호 스크립트 로드.
+        if (!window.daum?.Postcode) {
+            const postcodeScript = document.createElement("script");
+            postcodeScript.src =
+                "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+            postcodeScript.defer = true;
+            document.body.appendChild(postcodeScript);
         }
     }, []);
 
@@ -82,12 +93,32 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
         setForm((prev) => ({ ...prev, selectedDays: next }));
     };
 
-    const handleCustomDateChange = (value) => {
-        setCustomDate(value);
-        setForm((prev) => ({ ...prev, customDate: value }));
-    };
+    const handleSearchLoca = () => {
+        if (!window.daum?.Postcode) {
+            alert("주소 검색 모듈 로딩 중입니다. 잠시 후 다시 시도해주세요.");
+            return;
+        }
 
-    console.log(name);
+        new window.daum.Postcode({
+            oncomplete: async (data) => {
+                const mainAddress =
+                    data.userSelectedType === "R"
+                        ? data.roadAddress
+                        : data.jibunAddress;
+
+                //좌표 조회.
+                const coords = await getCoords(mainAddress);
+
+                // meta 위치 관련 정보 업데이트.
+                setForm((prev) => ({
+                    ...prev,
+                    address: mainAddress,
+                    geoLat: coords?.lat ?? null,
+                    geoLng: coords?.lng ?? null,
+                }));
+            },
+        }).open();
+    };
 
     return (
         <>
@@ -150,7 +181,7 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
                             setData={(value) =>
                                 setForm((prev) => ({ ...prev, name: value }))
                             }
-                            placeholder="예: 날아라 붉은 해파리"
+                            placeholder="설립될 동아리의 이름을 입력해주세요"
                             padding={10}
                         />
                     </Grid>
@@ -163,7 +194,7 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
                             setData={(value) =>
                                 setForm((prev) => ({ ...prev, purpose: value }))
                             }
-                            placeholder="예: 건강 증진을 위해"
+                            placeholder="동아리 설립의 목적 및 취지를 입력해주세요"
                             padding={10}
                         />
                     </Grid>
@@ -229,13 +260,8 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
                         <Grid item size={8}>
                             <CustomTextField
                                 data={form.address || ""}
-                                setData={(value) =>
-                                    setForm((prev) => ({
-                                        ...prev,
-                                        address: value,
-                                    }))
-                                }
-                                placeholder="기본 주소"
+                                disabled={true}
+                                placeholder="기본 주소를 검색해주세요"
                                 padding={10}
                             />
                         </Grid>
@@ -243,6 +269,7 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
                             <OneAlignedButton
                                 sx={{ height: "100%", width: "100%" }}
                                 buttonWrapperSx={{ width: "90%" }}
+                                onClick={handleSearchLoca}
                             >
                                 검색
                             </OneAlignedButton>
@@ -255,7 +282,7 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
                                     addressDetail: value,
                                 }))
                             }
-                            placeholder="상세 주소"
+                            placeholder="상세 주소를 입력해주세요"
                             padding={10}
                         />
                     </Grid>
@@ -412,7 +439,7 @@ export const CommunityRegisterFields = ({ form, setForm, onChange }) => {
                                                     customDate: value,
                                                 }));
                                             }}
-                                            placeholder="예: 매월 17일, 5월 3일 등"
+                                            placeholder="예: 매월 1일, 5월 5일 등"
                                             padding={10}
                                         />
                                     </Box>

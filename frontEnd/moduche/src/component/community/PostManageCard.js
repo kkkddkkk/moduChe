@@ -6,9 +6,18 @@ import {
     Stack,
     Divider,
     Chip,
+    useTheme,
 } from "@mui/material";
 import { formattedDate } from "./utility/communityUtility";
-import { ArrowRightLeft, Ban, CircleCheck, Pencil, Plus, UserStar } from "lucide-react";
+import {
+    ArrowRightLeft,
+    Ban,
+    CircleCheck,
+    Pencil,
+    Plus,
+    SquareArrowRight,
+    UserStar,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const PostManageCard = ({
@@ -17,6 +26,7 @@ const PostManageCard = ({
     onEdit, //게시물 수정 하기
 }) => {
     const navigate = useNavigate();
+    const theme = useTheme();
     return (
         <Card
             variant="outlined"
@@ -47,73 +57,81 @@ const PostManageCard = ({
                     {/* Chip 버튼 그룹 */}
                     <Stack direction="row" spacing={1}>
                         {/* 게시 상태 게시물 => 게시물 수정, 이동, 삭제하기 기능 */}
-                        {post.status === "PUBLISHED" || post.status === "REGISTERED"&& (
-                            <>
-                                <Chip
-                                    label="게시물"
-                                    size="small"
-                                    icon={<Plus size={16} />}
-                                    onClick={() => navigate(`/community/details/${post.postId}`)}
-                                    sx={{
-                                        px: 1,
-                                        bgcolor: "grey.100",
-                                        "& .MuiChip-label": { px: 0.5 },
-                                        "&:hover": { bgcolor: "grey.200" },
-                                        cursor: "pointer",
-                                    }}
-                                />
-                                <Chip
-                                    label="수정"
-                                    size="small"
-                                    color="success"
-                                    icon={<Pencil size={16} />}
-                                    onClick={() => {onEdit(post)}}
-                                    sx={{
-                                        px: 1,
-                                        border: "2px solid",
-                                        borderColor: "success.main",
-                                        color: "success.main",
-                                        "& .MuiChip-icon": {
+                        {post.status === "PUBLISHED" ||
+                            (post.status === "REGISTERED" && (
+                                <>
+                                    <Chip
+                                        label="게시물"
+                                        size="small"
+                                        icon={<SquareArrowRight size={16} />}
+                                        onClick={() =>
+                                            navigate(
+                                                `/community/details/${post.postId}`
+                                            )
+                                        }
+                                        sx={{
+                                            px: 1,
+                                            bgcolor: "grey.100",
+                                            color: theme.palette.text.primary,
+                                            "& .MuiChip-label": { px: 0.8 },
+                                            "&:hover": { bgcolor: "grey.200" },
+                                            cursor: "pointer",
+                                        }}
+                                    />
+                                    <Chip
+                                        label="수정"
+                                        size="small"
+                                        color="success"
+                                        icon={<Pencil size={16} />}
+                                        onClick={() => {
+                                            onEdit(post);
+                                        }}
+                                        sx={{
+                                            px: 1,
+                                            border: "2px solid",
+                                            borderColor: "success.main",
                                             color: "success.main",
-                                        },
-                                        bgcolor: "transparent",
-                                        "&:hover": {
-                                            bgcolor: "success.main",
-                                            color: "white",
                                             "& .MuiChip-icon": {
-                                                color: "white",
+                                                color: "success.main",
                                             },
-                                        },
-                                        cursor: "pointer",
-                                    }}
-                                />
-                                <Chip
-                                    label="삭제"
-                                    size="small"
-                                    color="warning"
-                                    icon={<Ban size={16} />}
-                                    onClick={() => onDelete(post)}
-                                    sx={{
-                                        px: 1,
-                                        border: "2px solid",
-                                        borderColor: "error.main",
-                                        color: "error.main",
-                                        "& .MuiChip-icon": {
+                                            bgcolor: "transparent",
+                                            "&:hover": {
+                                                bgcolor: "success.main",
+                                                color: "white",
+                                                "& .MuiChip-icon": {
+                                                    color: "white",
+                                                },
+                                            },
+                                            cursor: "pointer",
+                                        }}
+                                    />
+                                    <Chip
+                                        label="삭제"
+                                        size="small"
+                                        color="warning"
+                                        icon={<Ban size={16} />}
+                                        onClick={() => onDelete(post)}
+                                        sx={{
+                                            px: 1,
+                                            border: "2px solid",
+                                            borderColor: "error.main",
                                             color: "error.main",
-                                        },
-                                        bgcolor: "transparent",
-                                        "&:hover": {
-                                            bgcolor: "error.main",
-                                            color: "white",
                                             "& .MuiChip-icon": {
-                                                color: "white",
+                                                color: "error.main",
                                             },
-                                        },
-                                        cursor: "pointer",
-                                    }}
-                                />
-                            </>
-                        )}
+                                            bgcolor: "transparent",
+                                            "&:hover": {
+                                                bgcolor: "error.main",
+                                                color: "white",
+                                                "& .MuiChip-icon": {
+                                                    color: "white",
+                                                },
+                                            },
+                                            cursor: "pointer",
+                                        }}
+                                    />
+                                </>
+                            ))}
                     </Stack>
                 </Stack>
                 <Stack
@@ -127,7 +145,10 @@ const PostManageCard = ({
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                         상태:{" "}
-                        {post.status === "PUBLISHED" || post.status === "REGISTERED"? "게시중" : "삭제됨"}
+                        {post.status === "PUBLISHED" ||
+                        post.status === "REGISTERED"
+                            ? "게시중"
+                            : "삭제됨"}
                     </Typography>
                 </Stack>
             </CardContent>

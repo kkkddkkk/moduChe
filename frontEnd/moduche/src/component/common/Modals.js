@@ -66,11 +66,9 @@ export const NormalModalExpand = ({
                 },
             }}
         >
-            {!title && (
-                <DialogTitle align="center" sx={{ padding: 3 }}>
-                    {title}
-                </DialogTitle>
-            )}
+            <DialogTitle align="center" sx={{ padding: 3 }}>
+                {title}
+            </DialogTitle>
 
             <DialogActions>
                 <IconButton

@@ -40,23 +40,6 @@ const CommunityEnrollmentsManage = ({ communityId }) => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    const createDummyEnrollments = () => {
-        const dummy = [];
-        for (let i = 1; i <= 20; i++) {
-            dummy.push({
-                enrollmentId: i,
-                name: `지원자 ${i}`,
-                contact: `010-0000-${String(i).padStart(4, "0")}`,
-                introduction: `안녕하세요, 저는 ${i}번 지원자입니다.`,
-                motivation:
-                    i % 3 === 0
-                        ? "동아리 활동을 통해 다양한 사람들과 함께 성장하고 싶습니다."
-                        : "동아리 활동에 적극적으로 참여하고 싶습니다.",
-            });
-        }
-        return dummy;
-    };
-
     const loadData = async () => {
         try {
             const data = await getEnrollmentList(
@@ -102,7 +85,8 @@ const CommunityEnrollmentsManage = ({ communityId }) => {
         }
 
         setConfirmOpen(false);
-        loadData();
+        // loadData();
+        window.location.reload();
     };
 
     const openApproveModal = (id) => {

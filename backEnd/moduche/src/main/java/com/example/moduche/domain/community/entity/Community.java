@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.example.moduche.domain.community.dto.MetaInfoEditRequestDTO;
 import com.example.moduche.domain.community.enums.CommunityScheduleType;
 import com.example.moduche.domain.community.enums.CommunityStatus;
 import com.example.moduche.domain.login.User;
@@ -50,4 +51,6 @@ public class Community {
 	private BigDecimal geoLat;
 	@Column(precision = 38, scale = 15)
 	private BigDecimal geoLng;
+	
+
 }

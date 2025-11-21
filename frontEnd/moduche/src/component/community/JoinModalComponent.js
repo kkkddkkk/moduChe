@@ -48,6 +48,7 @@ const JoinModalComponent = ({ open, onClose, clubName, communityId }) => {
 
             // 모달 닫기
             onClose();
+            window.location.reload();
         } catch (error) {
             alert("가입 신청 중 오류가 발생했습니다.");
         } finally {

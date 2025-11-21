@@ -16,6 +16,7 @@ import com.example.moduche.domain.community.dto.CommunityEnrollmentRequestDTO;
 import com.example.moduche.domain.community.dto.EnrollmentManageDTO;
 import com.example.moduche.domain.community.enums.CommunityEnrollmentStatus;
 import com.example.moduche.domain.community.service.CommunityEnrollmentService;
+import com.example.moduche.domain.community.service.CommunityEnrollmentService.EnrollmentCheckResponse;
 import com.example.moduche.domain.login.User;
 import com.example.moduche.global.security.JwtTokenProvider;
 import com.example.moduche.repository.UserRepository;
@@ -91,6 +92,17 @@ public class CommunityEnrollmentController {
 		enrollmentService.denyEnrollment(enrollmentId, ownerId, reason);
 
 		return ResponseEntity.ok("denied");
+	}
+	
+	@GetMapping("/eligible")
+	public ResponseEntity<EnrollmentCheckResponse> checkEligibility(
+	        @RequestHeader("Authorization") String tokenHeader,
+	        @PathVariable("communityId") Long communityId
+	) {
+	    Long userId = extractUserId(tokenHeader);
+	    return ResponseEntity.ok(
+	    		enrollmentService.checkEnrollmentEligibility(userId, communityId)
+	    );
 	}
 
 }

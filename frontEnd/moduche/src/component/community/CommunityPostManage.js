@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import {
+    createCommunityPost,
     deleteCommunityPost,
     fetchAllPost,
     getEditPost,
@@ -38,7 +39,7 @@ const CommunityPostManage = ({ communityId }) => {
     const [confirmOpen, setConfirmOpen] = useState(false);
 
     const [editOpen, setEditOpen] = useState(false);
-
+    const [editType, setEditType] = useState("");
     //검색어 설정 멫 페이징 변수.
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
@@ -116,12 +117,14 @@ const CommunityPostManage = ({ communityId }) => {
             //삭제 계산용으로만 쓰는 원본 URL 배열
             setOriginalImages(data.existingImages || []);
 
+            setEditType("EDIT_POST");
             setEditOpen(true);
         } catch (err) {
             console.error(err);
         }
     };
-    const handleUpdate = async () => {
+
+    const handleEditUpdate = async () => {
         // 기존 이미지 URL (이미 업로드된 이미지들)
         const existing = originalImages; // 기존 이미지들
         console.log("기존 이미지:", existing);
@@ -181,9 +184,51 @@ const CommunityPostManage = ({ communityId }) => {
                 formData
             );
             setEditOpen(false);
+            setEditType("");
             loadData();
         } catch (err) {
             console.error(err);
+            setEditOpen(false);
+            setEditType("");
+        }
+    };
+
+    const handleNewPost = async () => {
+        try {
+            // 현재 이미지 중 신규 파일만 추출
+            const newFiles = form.images.filter((img) => img.file !== null);
+
+            console.log("신규 업로드 파일:", newFiles);
+
+            const formData = new FormData();
+
+            //JSON DTO 추가
+            formData.append(
+                "data",
+                new Blob(
+                    [
+                        JSON.stringify({
+                            title: form.title,
+                            content: form.content,
+                            hashTags: form.hashtags.join(" "), 
+                        }),
+                    ],
+                    { type: "application/json" }
+                )
+            );
+
+            //새 파일 추가.
+            newFiles.forEach((img) => {
+                formData.append("newImages", img.file);
+            });
+
+            await createCommunityPost(communityId, formData);
+
+            setEditOpen(false);
+            setEditType("");
+            loadData();
+        } catch (err) {
+            console.error("게시물 등록 실패:", err);
         }
     };
 
@@ -232,13 +277,24 @@ const CommunityPostManage = ({ communityId }) => {
                         sx={{
                             flex: 1,
                             display: "flex",
+                            flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
                             color: "text.secondary",
                             fontSize: "1.1rem",
                         }}
                     >
-                        아직 등록 된 게시물이 없습니다.
+                        <Typography mb={2}>
+                            아직 등록 된 게시물이 없습니다.
+                        </Typography>
+                        <OneAlignedButton
+                            onClick={() => {
+                                setEditType("NEW_POST");
+                                setEditOpen(true);
+                            }}
+                        >
+                            게시물 작성하기
+                        </OneAlignedButton>
                     </Box>
                 </>
             ) : (
@@ -361,10 +417,15 @@ const CommunityPostManage = ({ communityId }) => {
             </NormalModal>
             <EditPostModal
                 open={editOpen}
-                onClose={() => setEditOpen(false)}
+                editMode={editType}
+                onClose={() => {
+                    setEditOpen(false);
+                    setEditType("");
+                }}
                 form={form}
                 setForm={setForm}
-                onSubmit={handleUpdate}
+                onSubmitEdit={handleEditUpdate}
+                onSubmitNew={handleNewPost}
                 originalImages={originalImages}
             />
         </Paper>

@@ -128,16 +128,6 @@ const CommunityMemberManage = ({ communityId }) => {
         if (!selectedMember) return;
         const id = selectedMember.memberId;
 
-        console.log(
-            "communityId: " +
-                communityId +
-                ", memberId: " +
-                id +
-                " , suspendReason: " +
-                suspendReason +
-                ", modalActionType: " +
-                modalActionType
-        );
         try {
             if (modalActionType === "suspend") {
                 //정지처리 사유 필요.
@@ -251,7 +241,7 @@ const CommunityMemberManage = ({ communityId }) => {
             <NormalModalExpand
                 open={roleModalOpen}
                 close={() => setRoleModalOpen(false)}
-                title="역할 변경"
+                title={<SubTitle>역할 변경</SubTitle>}
                 content={
                     <Box
                         sx={{
@@ -292,7 +282,6 @@ const CommunityMemberManage = ({ communityId }) => {
                                 value={newRole}
                                 onChange={(e) => setNewRole(e.target.value)}
                             >
-                                <MenuItem value="ADMIN">운영자</MenuItem>
                                 <MenuItem value="MANAGER">매니저</MenuItem>
                                 <MenuItem value="MEMBER">일반 회원</MenuItem>
                             </Select>

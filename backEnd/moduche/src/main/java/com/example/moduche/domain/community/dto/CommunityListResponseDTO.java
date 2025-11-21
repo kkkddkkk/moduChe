@@ -13,6 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CommunityListResponseDTO {
 	private Long communityId;
+	private Long postId;
 	private String name;
 	private String desc;
 	private String representativeImage;

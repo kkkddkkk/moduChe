@@ -6,16 +6,17 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.moduche.domain.community.dto.MemberManageDTO;
 import com.example.moduche.domain.community.dto.MyCommunityManageDTO;
+import com.example.moduche.domain.community.entity.Community;
 import com.example.moduche.domain.community.entity.CommunityMember;
 import com.example.moduche.domain.community.enums.CommunityMemberRole;
 import com.example.moduche.domain.community.enums.CommunityMemberStatus;
 import com.example.moduche.domain.community.repository.CommunityMemberRepository;
 import com.example.moduche.domain.community.repository.CommunityRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -71,6 +72,16 @@ public class CommunityMemberService {
 
 		CommunityMember member = memberRepository.findByIdAndCommunity_CommunityId(memberId, communityId)
 				.orElseThrow(() -> new IllegalArgumentException("회원 없음"));
+
+		if (member.getRole() == CommunityMemberRole.ADMIN) {
+			// 운영자 멤버에 대한 등급 변경 불가능.
+			throw new CommunityPermissionException("운영자 본인은 등급을 변경할 수 없습니다.");
+		}
+
+		if (newRole == CommunityMemberRole.ADMIN) {
+			// 역시 운영자 등급에 대한 권한 부여 불가능.
+			throw new CommunityPermissionException("다른 회원에게 운영자 권한을 부여할 수 없습니다.");
+		}
 
 		member.setRole(newRole);
 	}
@@ -134,4 +145,56 @@ public class CommunityMemberService {
 		return memberRepository.existsByUser_UserIdAndStatusIn(userId,
 				List.of(CommunityMemberStatus.ACTIVE, CommunityMemberStatus.SUSPENDED));
 	}
+
+	@Transactional
+	public void transferOwner(Long communityId, Long currentUserId, Long targetMemberId) {
+		// 동아리 조회.
+		Community community = communityRepository.findById(communityId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 동아리입니다."));
+
+		// 현재 운영자가 맞는지 검증.
+		if (!community.getOwner().getUserId().equals(currentUserId)) {
+			throw new IllegalArgumentException("대표 운영자만 권한을 이양할 수 있습니다.");
+		}
+
+		// 본인의 Member 엔티티 찾기.
+		CommunityMember currentMember = memberRepository
+				.findByCommunity_CommunityIdAndUser_UserId(communityId, currentUserId)
+				.orElseThrow(() -> new IllegalArgumentException("운영자 멤버 정보를 찾을 수 없습니다."));
+
+		// 권한 이양 대상 멤버 찾기.
+		CommunityMember newOwnerMember = memberRepository.findById(targetMemberId)
+				.orElseThrow(() -> new IllegalArgumentException("대상 멤버를 찾을 수 없습니다."));
+
+		// 대상이 같은 동아리 소속인지 확인.
+		if (!newOwnerMember.getCommunity().getCommunityId().equals(communityId)) {
+			throw new IllegalArgumentException("해당 멤버는 이 동아리 소속이 아닙니다.");
+		}
+
+		// 유효성 검증 (본인을 제외한 Active 회원 1명 이상 있어야 함).
+		if (!isCanSwitch(communityId, currentMember.getId())) {
+			throw new IllegalArgumentException("책임을 이양할 대상이 없어 등급 변경이 불가합니다.");
+		}
+
+		// 기존 운영자 => 일반 회원.
+		currentMember.setRole(CommunityMemberRole.MEMBER);
+
+		// 새 운영자 => 운영자.
+		newOwnerMember.setRole(CommunityMemberRole.ADMIN);
+
+		// 커뮤니티 Owner 새 운영자로 갱신.
+		community.setOwner(newOwnerMember.getUser());
+	}
+
+	// 나 말고 유효한 책임 전가 대상 확인 메소드.
+	public boolean isCanSwitch(Long communityId, Long currentMemberId) {
+
+		// ACTIVE 상태의 멤버 리스트 가져오기
+		List<CommunityMember> activeMembers = memberRepository.findActiveMembersByCommunityId(communityId);
+
+		// 나를 제외한 사람이 1명 이상 있어야 운영자 권한 이양 가능.
+		return activeMembers.stream().anyMatch(m -> !m.getId().equals(currentMemberId));
+	}
+
+	
 }

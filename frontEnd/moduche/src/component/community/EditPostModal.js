@@ -25,7 +25,9 @@ const EditPostModal = ({
     onClose,
     form,
     setForm,
-    onSubmit,
+    onSubmitNew,
+    onSubmitEdit,
+    editMode,
     type = "COMMUNITY",
     originalImages, // 추가된 props
 }) => {
@@ -33,11 +35,6 @@ const EditPostModal = ({
 
     const handleInputChange = (value, name) => {
         setForm((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onSubmit();
     };
 
     return (
@@ -70,11 +67,13 @@ const EditPostModal = ({
             </IconButton>
 
             <DialogTitle sx={{ textAlign: "center", fontWeight: 600 }}>
-                게시물 수정
+                {editMode === "NEW_POST" ? "게시물 작성" : "게시물 수정"}
             </DialogTitle>
 
             {/* 본문 스크롤 영역 */}
-            <form onSubmit={onSubmit}>
+            <form
+                onSubmit={editMode === "NEW_POST" ? onSubmitNew : onSubmitEdit}
+            >
                 <DialogContent
                     dividers
                     sx={{
@@ -151,23 +150,51 @@ const EditPostModal = ({
                             justifyContent: "space-between",
                         }}
                     >
-                        <OneAlignedButton
-                            variant="outlined"
-                            sx={{ width: "90%" }}
-                            onClick={onClose}
-                            buttonWrapperSx={{ width: "100%" }}
-                        >
-                            수정 취소
-                        </OneAlignedButton>
+                        {editMode === "NEW_POST" ? (
+                            <>
+                                <OneAlignedButton
+                                    variant="contained"
+                                    sx={{ width: "90%" }}
+                                    onClick={onSubmitNew}
+                                    align="center"
+                                    buttonWrapperSx={{
+                                        width: "50%",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    게시물 등록
+                                </OneAlignedButton>
+                            </>
+                        ) : (
+                            <>
+                                <OneAlignedButton
+                                    variant="outlined"
+                                    sx={{ width: "90%" }}
+                                    onClick={onClose}
+                                    buttonWrapperSx={{
+                                        width: "100%",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    수정 취소
+                                </OneAlignedButton>
 
-                        <OneAlignedButton
-                            variant="contained"
-                            sx={{ width: "90%" }}
-                            onClick={onSubmit}
-                            buttonWrapperSx={{ width: "100%" }}
-                        >
-                            수정 완료
-                        </OneAlignedButton>
+                                <OneAlignedButton
+                                    variant="contained"
+                                    sx={{ width: "90%" }}
+                                    onClick={onSubmitEdit}
+                                    buttonWrapperSx={{
+                                        width: "100%",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    게시물 수정
+                                </OneAlignedButton>
+                            </>
+                        )}
                     </DialogActions>
                 </DialogContent>
             </form>

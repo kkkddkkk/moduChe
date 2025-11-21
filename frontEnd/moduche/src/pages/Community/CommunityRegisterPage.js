@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RegisterFormBase from "../../component/common/RegisterFormBase";
 import { CommunityRegisterFields } from "../../component/community/CommunityRegisterFields";
 import { Grid, useMediaQuery, useTheme } from "@mui/material";
 import { registerCommunity } from "../../api/communityAPI/communityAPI";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../component/community/ConfirmModal";
+import { isLoggedIn, isTokenExpired } from "../../utils/auth";
+import Loading from "../../component/common/Loading";
 
 const CommunityRegisterPage = () => {
     const navigate = useNavigate();
@@ -16,6 +18,41 @@ const CommunityRegisterPage = () => {
     const [modalTitle, setModalTitle] = useState("안내");
     const [modalContent, setModalContent] = useState("내용");
     const [modalEvent, setModalEvent] = useState(() => {});
+
+    //공용 모달 제어용.
+    const [noEscape, setNoEscape] = useState(false);
+    const [isOneBtn, setIsOneBtn] = useState(false);
+
+    //로딩처리.
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        //로그인, 엑세스 토큰 먼저 확인.
+        if (!isLoggedIn()) {
+            setOpenConfirm(true);
+            setModalTitle("잘못된 접근");
+            setModalContent(
+                "로그인이 필요한 서비스입니다.\n로그인 후 이용하실 수 있습니다."
+            );
+            setIsOneBtn(true);
+            setNoEscape(true);
+            setModalEvent(() => () => navigate("/account/login"));
+            return;
+        }
+
+        const token = localStorage.getItem("accessToken");
+        if (!token || isTokenExpired(token)) {
+            setOpenConfirm(true);
+            setModalTitle("로그인 만료");
+            setModalContent(
+                "로그인이 만료 되었습니다.\n재로그인 후 이용하실 수 있습니다."
+            );
+            setIsOneBtn(true);
+            setNoEscape(true);
+            setModalEvent(() => () => navigate("/account/login"));
+            return;
+        }
+    }, []);
 
     const [form, setForm] = useState({
         // 기본 정보
@@ -36,6 +73,8 @@ const CommunityRegisterPage = () => {
         // 활동 관련
         address: "",
         addressDetail: "",
+        geoLat: null,
+        geoLng: null,
         scheduleType: "비정기",
         selectedDays: [],
         selectedWeeks: [],
@@ -59,29 +98,39 @@ const CommunityRegisterPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        setLoading(true);
         // 동아리 이름 검사.
         if (!form.name || form.name.trim().length > 30) {
+            setLoading(false);
             setModalTitle("입력 오류");
             setModalContent("동아리 이름은 30자 이내로 입력해주세요.");
             setModalEvent(() => () => setOpenConfirm(false));
+            setIsOneBtn(true);
+            setNoEscape(false);
             setOpenConfirm(true);
             return;
         }
 
         // 설립 목적 검사.
         if (!form.purpose || form.purpose.trim().length > 30) {
+            setLoading(false);
             setModalTitle("입력 오류");
             setModalContent("설립 목적 및 취지는 30자 이내로 입력해주세요.");
             setModalEvent(() => () => setOpenConfirm(false));
+            setIsOneBtn(true);
+            setNoEscape(false);
             setOpenConfirm(true);
             return;
         }
 
         // 활동 위치 검사.
         if (!form.address || !form.addressDetail) {
+            setLoading(false);
             setModalTitle("입력 누락");
             setModalContent("활동 위치 및 상세 위치를 모두 입력해주세요.");
             setModalEvent(() => () => setOpenConfirm(false));
+            setIsOneBtn(true);
+            setNoEscape(false);
             setOpenConfirm(true);
             return;
         }
@@ -95,27 +144,37 @@ const CommunityRegisterPage = () => {
                 : form.customDate;
 
         if (!scheduleDetail || scheduleDetail.trim() === "") {
+            setLoading(false);
             setModalTitle("입력 누락");
             setModalContent("활동 일정 상세를 반드시 입력해주세요.");
             setModalEvent(() => () => setOpenConfirm(false));
+            setIsOneBtn(true);
+            setNoEscape(false);
             setOpenConfirm(true);
             return;
         }
 
         // 제목 길이 검사.
         if (!form.title || form.title.trim().length > 30) {
+            setLoading(false);
+
             setModalTitle("입력 오류");
             setModalContent("홍보글 제목은 30자 이내로 입력해주세요.");
             setModalEvent(() => () => setOpenConfirm(false));
+            setIsOneBtn(true);
+            setNoEscape(false);
             setOpenConfirm(true);
             return;
         }
 
         // 해시태그 검사.
         if (!form.hashtags || form.hashtags.length === 0) {
+            setLoading(false);
             setModalTitle("입력 누락");
             setModalContent("해시태그를 하나 이상 입력해주세요.");
             setModalEvent(() => () => setOpenConfirm(false));
+            setIsOneBtn(true);
+            setNoEscape(false);
             setOpenConfirm(true);
             return;
         }
@@ -125,11 +184,14 @@ const CommunityRegisterPage = () => {
             !form.representativeImage &&
             (!form.images || form.images.length === 0)
         ) {
+            setLoading(false);
             setModalTitle("입력 누락");
             setModalContent(
                 "대표 이미지 또는 활동 이미지를 최소 1개 이상 업로드해주세요."
             );
             setModalEvent(() => () => setOpenConfirm(false));
+            setIsOneBtn(true);
+            setNoEscape(false);
             setOpenConfirm(true);
             return;
         }
@@ -143,6 +205,8 @@ const CommunityRegisterPage = () => {
         const dto = {
             address: form.address,
             addressDetail: form.addressDetail,
+            geoLat: form.geoLat ?? null,
+            geoLng: form.geoLng ?? null,
             title: form.title,
             content: form.content,
             hashTags: processedTags,
@@ -168,20 +232,30 @@ const CommunityRegisterPage = () => {
             }
         });
 
-        // API 호출.
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+
+        // // API 호출.
         try {
             const res = await registerCommunity(formData);
+            setLoading(false);
             setModalTitle("등록 완료");
             setModalContent("동아리 등록 요청이 정상적으로 제출되었습니다.");
             setModalEvent(() => () => {
                 setOpenConfirm(false);
                 navigate("/community/home");
             });
+            setIsOneBtn(true);
+            setNoEscape(true);
             setOpenConfirm(true);
         } catch (err) {
+            setLoading(false);
             setModalTitle("등록 실패");
             setModalContent("등록에 실패했습니다. 잠시 후 다시 시도해주세요.");
             setModalEvent(() => () => setOpenConfirm(false));
+            setIsOneBtn(true);
+            setNoEscape(false);
             setOpenConfirm(true);
         }
     };
@@ -213,6 +287,13 @@ const CommunityRegisterPage = () => {
                     content={modalContent}
                     onConfirm={modalEvent}
                     onClose={() => setOpenConfirm(false)}
+                    isNoEscape={noEscape}
+                    isOneBtn={isOneBtn}
+                />
+
+                <Loading
+                    open={loading}
+                    text="동아리 정보를 등록하고 있습니다."
                 />
             </Grid>
 

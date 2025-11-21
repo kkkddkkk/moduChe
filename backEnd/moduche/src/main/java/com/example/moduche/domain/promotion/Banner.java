@@ -7,7 +7,7 @@ import com.example.moduche.domain.login.User;
 
 import lombok.*;
 
-@Entity @Table(name="banner")
+//@Entity @Table(name="banner")
 @Getter @Setter @NoArgsConstructor
 public class Banner {
   @Id @GeneratedValue(strategy=GenerationType.IDENTITY)

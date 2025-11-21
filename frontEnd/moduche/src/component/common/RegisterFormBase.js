@@ -35,29 +35,7 @@ const RegisterFormBase = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
-  // ✅ 제출 전에 검증 & 로그 출력
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    const missingFields = [];
-    if (!form.title?.trim()) missingFields.push("제목");
-    if (!form.content?.trim()) missingFields.push("내용");
-
-    if (missingFields.length > 0) {
-      alert(`입력 누락 항목: ${missingFields.join(", ")}`);
-      console.warn("❌ 누락 필드:", missingFields);
-      console.table(form);
-      return;
-    }
-
-    console.group("✅ 폼 제출 직전 데이터 로그");
-    console.table(form);
-    console.groupEnd();
-
-    onSubmit(e); // ← 상위 onSubmit으로 실제 처리 위임
-  };
-
-  // ✅ 취소 버튼
+  
   const handleCancel = () => {
     if (window.confirm("작성 중인 내용을 모두 취소하시겠습니까?")) {
       window.history.back();
@@ -119,7 +97,7 @@ const RegisterFormBase = ({
                     title: value,
                   }))
                 }
-                placeholder={"예: 사랑과 낭만을 쫓는 사람들의 모임"}
+                placeholder={"게시될 홍보글의 제목을 입력해주세요"}
                 padding={10}
               />
             </Grid>

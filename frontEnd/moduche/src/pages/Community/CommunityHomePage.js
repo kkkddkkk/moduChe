@@ -64,6 +64,8 @@ const CommunityHomePage = () => {
                 title={modalTitle}
                 content={modalContent}
                 onConfirm={modalEvent}
+                isNoEscape={true}
+                isOneBtn={true}
                 onClose={() => setOpenConfirm(false)}
             />
             {!data ? (
