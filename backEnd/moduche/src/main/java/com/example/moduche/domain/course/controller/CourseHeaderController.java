@@ -8,14 +8,14 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/courses")
+@RequestMapping("/api/course")
 public class CourseHeaderController {
 
-    private final CourseHeaderService headerService;
+	private final CourseHeaderService courseHeaderService;
 
-    @GetMapping("/{id}/header")
-    public ResponseEntity<CourseHeaderResponse> getHeader(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(headerService.getHeader(id));
+    // 강좌 헤더 조회
+    @GetMapping("/{courseId}/header")
+    public CourseHeaderResponse getHeader(@PathVariable("courseId") Long courseId) {
+        return courseHeaderService.getHeader(courseId);
     }
-
 }

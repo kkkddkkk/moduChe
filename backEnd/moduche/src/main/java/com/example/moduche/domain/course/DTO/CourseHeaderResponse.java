@@ -1,31 +1,38 @@
-// CourseHeaderResponse.java
+// src/main/java/.../course/DTO/CourseHeaderResponse.java
 package com.example.moduche.domain.course.DTO;
 
-import com.example.moduche.domain.course.Course;
+import lombok.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-public record CourseHeaderResponse(
-    String title,
-    String bylineName,
-    String bylineOrg,
+import com.example.moduche.domain.course.Course;
 
-    LocalDate periodStart,
-    LocalDate periodEnd,
-    String scheduleLine,
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
+public class CourseHeaderResponse {
+    private String title;
+    private String bylineName;
+    private String bylineOrg;
 
-    List<SessionDto> sessions,
-    Map<String, List<String>> datesBySession,
+    private LocalDate periodStart;
+    private LocalDate periodEnd;
 
-    String defaultSessionId,
-    String defaultDate,
+    private String scheduleLine;
 
-    List<String> tags,
-    FacilityHeaderDto facility,
+    private List<SessionDto> sessions;
+    private Map<String, List<String>> datesBySession;
 
-    String thumbnailUrl,
-    Integer maxParticipants,
-    Course.CourseFormat format,
-    Course.CourseStatus status
-) {}
+    private String defaultSessionId;
+    private String defaultDate;
+
+    private List<String> tags;
+
+    private FacilityHeaderDto facility;
+
+    private String thumbnailUrl;
+    private Integer maxParticipants;
+
+    private Course.CourseFormat format;
+    private Course.CourseStatus status;
+}

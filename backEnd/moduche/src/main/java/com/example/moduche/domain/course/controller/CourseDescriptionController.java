@@ -8,13 +8,14 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/courses")
+@RequestMapping("/api/course")
 public class CourseDescriptionController {
 
     private final CourseDescriptionService service;
 
     @GetMapping("/{id}/description")
-    public ResponseEntity<CourseDescriptionResponse> getDescription(@PathVariable Long id) {
+    public ResponseEntity<CourseDescriptionResponse> getDescription(@PathVariable("id") Long id) {
         return ResponseEntity.ok(service.getDescription(id));
+    
     }
 }

@@ -1,33 +1,34 @@
-// CourseDescription.jsx
+// src/pages/Course/CourseDescription.jsx
 import { Box, Typography } from "@mui/material";
-import SectionBox from "./SectionBox";
-import MetaRow from "./MetaRow";
+import Paper from "../../component/common/Paper";
 
-export default function CourseDescription({
-  hasDetail,
-  title,
-  description,
-  tags = [],
-  address,
-}) {
+export default function CourseDescription({ hasDetail, html }) {
   return (
-    <SectionBox label="상세 내용" sx={{ flexGrow: 1 }}>
-      {hasDetail && (
-        <Box sx={{ p: 3, "& h6": { mt: 3, mb: 1.5 }, "& p": { mb: 1.5 } }}>
-          <MetaRow tags={tags} address={address} />
+    <Paper
+      sx={{
+        p: 3,
+        minHeight: 260,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Typography variant="h6" fontWeight="bold" gutterBottom>
+        강좌 소개
+      </Typography>
 
-          <Typography variant="h6" gutterBottom>
-            강좌 소개
+      <Box sx={{ mt: 1, flex: 1 }}>
+        {html ? (
+          // 🔥 에디터에서 온 HTML 그리기
+          <div
+            style={{ lineHeight: 1.6, whiteSpace: "normal" }}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        ) : (
+          <Typography color="text.secondary">
+            설명이 아직 등록되지 않았습니다.
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{ fontSize: "1.4rem", lineHeight: 1.45 }}
-          >
-            {description ?? "설명이 아직 등록되지 않았습니다."}
-          </Typography>
-          {/* 필요 시 섹션 추가 */}
-        </Box>
-      )}
-    </SectionBox>
+        )}
+      </Box>
+    </Paper>
   );
 }

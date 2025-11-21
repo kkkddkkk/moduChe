@@ -20,7 +20,7 @@ export default function courseRouter() {
     },
 
     {
-      path: "CourseDetail",
+      path: "details/:courseId",
       element: (
         <Suspense fallback={Loading}>
           <CourseDetail />

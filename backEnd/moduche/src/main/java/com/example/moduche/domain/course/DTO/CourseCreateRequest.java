@@ -15,5 +15,5 @@ public class CourseCreateRequest {
     private String status;             // PUBLISHED 등
     private String typeCode;           // course_type FK
     private Long facilityId;           // 시설 FK
-    private Long creatorUserId;        // 작성자(User) PK
+
 }

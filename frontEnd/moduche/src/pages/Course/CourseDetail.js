@@ -1,6 +1,8 @@
-// src/pages/CourseDetail.jsx
-import React, { useEffect, useState } from "react";
+// src/pages/Course/CourseDetail.js
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Box, Toolbar, Container } from "@mui/material";
+
 import Layout from "../../component/common/Layout";
 import CourseImage from "./CourseImage";
 import CourseHeader from "./CourseHeader";
@@ -8,43 +10,49 @@ import CourseDescription from "./CourseDescription";
 import QuickSearchBar from "./QuickSearchBar";
 import CourseSidebar from "./CourseSidebar";
 
-// API 클라이언트
-import { getCourseHeader } from "../../api/courseAPI";
+import { getCourseHeader, getCourseDescription } from "../../api/courseAPI";
 import { mapHeaderToProps } from "../../api/coursemappers/courseMapper";
 
-export default function CourseDetail({ courseId = "4" }) {
+export default function CourseDetail() {
+  const { courseId } = useParams();
+
   const [loading, setLoading] = useState(true);
   const [ui, setUi] = useState(null);
+  const [desc, setDesc] = useState(null);
   const [error, setError] = useState(null);
 
   const [sessionId, setSessionId] = useState("");
   const [date, setDate] = useState("");
   const [spotsLeft, setSpotsLeft] = useState(0);
 
-  /** 1) 서버에서 헤더 데이터 가져오기 */
   useEffect(() => {
+    if (!courseId) return;
+
     let alive = true;
 
     (async () => {
       try {
-        setError(null);
         setLoading(true);
+        setError(null);
 
         console.log("📡 [CourseDetail] 요청 courseId =", courseId);
 
-        const data = await getCourseHeader(courseId);
-        console.log("📨 [CourseDetail] 서버 응답 =", data);
+        const headerRes = await getCourseHeader(courseId);
+        const descRes = await getCourseDescription(courseId);
+
+        console.log("📨 [CourseDetail] 헤더 응답 =", headerRes);
+        console.log("📨 [CourseDetail] 설명 응답 =", descRes);
 
         if (!alive) return;
 
-        const mapped = mapHeaderToProps(data);
+        const mapped = mapHeaderToProps(headerRes, descRes);
         console.log("🎨 [CourseDetail] mapped UI =", mapped);
 
         setUi(mapped);
+        setDesc(descRes);
 
-        /** 기본값 처리 */
         const sid = mapped.defaultSessionId || mapped.sessions?.[0]?.id || "";
-        const first = (sid && mapped.datesBySession[sid]?.[0]) || "";
+        const first = (sid && mapped.datesBySession?.[sid]?.[0]) || "";
 
         setSessionId(sid);
         setDate(first);
@@ -53,7 +61,7 @@ export default function CourseDetail({ courseId = "4" }) {
           mapped.sessions?.find((s) => s.id === sid)?.remaining ?? 0;
         setSpotsLeft(remainForSid);
       } catch (e) {
-        console.error("❌ [CourseDetail] 헤더 로드 실패:", e);
+        console.error("❌ [CourseDetail] 로드 실패:", e);
         if (alive) setError(e);
       } finally {
         if (alive) setLoading(false);
@@ -65,10 +73,8 @@ export default function CourseDetail({ courseId = "4" }) {
     };
   }, [courseId]);
 
-  /** 2) 세션 변경 시 좌석/날짜 갱신 */
   useEffect(() => {
     if (!ui || !sessionId) return;
-
     const r = ui.sessions?.find((s) => s.id === sessionId)?.remaining ?? 0;
     setSpotsLeft(r);
 
@@ -76,11 +82,8 @@ export default function CourseDetail({ courseId = "4" }) {
     if (first) setDate(first);
   }, [sessionId, ui]);
 
-  /** ====================
-   *  렌더링 분기 처리
-   * ==================== */
+  // 로딩 / 에러 / 데이터 없음은 기존 그대로…
 
-  /** 로딩 상태 */
   if (loading) {
     return (
       <Layout>
@@ -92,7 +95,6 @@ export default function CourseDetail({ courseId = "4" }) {
     );
   }
 
-  /** 에러 상태 */
   if (error) {
     return (
       <Layout>
@@ -107,7 +109,6 @@ export default function CourseDetail({ courseId = "4" }) {
     );
   }
 
-  /** 데이터 없음 */
   if (!ui) {
     return (
       <Layout>
@@ -119,7 +120,6 @@ export default function CourseDetail({ courseId = "4" }) {
     );
   }
 
-  /** 정상 렌더링 */
   const hasImage = true;
   const hasHeader = true;
   const hasDetail = true;
@@ -164,7 +164,7 @@ export default function CourseDetail({ courseId = "4" }) {
               minHeight: 0,
             }}
           >
-            {/* 이미지 + 헤더 영역 */}
+            {/* 이미지 + 헤더 */}
             <Box
               sx={{
                 display: "flex",
@@ -193,7 +193,6 @@ export default function CourseDetail({ courseId = "4" }) {
                   setDate={setDate}
                   showMeta={false}
                   emphasizeByline={true}
-                  /* 백엔드 데이터 */
                   titleText={ui.titleText}
                   bylineName={ui.bylineName}
                   bylineOrg={ui.bylineOrg}
@@ -209,7 +208,10 @@ export default function CourseDetail({ courseId = "4" }) {
             {/* 상세 설명 */}
             <Box sx={{ flex: 1, minHeight: 240, display: "flex" }}>
               <Box sx={{ flex: 1 }}>
-                <CourseDescription hasDetail={hasDetail} />
+                <CourseDescription
+                  hasDetail={hasDetail}
+                  html={desc?.description} // 🔥 실제 HTML 넘기기
+                />
               </Box>
             </Box>
           </Box>
