@@ -38,8 +38,8 @@ public class Course {
     @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_course_created_by"))
     private User createdBy;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "type_code", referencedColumnName = "type_code")
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "type_code", referencedColumnName = "type_code", nullable = true)
     private CourseType courseType;
 
     /** 콘텐츠 */

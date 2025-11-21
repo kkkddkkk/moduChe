@@ -9,15 +9,19 @@ import com.example.moduche.domain.course.repository.CourseTypeRepository;
 import com.example.moduche.domain.facility.Facility;
 import com.example.moduche.domain.facility.repository.FacilityRepository;
 import com.example.moduche.domain.login.User;
+import com.example.moduche.global.AWS.service.AWSService;
 import com.example.moduche.global.security.JwtTokenProvider;
 import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -27,49 +31,61 @@ public class CourseCommandServiceImpl implements CourseCommandService {
     private final CourseTypeRepository courseTypeRepository;
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
+    // 필요하면 AWSService 같은 거 주입해서 이미지 처리
 
     @Override
     @Transactional
-    public CourseCreateResponse createCourse(CourseCreateRequest req) {
+    public CourseCreateResponse registerCourse(Long ownerId,
+                                               CourseCreateRequest dto,
+                                               List<MultipartFile> images) {
 
-        // 1) SecurityContext에서 인증 정보 꺼내기
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("인증 정보가 없습니다. (SecurityContext authentication null)");
-        }
+        // 1) 작성자 조회 (userId로)
+        User creator = userRepository.findById(ownerId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. id=" + ownerId));
 
-        String username = authentication.getName();
-
-        // 2) username 기반 User 조회
-        User creator = userRepository.findByUserName(username)
-                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다: " + username));
-
-        // 3) 코스 타입 조회 (nullable)
+        // 2) 코스 타입 (nullable)
         CourseType courseType = null;
-        if (req.getTypeCode() != null && !req.getTypeCode().isBlank()) {
-            courseType = courseTypeRepository.findById(req.getTypeCode())
-                    .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 코스 타입: " + req.getTypeCode()));
+        if (dto.getTypeCode() != null && !dto.getTypeCode().isBlank()) {
+            courseType = courseTypeRepository.findById(dto.getTypeCode())
+                    .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 코스 타입: " + dto.getTypeCode()));
         }
 
-        // 4) Facility 조회
-        Facility facility = facilityRepository.findById(req.getFacilityId())
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 시설 ID: " + req.getFacilityId()));
+        // 3) 시설
+        Facility facility = facilityRepository.findById(dto.getFacilityId())
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 시설 ID: " + dto.getFacilityId()));
 
-        // 5) Course 엔티티 생성
+        // 4) 포맷/상태 기본값 처리
+        Course.CourseFormat format = Course.CourseFormat.OFFLINE;
+        if (dto.getFormat() != null && !dto.getFormat().isBlank()) {
+            format = Course.CourseFormat.valueOf(dto.getFormat()); // "OFFLINE", "ONLINE" 이런 값 들어온다고 가정
+        }
+
+        Course.CourseStatus status = Course.CourseStatus.PUBLISHED;
+        if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
+            status = Course.CourseStatus.valueOf(dto.getStatus());
+        }
+
+        // 5) 코스 생성
         Course course = Course.builder()
-                .title(req.getTitle())
-                .summary(req.getSummary())
-                .description(req.getDescription())
+                .title(dto.getTitle())
+                .summary(dto.getSummary())
+                .description(dto.getDescription()) // 🔥 Quill 본문 그대로 들어오는 필드
                 .createdBy(creator)
                 .facility(facility)
                 .courseType(courseType)
-                .maxParticipants(req.getMaxParticipants())
-                .format(Course.CourseFormat.valueOf(req.getFormat()))
-                .status(Course.CourseStatus.valueOf(req.getStatus()))
+                .maxParticipants(dto.getMaxParticipants())
+                .format(format)
+                .status(status)
                 .viewCount(0L)
                 .build();
 
         courseRepository.save(course);
+
+        // 6) 이미지 처리 (있으면)
+        if (images != null && !images.isEmpty()) {
+            // TODO: AWSService 등 붙여서 course 이미지 저장
+            // for (MultipartFile file : images) { ... }
+        }
 
         return new CourseCreateResponse(course.getCourseId(), "강좌 생성 완료");
     }

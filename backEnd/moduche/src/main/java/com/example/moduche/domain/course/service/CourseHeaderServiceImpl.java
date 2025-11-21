@@ -122,23 +122,23 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
                 : "Organization";
         System.out.println("=== DEBUG: returning header for courseId = " + c.getCourseId());
         return new CourseHeaderResponse(
-                c.getTitle(),
-                bylineName,
-                bylineOrg,
-                periodStart,
-                periodEnd,
-                scheduleLine,
-                sessionDtos,
-                datesBySession,
-                defaultSessionId,
-                defaultDate,
-                tags,
-                facility,
-                c.getThumbnailUrl(),
-                c.getMaxParticipants(),
-                c.getFormat(),
-                c.getStatus()
-        );
+        	    c.getTitle(),
+        	    bylineName,
+        	    bylineOrg,
+        	    periodStart,
+        	    periodEnd,
+        	    scheduleLine,
+        	    sessionDtos,
+        	    datesBySession,
+        	    defaultSessionId,
+        	    defaultDate,
+        	    tags,
+        	    facility,
+        	    c.getThumbnailUrl(),
+        	    c.getMaxParticipants(),
+        	    c.getFormat(),
+        	    c.getStatus()
+        	);
     }
 
     /* ================= 내부 유틸 ================= */

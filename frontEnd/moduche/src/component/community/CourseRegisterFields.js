@@ -1,44 +1,59 @@
+// src/component/community/CourseRegisterFields.jsx
+
 import {
-  Typography,
+  Autocomplete,
+  Box,
   TextField,
-  MenuItem,
+  Tooltip,
+  Typography,
   useTheme,
   useMediaQuery,
   Grid,
   alpha,
-  Checkbox,
-  FormGroup,
-  FormControlLabel,
-  Box,
 } from "@mui/material";
-import { CalendarCheck, ClipboardList, Receipt, Tag } from "lucide-react";
+import { CalendarCheck, ClipboardList, Receipt } from "lucide-react";
 import { SubTitle } from "../common/Text";
 import { RegisterTitle } from "./RegisterTitle";
 import CustomTextField from "../common/CustomTextField";
-import { OneAlignedButton } from "../common/Button";
-import { HashTagInput } from "../common/HashTagInput";
 import Paper from "../common/Paper";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export const CourseRegisterFields = ({ form, setForm, onChange }) => {
+// 🔥 회원가입 때 쓰던 시설 검색 API 재사용
+import { getFacilityList } from "../../api/accountAPI/signInAPI";
+
+export const CourseRegisterFields = ({
+  form,
+  setForm,
+  onChange,
+  facility,
+  setFacility,
+}) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
 
-  // 접근성 옵션
-  const [accessibility, setAccessibility] = useState({
-    visual: false,
-    hearing: false,
-    mobility: false,
-    assistant: false,
-    signLanguage: false,
-  });
+  // ✅ 시설 자동완성용 상태
+  const [facilities, setFacilities] = useState([]);
+  const [search, setSearch] = useState("");
 
-  const handleAccessibilityChange = (key) => {
-    const updated = { ...accessibility, [key]: !accessibility[key] };
-    setAccessibility(updated);
-    setForm((prev) => ({ ...prev, accessibility: updated }));
-  };
+  // 🔍 시설명 검색 → 백엔드에서 목록 가져오기
+  useEffect(() => {
+    if (search.length < 2) {
+      setFacilities([]);
+      return;
+    }
+
+    const fetch = async () => {
+      try {
+        const res = await getFacilityList(search); // 회원가입에서 쓰던 거 그대로
+        setFacilities(res.data);
+      } catch (e) {
+        console.error("시설 목록 조회 실패:", e);
+      }
+    };
+
+    fetch();
+  }, [search]);
 
   return (
     <>
@@ -76,16 +91,23 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
             },
           }}
         >
+          {/* 강좌명 */}
           <Grid size={12} sx={{ mb: 3 }}>
             <RegisterTitle title={"강좌명"} />
             <CustomTextField
               data={form.name || ""}
-              setData={(value) => setForm((prev) => ({ ...prev, name: value }))}
+              setData={(value) =>
+                setForm((prev) => ({
+                  ...prev,
+                  name: value,
+                }))
+              }
               placeholder="예: Adaptive Pilates — Core Strength for All"
               padding={10}
             />
           </Grid>
 
+          {/* 강사명 (지금은 백엔드에 안 보내지만 UI는 유지) */}
           <Grid size={12} sx={{ mb: 3 }}>
             <RegisterTitle title={"강사명"} />
             <CustomTextField
@@ -101,13 +123,15 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
             />
           </Grid>
 
+          {/* 강좌 종목 (화면용) */}
           <Grid size={12} sx={{ mb: 3 }}>
             <RegisterTitle title={"강좌 종목"} />
             <CustomTextField
+              data={form.courseTypeName || ""}
               setData={(value) =>
                 setForm((prev) => ({
                   ...prev,
-                  courseType: value,
+                  courseTypeName: value,
                 }))
               }
               placeholder={"예: 요가, 수영, 농구, 배드민턴"}
@@ -115,21 +139,55 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
             />
           </Grid>
 
+          {/* ✅ 시설명 선택 (Autocomplete) */}
           <Grid size={12} sx={{ mb: 3 }}>
             <RegisterTitle title={"시설명"} />
-            <CustomTextField
-              data={form.facility || ""}
-              setData={(value) =>
+            <Autocomplete
+              options={facilities}
+              getOptionLabel={(option) => option.name?.toString() || ""}
+              value={facility || null}
+              onChange={(event, newValue) => {
+                setFacility(newValue || null);
+
                 setForm((prev) => ({
                   ...prev,
-                  facility: value,
-                }))
-              }
-              placeholder="예: Navi Athletics Club"
-              padding={10}
+                  facilityId: newValue ? newValue.id : null, // 🔥 PK
+                  facilityName: newValue ? newValue.name : "",
+                  address: newValue ? newValue.loca : "",
+                }));
+              }}
+              renderOption={(props, option, { index }) => (
+                <li {...props} key={index}>
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    width="100%"
+                  >
+                    <Typography>{option.name}</Typography>
+                    <Tooltip title={option.loca} arrow placement="right">
+                      <Typography>
+                        {option.loca && option.loca.length > 15
+                          ? option.loca.substring(0, 15) + "..."
+                          : option.loca}
+                      </Typography>
+                    </Tooltip>
+                  </Box>
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="시설명을 입력해서 검색"
+                  variant="standard"
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              )}
+              isOptionEqualToValue={(option, val) => option.id === val?.id}
+              noOptionsText="등록되지 않은 시설입니다."
             />
           </Grid>
 
+          {/* 최대 참가 인원 */}
           <Grid size={12}>
             <RegisterTitle title={"최대 참가 인원"} />
             <TextField
@@ -178,40 +236,15 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
             },
           }}
         >
-          {/* 위치 */}
+          {/* 위치 – 시설 선택하면 자동 채워짐 (읽기 전용) */}
           <Grid container size={12} sx={{ mb: 4.5 }}>
             <RegisterTitle title={"활동 위치"} />
-            <Grid item size={8}>
-              <CustomTextField
-                data={form.address || ""}
-                setData={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    address: value,
-                  }))
-                }
-                placeholder="기본 주소"
-                padding={10}
-              />
-            </Grid>
-            <Grid item size={4} mb={1}>
-              <OneAlignedButton
-                sx={{ height: "100%", width: "100%" }}
-                buttonWrapperSx={{ width: "90%" }}
-              >
-                검색
-              </OneAlignedButton>
-            </Grid>
             <CustomTextField
-              data={form.addressDetail || ""}
-              setData={(value) =>
-                setForm((prev) => ({
-                  ...prev,
-                  addressDetail: value,
-                }))
-              }
-              placeholder="상세 주소"
+              data={form.address || ""}
+              setData={() => {}}
+              placeholder="시설 선택 시 주소가 자동으로 입력됩니다."
               padding={10}
+              disabled
             />
           </Grid>
 
@@ -237,7 +270,7 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
             </Grid>
           </Grid>
 
-          {/* 주기 */}
+          {/* 운영 주기 */}
           <Grid item size={12} sx={{ mb: 2.4 }}>
             <RegisterTitle title={"운영 주기"} />
             <CustomTextField
@@ -255,7 +288,7 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
         </Paper>
       </Grid>
 
-      {/* 세션 및 금액 */}
+      {/* 수강료 및 세션 */}
       <Grid size={12} sx={{ mt: 2 }}>
         <SubTitle
           sx={{
@@ -291,6 +324,7 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
         >
           <Grid container size={12}>
             <Grid item size={5.5}>
+              {/* 수강료 */}
               <RegisterTitle title={"수강료"} sx={{ mt: 3 }} />
               <TextField
                 name="price"
@@ -302,6 +336,7 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
                 sx={{ mb: 3 }}
               />
 
+              {/* 환불 정책 */}
               <RegisterTitle title={"환불 정책"} />
               <CustomTextField
                 data={form.refundPolicy || ""}
@@ -314,8 +349,10 @@ export const CourseRegisterFields = ({ form, setForm, onChange }) => {
                 placeholder="예: 첫 수업 24시간 전 100% 환불"
               />
             </Grid>
+
             <Grid item size={1} />
-            {/* 세션 블록 */}
+
+            {/* 세션 구성 */}
             <Grid item size={5.5}>
               <RegisterTitle title={"세션 구성"} />
               <CustomTextField

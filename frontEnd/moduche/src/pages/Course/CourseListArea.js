@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { PostCard } from "../../component/common/PostCard";
 import { HorizontalBanner } from "../../component/common/SideBanner";
 import { getCourseList } from "../../api/courseAPI";
+import { isLoggedIn } from "../../utils/auth";
 
 const DEFAULT_COURSE_IMAGE =
   "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop";
@@ -70,10 +71,21 @@ const CourseListArea = () => {
           variant="contained"
           color="primary"
           sx={{ whiteSpace: "nowrap" }}
-          onClick={() => navigate(`/course/register`)}
+          onClick={() => {
+            // ✅ 여기서 로그인 여부 체크
+            if (!isLoggedIn()) {
+              alert(
+                "강좌 등록은 로그인 후 이용 가능합니다. 로그인 페이지로 이동합니다."
+              );
+              navigate("/account/login"); // 🔥 앞에 / 붙여서 절대 경로로
+              return;
+            }
+            navigate("/course/register");
+          }}
         >
           강좌 등록 신청
         </Button>
+
         <Button
           variant="outlined"
           color="primary"
@@ -98,16 +110,23 @@ const CourseListArea = () => {
         sx={{ mt: 1 }}
       >
         {courses.map((course) => (
-          <Grid item xs={12} sm={6} md={3} key={course.id}>
+          <Grid item xs={12} sm={6} md={3} key={course.courseId}>
             <PostCard
               type={"COURSE"}
-              clickURL={`/course/details/${course.id}`}
-              imageURL={course.imageUrl || DEFAULT_COURSE_IMAGE}
+              clickURL={`/course/details/${course.courseId}`}
+              // 백엔드 필드에 맞게 수정
+              imageURL={course.thumbnailUrl || DEFAULT_COURSE_IMAGE}
               postTitle={course.title}
-              postDesc={`${course.description} · 잔여 ${course.spotsLeft}명`}
-              createdAt={course.startDate}
-              memberCount={course.spotsLeft}
-              isSponsored={course.isFeatured}
+              // summary가 있으면 summary, 없으면 description 일부
+              postDesc={
+                course.summary || course.description?.substring(0, 30) + "..."
+              }
+              // 등록일 createdAt
+              createdAt={course.createdAt}
+              // spotsLeft 같은 거 없음 → maxParticipants로 대체
+              memberCount={course.maxParticipants}
+              // isFeatured 없음 → false
+              isSponsored={false}
             />
           </Grid>
         ))}

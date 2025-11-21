@@ -43,7 +43,7 @@ public class Security {
 
             // ✅ URL별 접근 권한 설정
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/api/auth/**", "/api/signIn/**", "/api/email/**", "/api/find/**", "/api/myfit/**").permitAll()
+                .requestMatchers("/", "/api/auth/**", "/api/signIn/**", "/api/email/**", "/api/find/**", "/api/myfit/**","/api/course/**").permitAll()
                 .anyRequest().authenticated()
             )
 
