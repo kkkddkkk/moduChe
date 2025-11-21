@@ -23,16 +23,12 @@ public class MyFitPrescriptionResponseDTO {
 
     public static MyFitPrescriptionResponseDTO fromEntity(MyFitPrescription entity) {
     	return MyFitPrescriptionResponseDTO.builder()
-    			.prescriptionId(entity.getPrescriptionId())
+                .prescriptionId(entity.getPrescriptionId())
+                .sexdstnFlagCd(entity.getSexdstnFlagCd())
                 .troblTyNm(entity.getTroblTyNm())
+                .troblDetailNm(entity.getTroblDetailNm())
                 .prescriptionContent(entity.getPrescriptionContent())
                 .build();
-//                .prescriptionId(entity.getPrescriptionId())
-//                .sexdstnFlagCd(entity.getSexdstnFlagCd())
-//                .troblTyNm(entity.getTroblTyNm())
-//                .troblDetailNm(entity.getTroblDetailNm())
-//                .prescriptionContent(entity.getPrescriptionContent())
-//                .build();
     	
     }
 

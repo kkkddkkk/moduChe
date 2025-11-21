@@ -33,7 +33,7 @@ public class MyFitPrescription extends MyFitBaseEntity {
     private String troblTyNm;
     private String troblDetailNm;
 
-    @Column(columnDefinition = "TEXT")
+    @Column
     private String prescriptionContent;
     
     @OneToOne(fetch = FetchType.LAZY)

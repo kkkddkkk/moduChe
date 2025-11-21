@@ -27,7 +27,7 @@ public class MyFitRecommendServiceImpl implements MyFitRecommendService {
     @Override
     public MyFitRecommendResponseDTO getRecommendById(Long id) {
         MyFitRecommend recommend = recommendRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("ÃßÃµ Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù."));
+                .orElseThrow(() -> new IllegalArgumentException("ì¶”ì²œ ìš´ë™ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤."));
         return MyFitRecommendResponseDTO.fromEntity(recommend);
     }
 

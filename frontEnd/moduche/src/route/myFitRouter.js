@@ -36,7 +36,7 @@ export default function myFitRouter() {
             ),
         },
         {
-            path: "recommend",
+            path: "recommend/:recommendId",
             element: (
                 <Suspense fallback={Loading}>
                     <Recommend />
