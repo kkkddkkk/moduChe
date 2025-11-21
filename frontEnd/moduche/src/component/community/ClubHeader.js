@@ -10,17 +10,33 @@ import {
 import SectionBox from "../../pages/Course/SectionBox";
 import { formattedDate } from "./utility/communityUtility";
 import { OneAlignedButton } from "../common/Button";
+import { getIdRoleFromToken } from "../../utils/auth";
 
 export default function ClubHeader({
     hasHeader,
     data,
+    role,
+    eligible,
     emphasizeByline = false,
     onOpenJoin,
 }) {
     if (!hasHeader) return <SectionBox label="헤더 정보" />;
 
     const isFull = data.memberCount >= data.maxMember;
+    const isEligible = eligible?.canApply === true;
+    const reason = eligible?.reason ?? "";
 
+    const getReason = (reason) => {
+        if(reason === "ACTIVE_MEMBER"){
+           return "가입된 동아리"
+        }else if(reason === "PENDING_ENROLLMENT"){
+            return "승인 대기중";
+        }
+    }
+
+    console.log(
+        "role: " + role + ", isEligible: " + isEligible + ", reason: " + reason
+    );
     const textStyle = {
         color: "text.secondary",
         fontSize: "1rem",
@@ -172,23 +188,36 @@ export default function ClubHeader({
                             />
                         </Stack>
 
-                        <Tooltip title={isFull ? "정원이 가득 찼습니다" : ""}>
-                            <span>
-                                <OneAlignedButton
-                                    variant="contained"
-                                    color="primary"
-                                    disabled={isFull}
-                                    buttonSx={{
-                                        py: 1,
-                                        borderRadius: "8px",
-                                    }}
-                                    children={
-                                        isFull ? "마감됨" : "가입 신청하기"
-                                    }
-                                    onClick={onOpenJoin}
-                                />
-                            </span>
-                        </Tooltip>
+                        {role.role === "INDIVIDUAL" && (
+                            <Tooltip
+                                title={
+                                    isFull
+                                        ? "정원이 가득 찼습니다"
+                                        : !isEligible
+                                        ? getReason(reason)
+                                        : ""
+                                }
+                            >
+                                <span>
+                                    <OneAlignedButton
+                                        variant="contained"
+                                        color="primary"
+                                        disabled={isFull || !isEligible}
+                                        buttonSx={{
+                                            py: 1,
+                                            borderRadius: "8px",
+                                        }}
+                                        onClick={onOpenJoin}
+                                    >
+                                        {isFull
+                                            ? "마감됨"
+                                            : eligible?.canApply
+                                            ? "가입 신청하기"
+                                            : "신청 불가"}
+                                    </OneAlignedButton>
+                                </span>
+                            </Tooltip>
+                        )}
                     </Stack>
                 </Stack>
             </Box>

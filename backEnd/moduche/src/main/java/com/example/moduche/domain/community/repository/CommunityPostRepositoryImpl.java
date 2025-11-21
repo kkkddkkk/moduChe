@@ -77,8 +77,8 @@ public class CommunityPostRepositoryImpl implements CommunityPostRepositoryCusto
 
 		// 게시물 상태가 'REGISTERED'인 게시물만 가져오기 (삭제된 게시물 제외)
 		List<CommunityListResponseDTO> results = queryFactory
-				.select(Projections.constructor(CommunityListResponseDTO.class, community.communityId, community.name,
-						shortDesc, representativeImageSubquery, community.createdAt,
+				.select(Projections.constructor(CommunityListResponseDTO.class, community.communityId, cp.postId,
+						community.name, shortDesc, representativeImageSubquery, community.createdAt,
 						JPAExpressions.select(cmSub.countDistinct()).from(cmSub).where(cmSub.community.eq(community)),
 						isPromotedExpr))
 				.from(community).leftJoin(communityPost).on(communityPost.community.eq(community))

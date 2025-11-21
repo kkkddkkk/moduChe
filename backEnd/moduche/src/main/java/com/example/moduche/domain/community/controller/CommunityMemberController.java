@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,6 +83,22 @@ public class CommunityMemberController {
 		return ResponseEntity.ok("activated");
 	}
 
+	
+	//운영자 본인 등급 하향 조정, 타인에게 권리 전이용.
+	@PostMapping("/transfer-owner")
+	public ResponseEntity<?> transferOwner(
+	        @RequestHeader("Authorization") String authorizationHeader,
+	        @PathVariable("communityId") Long communityId,
+	        @RequestParam("targetMemberId") Long targetMemberId
+	) {
+
+	    Long currentUserId = extractUserId(authorizationHeader);
+
+	    memberService.transferOwner(communityId, currentUserId, targetMemberId);
+
+	    return ResponseEntity.ok("대표 운영자 권한이 성공적으로 이양되었습니다.");
+	}
+	
 	// 회원 등급 변경 (ADMIN/MANAGER/MEMBER).
 	@PutMapping("/{memberId}/role")
 	public ResponseEntity<?> updateRole(@PathVariable("communityId") Long communityId,

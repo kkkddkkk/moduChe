@@ -12,20 +12,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.moduche.domain.community.dto.CommunityListResponseDTO;
+import com.example.moduche.domain.community.dto.CommunityNewPostDTO;
 import com.example.moduche.domain.community.dto.CommunityPostCommentDTO;
 import com.example.moduche.domain.community.dto.CommunityPostDetailDTO;
 import com.example.moduche.domain.community.dto.PostManageDTO;
 import com.example.moduche.domain.community.dto.PostUpdateRequestDTO;
 import com.example.moduche.domain.community.dto.PostUpdateResponseDTO;
 import com.example.moduche.domain.community.service.CommunityPostService;
+import com.example.moduche.domain.login.User;
+import com.example.moduche.global.security.JwtTokenProvider;
+import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +40,23 @@ import lombok.RequiredArgsConstructor;
 public class CommunityPostController {
 
 	private final CommunityPostService communityPostService;
+	private final UserRepository userRepository;
+	private final JwtTokenProvider jwtTokenProvider;
+
+	// 토큰에서 유저아이디 추출 유틸.
+	private Long extractUserId(String authorizationHeader) {
+		if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer "))
+			throw new IllegalArgumentException("Authorization header required");
+
+		String token = authorizationHeader.replace("Bearer ", "");
+		String username = jwtTokenProvider.getUsername(token); // username 추출.
+
+		// username으로 userId 조회.
+		Long userId = userRepository.findByUserName(username).map(User::getUserId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		return userId;
+	}
 
 	// 목록 조회.
 	@GetMapping("/api/community-post/list")
@@ -65,8 +88,21 @@ public class CommunityPostController {
 
 	// 게시물 삭제
 	@DeleteMapping("/api/community/{communityId}/post/{postId}")
-	public ResponseEntity<Void> deletePost(@PathVariable("communityId") Long communityId, @PathVariable("postId") Long postId) {
+	public ResponseEntity<Void> deletePost(@PathVariable("communityId") Long communityId,
+			@PathVariable("postId") Long postId) {
 		communityPostService.deleteCommunityPost(communityId, postId);
+		return ResponseEntity.ok().build();
+	}
+
+	//신규 게시물 등록.
+	@PostMapping("/api/community-post/{communityId}/posts")
+	public ResponseEntity<Void> createPost(@PathVariable("communityId") Long communityId,
+			@RequestPart("data") CommunityNewPostDTO dto,
+			@RequestPart(value = "newImages", required = false) List<MultipartFile> files,
+			@RequestHeader("Authorization") String tokenHeader) {
+
+		Long userId = extractUserId(tokenHeader);
+		communityPostService.registerCommunityPost(communityId, userId, dto, files);
 		return ResponseEntity.ok().build();
 	}
 

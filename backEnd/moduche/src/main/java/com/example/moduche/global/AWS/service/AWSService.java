@@ -4,6 +4,7 @@ package com.example.moduche.global.AWS.service;
 
 import java.net.URL;
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -54,7 +55,21 @@ public class AWSService {
 		return url.toString();
 	}
 
+	//단일 키에 대한 이미지 삭제(aka.단일 삭제).
 	public void deletePhoto(String key) {
 		s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+	}
+	
+	//키 목록에 대한 이미지 전체 삭제(aka. 대량 삭제)
+	public void deletePhotos(List<String> keys) {
+
+	    if (keys == null || keys.isEmpty()) return;
+
+	    keys.forEach(key ->
+	        s3Client.deleteObject(DeleteObjectRequest.builder()
+	            .bucket(bucket)
+	            .key(key)
+	            .build())
+	    );
 	}
 }

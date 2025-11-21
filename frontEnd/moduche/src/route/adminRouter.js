@@ -13,6 +13,7 @@ const AdministratorPage = lazy(() =>
 );
 const CalculatePage = lazy(() => import("../pages/Admin/CalculatePage"));
 const BannersPage = lazy(() => import("../pages/Admin/BannersPage"));
+const BannersApplyPage = lazy(() => import("../pages/Admin/BannersApplyPage"));
 const FacilityPage = lazy(() => import("../pages/Admin/FacilityPage"));
 
 export default function adminRouter() {
@@ -69,6 +70,14 @@ export default function adminRouter() {
                     element: (
                         <Suspense fallback={Loading}>
                             <BannersPage />
+                        </Suspense>
+                    ),
+                },
+                {
+                    path: "banners-apply",
+                    element: (
+                        <Suspense fallback={Loading}>
+                            <BannersApplyPage />
                         </Suspense>
                     ),
                 },

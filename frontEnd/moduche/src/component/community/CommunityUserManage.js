@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import MyCommunityCard from "./MyCommunityCard";
+import ConfirmModal from "./ConfirmModal";
 import { NormalModalExpand, SlideModal } from "../common/Modals";
 import { SubTitle } from "../common/Text";
 import { OneAlignedButton } from "../common/Button";
@@ -22,6 +23,8 @@ import {
 } from "../../api/communityAPI/communityAPI";
 import { formattedDate } from "./utility/communityUtility";
 import { useNavigate } from "react-router-dom";
+import { isLoggedIn, isTokenExpired } from "../../utils/auth";
+import Loading from "../common/Loading";
 
 const CommunityUserManage = () => {
     const navigate = useNavigate();
@@ -29,12 +32,21 @@ const CommunityUserManage = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
     const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
 
+    //공용 모달 제어용.
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [modalTitle, setModalTitle] = useState("안내");
+    const [modalContent, setModalContent] = useState("내용");
+    const [modalEvent, setModalEvent] = useState(() => {});
+
+    //로딩처리.
+    const [loading, setLoading] = useState(true);
+
     //가입된 동아리 목록.
     const [community, setCommunity] = useState([]);
     //목록 내 선택된 동아리.
     const [selectedCommunity, setSelectedCommunity] = useState(null);
 
-    //모달 팝업 제거 변수.
+    //상세 모달 팝업 제거 변수.
     const [detailOpen, setDetailOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [quitReason, setQuitReason] = useState("");
@@ -45,24 +57,31 @@ const CommunityUserManage = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    const createDummyCommunity = () => {
-        const dummy = [];
-        for (let i = 1; i <= 20; i++) {
-            dummy.push({
-                communityId: i,
-                name: `랜덤한 동아리 이름 울랄라 히히 ${i}`,
-                ownerName: "홍길동",
-                joinedAt: `2025.11.$${i}`,
-                createdAt: `2024.10.$${i}`,
-                status:
-                    i % 3 == 0 ? "ACTIVE" : i % 3 == 1 ? "SUSPENDED" : "QUIT",
-                role: i % 2 == 0 ? "MANAGER" : "MEMBER",
-            });
-        }
-        return dummy;
-    };
-
     const loadData = async () => {
+        //로그인, 엑세스 토큰 먼저 확인.
+        if (!isLoggedIn()) {
+            setLoading(false);
+            setOpenConfirm(true);
+            setModalTitle("잘못된 접근");
+            setModalContent(
+                "로그인이 필요한 서비스입니다.\n로그인 후 이용하실 수 있습니다."
+            );
+            setModalEvent(() => () => navigate("/account/login"));
+            return;
+        }
+
+        const token = localStorage.getItem("accessToken");
+        if (!token || isTokenExpired(token)) {
+            setLoading(false);
+            setOpenConfirm(true);
+            setModalTitle("로그인 만료");
+            setModalContent(
+                "로그인이 만료 되었습니다.\n재로그인 후 이용하실 수 있습니다."
+            );
+            setModalEvent(() => () => navigate("/account/login"));
+            return;
+        }
+
         try {
             // 실제 API 호출
             const data = await fetchMyCommunityList(
@@ -71,6 +90,7 @@ const CommunityUserManage = () => {
                 activeOnly,
                 search
             );
+            setLoading(false);
 
             // 정상 응답인 경우
             if (
@@ -84,6 +104,7 @@ const CommunityUserManage = () => {
                 return;
             }
         } catch (e) {
+            setLoading(false);
             console.error("가입 요청 조회 실패:", e);
         }
     };
@@ -94,10 +115,14 @@ const CommunityUserManage = () => {
 
     const executeAction = async () => {
         if (!selectedCommunity) return;
+
+        setLoading(true);
         const communityId = selectedCommunity.communityId;
         try {
             await quitMemberSelf(communityId, quitReason);
+            setLoading(false);
         } catch (e) {
+            setLoading(false);
             console.error("회원 탈퇴 실패", e);
         }
 
@@ -105,7 +130,7 @@ const CommunityUserManage = () => {
         loadData();
     };
 
-    const openConfirm = (community) => {
+    const openQuitConfirm = (community) => {
         setSelectedCommunity(community);
         setQuitReason("");
         setConfirmOpen(true);
@@ -170,7 +195,7 @@ const CommunityUserManage = () => {
                                 <MyCommunityCard
                                     key={data.communityId}
                                     data={data}
-                                    onQuit={(c) => openConfirm(c)}
+                                    onQuit={(c) => openQuitConfirm(c)}
                                     onDetail={(c) => openDetail(c)}
                                 />
                             ))}
@@ -404,6 +429,18 @@ const CommunityUserManage = () => {
                     )}
                 </SlideModal>
             </Paper>
+
+            {/* 강제 로그인 리다이렉트용 */}
+            <ConfirmModal
+                open={openConfirm}
+                title={modalTitle}
+                content={modalContent}
+                onConfirm={modalEvent}
+                onClose={() => setOpenConfirm(false)}
+                isNoEscape={true}
+                isOneBtn={true}
+            />
+            <Loading open={loading} text="동아리 정보를 불러오고 있습니다." />
         </>
     );
 };

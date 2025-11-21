@@ -6,9 +6,18 @@ import {
     Stack,
     Divider,
     Chip,
+    useTheme,
 } from "@mui/material";
 import { formattedDate } from "./utility/communityUtility";
-import { ArrowRightLeft, Ban, CircleCheck, Plus, UserStar } from "lucide-react";
+import {
+    ArrowRightLeft,
+    Ban,
+    CircleCheck,
+    Crown,
+    Plus,
+    User,
+    UserStar,
+} from "lucide-react";
 
 const MemberCard = ({
     member,
@@ -17,6 +26,7 @@ const MemberCard = ({
     onActivate, // 정지 해제
     onDetail, // 더보기
 }) => {
+    const theme = useTheme();
     return (
         <Card
             variant="outlined"
@@ -42,9 +52,46 @@ const MemberCard = ({
                         <Typography variant="subtitle1" fontWeight={600}>
                             {member.name}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            (회원 등급: {member.role === "MEMBER" ? "일반 회원" : member.role === "MANAGER" ? "매니저" : "운영자"})
-                        </Typography>
+                        <Chip
+                            size="small"
+                            icon={
+                                member.role === "ADMIN" ? (
+                                    <Crown size={16} />
+                                ) : (
+                                    <User size={16} />
+                                )
+                            }
+                            label={
+                                member.role === "MEMBER"
+                                    ? "일반 회원"
+                                    : member.role === "MANAGER"
+                                    ? "매니저"
+                                    : "운영자"
+                            }
+                            sx={{
+                                py: 0,
+                                px: 1,
+                                border: "2px solid",
+                                borderColor:
+                                    member.role === "ADMIN"
+                                        ? theme.palette.primary.main
+                                        : "grey.600",
+                                color: "success.main",
+                                "& .MuiChip-icon": {
+                                    color:
+                                        member.role === "ADMIN"
+                                            ? theme.palette.primary.main
+                                            : "grey.600",
+                                },
+                                "& .MuiChip-label": {
+                                    color:
+                                        member.role === "ADMIN"
+                                            ? theme.palette.primary.main
+                                            : "grey.600",
+                                },
+                                bgcolor: "transparent",
+                            }}
+                        />
                     </Stack>
 
                     {/* Chip 버튼 그룹 */}
@@ -92,58 +139,63 @@ const MemberCard = ({
                         )}
 
                         {/*활성 → 계정 정지*/}
-                        {member.status === "ACTIVE" && (
-                            <Chip
-                                label="정지"
-                                size="small"
-                                color="warning"
-                                icon={<Ban size={16} />}
-                                onClick={() => onSuspend(member)}
-                                sx={{
-                                    px: 1,
-                                    border: "2px solid",
-                                    borderColor: "error.main",
-                                    color: "error.main",
-                                    "& .MuiChip-icon": {
+                        {member.status === "ACTIVE" &&
+                            member.role !== "ADMIN" && (
+                                <Chip
+                                    label="정지"
+                                    size="small"
+                                    color="warning"
+                                    icon={<Ban size={16} />}
+                                    onClick={() => onSuspend(member)}
+                                    sx={{
+                                        px: 1,
+                                        border: "2px solid",
+                                        borderColor: "error.main",
                                         color: "error.main",
-                                    },
-                                    bgcolor: "transparent",
-                                    "&:hover": {
-                                        bgcolor: "error.main",
-                                        color: "white",
-                                        "& .MuiChip-icon": { color: "white" },
-                                    },
-                                    cursor: "pointer",
-                                }}
-                            />
-                        )}
+                                        "& .MuiChip-icon": {
+                                            color: "error.main",
+                                        },
+                                        bgcolor: "transparent",
+                                        "&:hover": {
+                                            bgcolor: "error.main",
+                                            color: "white",
+                                            "& .MuiChip-icon": {
+                                                color: "white",
+                                            },
+                                        },
+                                        cursor: "pointer",
+                                    }}
+                                />
+                            )}
 
-                        {/*등급 수정 (정지/활성만)*/}
-                        {(member.status === "ACTIVE" ||
-                            member.status === "SUSPENDED") && (
-                            <Chip
-                                label="등급"
-                                size="small"
-                                icon={<UserStar size={16} />}
-                                onClick={() => onRole(member)}
-                                sx={{
-                                    px: 1,
-                                    border: "2px solid",
-                                    borderColor: "grey.600",
-                                    color: "grey.600",
-                                    "& .MuiChip-icon": {
+                        {/*등급 수정 (활성만)*/}
+                        {member.status === "ACTIVE" &&
+                            member.role !== "ADMIN" && (
+                                <Chip
+                                    label="등급"
+                                    size="small"
+                                    icon={<UserStar size={16} />}
+                                    onClick={() => onRole(member)}
+                                    sx={{
+                                        px: 1,
+                                        border: "2px solid",
+                                        borderColor: "grey.600",
                                         color: "grey.600",
-                                    },
-                                    bgcolor: "transparent",
-                                    "&:hover": {
-                                        bgcolor: "grey.600",
-                                        color: "white",
-                                        "& .MuiChip-icon": { color: "white" },
-                                    },
-                                    cursor: "pointer",
-                                }}
-                            />
-                        )}
+                                        "& .MuiChip-icon": {
+                                            color: "grey.600",
+                                        },
+                                        bgcolor: "transparent",
+                                        "&:hover": {
+                                            bgcolor: "grey.600",
+                                            color: "white",
+                                            "& .MuiChip-icon": {
+                                                color: "white",
+                                            },
+                                        },
+                                        cursor: "pointer",
+                                    }}
+                                />
+                            )}
                     </Stack>
                 </Stack>
                 <Stack

@@ -26,6 +26,7 @@ import { HorizontalBanner } from "../common/SideBanner";
 import adImage from "./media/ready.png";
 
 const PostAreaComponent = ({ posts, totalPages, page, setPage }) => {
+    console.log(posts);
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md")); // 0~600px
@@ -62,7 +63,7 @@ const PostAreaComponent = ({ posts, totalPages, page, setPage }) => {
                     <Grid item xs={12} sm={6} md={3} key={post.id}>
                         <PostCard
                             type={"COMMUNITY"}
-                            clickURL={`/community/details/${post.communityId}`}
+                            clickURL={`/community/details/${post.postId}`}
                             imageURL={
                                 post.representativeImage || defaultClubImage
                             }

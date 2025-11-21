@@ -21,7 +21,10 @@ export default function PostDetailComponent({
     onReportComment,
     onLoadMore,
     submitting,
+    role,
+    eligible
 }) {
+
     const hasImages =
         Array.isArray(data?.postImages) && data.postImages.length > 0;
 
@@ -79,6 +82,8 @@ export default function PostDetailComponent({
                             <ClubHeader
                                 hasHeader
                                 data={data}
+                                role={role}
+                                eligible={eligible}
                                 onOpenJoin={() => setJoinModal(true)}
                             />
                         </Box>

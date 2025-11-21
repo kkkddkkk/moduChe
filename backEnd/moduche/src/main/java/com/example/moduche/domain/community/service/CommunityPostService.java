@@ -9,17 +9,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.moduche.domain.community.dto.CommunityListResponseDTO;
+import com.example.moduche.domain.community.dto.CommunityNewPostDTO;
 import com.example.moduche.domain.community.dto.CommunityPostCommentDTO;
 import com.example.moduche.domain.community.dto.CommunityPostDetailDTO;
 import com.example.moduche.domain.community.dto.PostManageDTO;
 import com.example.moduche.domain.community.dto.PostUpdateRequestDTO;
 import com.example.moduche.domain.community.dto.PostUpdateResponseDTO;
+import com.example.moduche.domain.community.entity.Community;
 import com.example.moduche.domain.community.entity.CommunityPost;
 import com.example.moduche.domain.community.entity.CommunityPostPhoto;
+import com.example.moduche.domain.community.enums.CommunityPostStatus;
 import com.example.moduche.domain.community.repository.CommunityPostPhotoRepository;
 import com.example.moduche.domain.community.repository.CommunityPostRepository;
 import com.example.moduche.domain.community.repository.CommunityPostRepositoryCustom;
+import com.example.moduche.domain.community.repository.CommunityRepository;
+import com.example.moduche.domain.login.User;
 import com.example.moduche.global.AWS.service.AWSService;
+import com.example.moduche.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +38,8 @@ public class CommunityPostService {
 	private final CommunityPostRepositoryCustom communityRepoCustom;
 	private final CommunityPostRepository communityPostRepository;
 	private final CommunityPostPhotoRepository communityPostPhotoRepository;
+	private final CommunityRepository communityRepository;
+	private final UserRepository userRepository;
 	private final AWSService awsService;
 
 	// 전체 목록 조회.
@@ -71,6 +79,35 @@ public class CommunityPostService {
 
 		return new PostUpdateResponseDTO(post.getPostId(), post.getTitle(), post.getContent(), post.getHashTags(),
 				urls);
+	}
+
+	@Transactional
+	public void registerCommunityPost(Long communityId, Long userId, CommunityNewPostDTO dto, List<MultipartFile> images) {
+
+		Community community = communityRepository.findById(communityId)
+				.orElseThrow(() -> new IllegalArgumentException("해당 아이디에 해당하는 동아리 없음: " + communityId));
+
+		User owner = userRepository.findById(userId)
+				.orElseThrow(() -> new IllegalArgumentException("해당 아이디에 해당하는 유저 없음: " + userId));
+
+		//게시물 엔티티 저장.
+		CommunityPost post = new CommunityPost();
+		post.setCommunity(community);
+		post.setUser(owner);
+		post.setTitle(dto.getTitle());
+		post.setContent(dto.getContent());
+		post.setHashTags(dto.getHashTags());
+		post.setStatus(CommunityPostStatus.REGISTERED);
+		communityPostRepository.save(post);
+		
+		//사진 AWS 버킷 저장 후 사진 엔티티 저장.
+		for (MultipartFile file : images) {
+			String url = awsService.upload(file, "community/post");
+			CommunityPostPhoto photo = new CommunityPostPhoto();
+			photo.setPost(post);
+			photo.setPhotoUrl(url);
+			communityPostPhotoRepository.save(photo);
+		}
 	}
 
 	@Transactional

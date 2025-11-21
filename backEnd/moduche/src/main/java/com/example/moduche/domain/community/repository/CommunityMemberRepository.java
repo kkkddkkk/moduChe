@@ -1,16 +1,19 @@
 package com.example.moduche.domain.community.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.moduche.domain.community.dto.MemberManageDTO;
 import com.example.moduche.domain.community.dto.MyCommunityManageDTO;
+import com.example.moduche.domain.community.entity.Community;
 import com.example.moduche.domain.community.entity.CommunityMember;
 import com.example.moduche.domain.community.enums.CommunityMemberStatus;
 
@@ -19,6 +22,14 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
 	// 작성자: 고은설.
 	// 기능: 해당 유저가 이미 이 동아리 회원인가요 아닌가요? 반환용.
 	boolean existsByUser_UserIdAndCommunity_CommunityId(Long userId, Long communityId);
+
+	// 작성자: 고은설.
+	// 기능: 해당 유저가 이 동아리의 "활동" 회원 여부 조회용.
+	boolean existsByUser_UserIdAndCommunity_CommunityIdAndStatusIn(Long userId, Long communityId,
+			Collection<CommunityMemberStatus> statuses);
+
+	boolean existsByUser_UserIdAndCommunity_CommunityIdAndStatus(Long userId, Long communityId,
+			CommunityMemberStatus status);
 
 	// 작성자: 고은설.
 	// 기능: 해당 유저가 소속된 동아리가 하나라도 있는지 경량 반환용(활동, 정지만 필터링).
@@ -95,5 +106,25 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
 			""")
 	Page<MyCommunityManageDTO> findMyCommunityAsMember(@Param("userId") Long userId,
 			@Param("statuses") List<CommunityMemberStatus> statuses, @Param("search") String search, Pageable pageable);
+
+	// 작성자: 고은설.
+	// 기능: 활동상태의 동아리 회원 조회용(다음 운영자 대상 찾기용).
+	@Query("""
+			select m
+			from CommunityMember m
+			where m.community.communityId = :communityId
+			  and m.status = 'ACTIVE'
+			""")
+	List<CommunityMember> findActiveMembersByCommunityId(Long communityId);
+
+	// 작성자: 고은설.
+	// 기능: 동아리 잔존 회원수 간편 조회.
+	long countByCommunityAndStatusNot(Community community, CommunityMemberStatus status);
+
+	// 작성자: 고은설.
+	// 기능: 동아리 삭제 시 가입 회원 삭제.
+	@Modifying(clearAutomatically = true)
+	@Query("DELETE FROM CommunityMember m WHERE m.community.communityId = :communityId")
+	void bulkDeleteByCommunityId(@Param("communityId") Long communityId);
 
 }

@@ -6,6 +6,7 @@ import {
 } from "../../component/community/utility/communityUtility";
 
 const MyCommunityCard = ({ data, onDetail, onQuit }) => {
+    console.log(data);
     return (
         <Card
             variant="outlined"
@@ -48,7 +49,7 @@ const MyCommunityCard = ({ data, onDetail, onQuit }) => {
                         />
 
                         {/* 탈퇴 */}
-                        {!data.status == "QUIt" && (
+                        {data.status !== "QUIT" && (
                             <Chip
                                 label="탈퇴"
                                 size="small"

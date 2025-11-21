@@ -25,6 +25,7 @@ import {
     Paper as MuiPaper,
     Snackbar,
     Alert,
+    Badge,
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
@@ -35,8 +36,9 @@ import AddIcon from "@mui/icons-material/PlaylistAdd";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DeleteIcon from "@mui/icons-material/DeleteForever";
-
+import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
 import Paper from "../../component/common/Paper";
+import { useNavigate } from "react-router-dom";
 
 // ---------------------- 더미 데이터 (ERD 기준) ----------------------
 const DUMMY_BANNERS = [
@@ -90,6 +92,7 @@ async function copyText(t = "") {
 }
 
 export default function BannersPage() {
+    const navigate = useNavigate();
     const [banners, setBanners] = useState(DUMMY_BANNERS);
 
     // 필터 상태
@@ -353,6 +356,26 @@ export default function BannersPage() {
                 >
                     배너의 위치, 기간, 출력 순서를 확인하고 관리할 수 있습니다.
                 </Typography>
+
+                <Button
+                    size="small"
+                    variant="contained"
+                    onClick={() => navigate("/admin/banners-apply")}
+                    startIcon={<PriorityHighIcon />}
+                    sx={{
+                        borderRadius: 2,
+                        textTransform: "none",
+                        position: "absolute",
+                        top: 125,
+                        right: 65,
+                        fontWeight: 600,
+                        fontSize: "0.8rem",
+                        px: 1.5,
+                        py: 1,
+                    }}
+                >
+                    대기중인 신청
+                </Button>
             </Box>
 
             <Divider sx={{ mb: 3 }} />

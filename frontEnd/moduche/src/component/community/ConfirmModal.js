@@ -5,11 +5,37 @@ import {
     DialogActions,
     Button,
     Typography,
+    Stack,
+    Box,
+    Divider,
 } from "@mui/material";
+import { OneAlignedButton } from "../common/Button";
 
-const ConfirmModal = ({ open, title, content, onConfirm, onClose }) => {
+const ConfirmModal = ({
+    open,
+    title,
+    content,
+    onConfirm,
+    onClose,
+    isOneBtn = false,
+    isNoEscape = false,
+}) => {
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+        <Dialog
+            open={open}
+            onClose={(event, reason) => {
+                console.log(reason);
+                if (
+                    (reason === "backdropClick" ||
+                        reason === "escapeKeyDown") &&
+                    isNoEscape === true
+                )
+                    return;
+                onClose();
+            }}
+            maxWidth="xs"
+            fullWidth
+        >
             <DialogTitle sx={{ fontWeight: 600, textAlign: "center" }}>
                 {title || "알림"}
             </DialogTitle>
@@ -25,18 +51,55 @@ const ConfirmModal = ({ open, title, content, onConfirm, onClose }) => {
                     {content || "내용이 없습니다."}
                 </Typography>
             </DialogContent>
-            <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
-                <Button variant="outlined" onClick={onClose}>
-                    취소
-                </Button>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={onConfirm}
-                    autoFocus
+            <Divider sx={{ color: "grey" }} />
+            <DialogActions
+                sx={{
+                    display: "flex",
+                    flex: 1,
+                    justifyContent: "space-between",
+                    px: 4,
+                    py: 2,
+                    justifySelf: "center",
+                }}
+            >
+                <Box
+                    display={"flex"}
+                    flexDirection={"row"}
+                    flex={1}
+                    justifyContent={"space-between"}
                 >
-                    확인
-                </Button>
+                    {!isOneBtn && (
+                        <OneAlignedButton
+                            variant="outlined"
+                            onClick={onClose}
+                            sx={{ width: "90%" }}
+                            buttonWrapperSx={{
+                                width: "100%",
+                                display: "flex",
+                                justifyContent: "center",
+                            }}
+                        >
+                            취소
+                        </OneAlignedButton>
+                    )}
+
+                    <OneAlignedButton
+                        variant="contained"
+                        color="primary"
+                        onClick={onConfirm}
+                        inline={false}
+                        align="flex-end"
+                        autoFocus
+                        sx={{ width: "90%" }}
+                        buttonWrapperSx={{
+                            width: "100%",
+                            display: "flex",
+                            justifyContent: "center",
+                        }}
+                    >
+                        확인
+                    </OneAlignedButton>
+                </Box>
             </DialogActions>
         </Dialog>
     );

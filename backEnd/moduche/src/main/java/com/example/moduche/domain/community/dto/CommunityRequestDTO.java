@@ -1,5 +1,6 @@
 package com.example.moduche.domain.community.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.example.moduche.domain.community.enums.CommunityScheduleType;
@@ -21,6 +22,9 @@ public class CommunityRequestDTO {
 	private String scheduleDetail;
 	private String address;
 	private String addressDetail;
+	
+	private BigDecimal geoLat;
+	private BigDecimal geoLng;
 	
 	private String title;
 	private String content;

@@ -33,10 +33,54 @@ export const getMyCommunities = async () => {
     const response = await communityHttp.get(`/community/owner`);
     return response.data;
 };
+
+// 동아리 메타 정보 조회.
+export const getCommunityMeta = async (communityId) => {
+    try {
+        const res = await communityHttp.get(`/community/${communityId}/meta`);
+        return res.data;
+    } catch (e) {
+        console.error("메타 정보 조회 실패:", e);
+        throw e;
+    }
+};
+
+// 동아리 메타 정보 수정.
+export const updateCommunityMeta = async (communityId, dto) => {
+    try {
+        const res = await communityHttp.put(
+            `/community/${communityId}/meta`,
+            dto
+        );
+        return res.data;
+    } catch (e) {
+        console.error("메타 정보 수정 실패:", e);
+        throw e;
+    }
+};
+
+//동아리 삭제.
+export const deleteCommunity = async (communityId) => {
+    try {
+        const response = await communityHttp.delete(
+            `/community/${communityId}/delete`);
+        return response.status; 
+    } catch (error) {
+        console.error(`동아리 삭제 실패 (commentId: ${communityId}):`, error);
+        throw error;
+    }
+};
 //#endregion
 
 //---------------[가입 신청 COMMUNITY ENROLLMENT].
 //#region
+
+//동아리 가입 신청서 작성 가능 여부 확인.
+export const checkEnrollmentEligibility = async (communityId) => {
+  const res = await communityHttp.get(`/community/${communityId}/enrollments/eligible`);
+  return res.data;   // { canApply: boolean, reason: string|null }
+};
+
 //동아리 가입 신청서 작성.
 export const submitCommunityEnrollment = async (communityId, formData) => {
     try {
@@ -87,6 +131,7 @@ export const denyEnrollment = async (communityId, enrollmentId, reason) => {
     );
     return res.data;
 };
+
 //#endregion
 
 //---------------[게시물 COMMUNITY POST].
@@ -210,6 +255,17 @@ export const deleteCommunityPostComment = async (commentId, userId) => {
         console.error(`댓글 삭제 실패 (commentId: ${commentId}):`, error);
         throw error;
     }
+};
+
+//게시물 새로 등록.
+export const createCommunityPost = async (communityId, formData) => {
+    return await communityHttp.post(
+        `/community-post/${communityId}/posts`,
+        formData,
+        {
+            headers: { "Content-Type": "multipart/form-data" }
+        }
+    );
 };
 
 // 게시물 내용 수정을 위해 가져오기
