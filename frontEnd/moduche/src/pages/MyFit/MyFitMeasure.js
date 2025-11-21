@@ -8,6 +8,7 @@ import Paper from "../../component/common/Paper";
 import { StartTitle, Contents } from "../../component/common/Text";
 import Loading from "../../component/common/Loading";
 import { Box, TextField, Button, MenuItem } from "@mui/material";
+import { calculateGrade } from "../../utils/gradingCriteria";
 
 const MyFitMeasure = () => {
     const [measureResults, setMeasureResults] = useState([]);
@@ -82,6 +83,12 @@ const MyFitMeasure = () => {
     // ---------------------------
     const handleSave = async () => {
         try {
+            // 등급 계산
+            const grade = calculateGrade(form.itemName, form.score);
+            if (!grade) {
+                alert("해당 항목의 등급을 계산할 수 없습니다. 기준을 확인해주세요.");
+                return;
+            }
             // 백엔드 MyFitMeasureRequestDTO 구조에 맞게 요청 데이터를 구성
             const requestData = {
                 userId: 1, // TODO: 실제 사용자 ID로 교체 필요
@@ -95,7 +102,7 @@ const MyFitMeasure = () => {
                         itemName: form.itemName,
                         score: parseFloat(form.score), // 숫자로 변환
                         unit: form.unit,
-                        grade: null, // 옵션: grade 계산 로직 이후 추가 가능
+                        grade: grade, // 계산된 등급 사용
                     },
                 ],
             };
@@ -110,19 +117,25 @@ const MyFitMeasure = () => {
             // 입력폼 초기화
             setForm({ itemName: "", score: "", unit: "" });
         } catch (err) {
-            console.error(err);
-            alert("저장에 실패했습니다.");
+            console.error("Error saving measure result:", err);
+            // 백엔드에서 전송된 특정 에러 메시지 확인
+            if (err.response && err.response.data && typeof err.response.data === 'string' && err.response.data.includes("AccessibilityProfile not found")) {
+                alert("오류: 사용자의 신체 정보 프로필을 찾을 수 없습니다. 처방을 생성하려면 프로필을 먼저 완성해야 합니다.");
+            } else {
+                alert("저장에 실패했습니다. 다시 시도해주세요.");
+            }
         }
     };
 
     // ---------------------------
     // 4) 테이블 데이터 구성
     // ---------------------------
-    const columns = ["항목", "점수", "단위"];
+    const columns = ["항목", "점수", "단위", "기본 처방"];
     const tableData = measureResults.map((result) => ({
         항목: result.itemName,
         점수: result.score,
         단위: result.unit,
+        "기본 처방": result.prescriptionContent,
     }));
 
     if (loading) return <Loading />;

@@ -3,6 +3,8 @@ package com.example.moduche.domain.myFit.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,8 @@ public class MyFitMeasureServiceImpl implements MyFitMeasureService {
     private final MyFitMeasureRepository measureRepository;
     private final MyFitMeasureResultRepository resultRepository;
     private final UserRepository userRepository;
+    private final MyFitPrescriptionService myFitPrescriptionService;
+    private static final Logger logger = LoggerFactory.getLogger(MyFitMeasureServiceImpl.class);
 
     /** 저장 (POST) */
     @Override
@@ -57,10 +61,24 @@ public class MyFitMeasureServiceImpl implements MyFitMeasureService {
                 result.setMeasureDate(dto.getMeasureDate());
                 result.setMeasure(measure);
 
+                // MyFitMeasureResult의 prescriptionContent 설정 (기본 처방 내용)
+                String basicPrescriptionContent = String.format(
+                        "귀하의 '%s' 측정 결과는 '%s' 입니다. 이 결과를 바탕으로 맞춤 운동을 처방합니다.",
+                        r.getItemName(),
+                        r.getGrade()
+                );
+                result.setPrescriptionContent(basicPrescriptionContent);
+
                 measure.getResults().add(result);
             });
         }
         MyFitMeasure savedMeasure = measureRepository.save(measure);
+
+
+
+
+        // 3) 측정 결과에 따른 처방 생성
+        myFitPrescriptionService.createPrescriptionFromMeasure(savedMeasure);
 
         return convertToResponse(savedMeasure);
     }

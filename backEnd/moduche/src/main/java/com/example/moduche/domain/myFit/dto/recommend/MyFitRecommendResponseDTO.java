@@ -1,5 +1,8 @@
 package com.example.moduche.domain.myFit.dto.recommend;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.example.moduche.domain.myFit.entity.MyFitRecommend;
 
 import lombok.AllArgsConstructor;
@@ -22,8 +25,13 @@ public class MyFitRecommendResponseDTO {
     private String intensity;
     private String frequency;
     private String duration;
+    private List<MyFitMvmContentResponseDTO> contents;
 
     public static MyFitRecommendResponseDTO fromEntity(MyFitRecommend entity) {
+        List<MyFitMvmContentResponseDTO> contentDTOs = entity.getContents().stream()
+                .map(MyFitMvmContentResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+
     	return MyFitRecommendResponseDTO.builder()
                 .recommendId(entity.getRecommendId())
                 .ageFlagNm(entity.getAgeFlagNm())
@@ -32,6 +40,7 @@ public class MyFitRecommendResponseDTO {
                 .intensity(entity.getIntensity())
                 .frequency(entity.getFrequency())
                 .duration(entity.getDuration())
+                .contents(contentDTOs)
                 .build();
         
     }

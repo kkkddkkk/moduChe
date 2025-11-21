@@ -1,29 +1,28 @@
 import { useEffect, useState } from "react";
-import CustomTable from "../../component/common/CustomTable";
+import { useParams } from "react-router-dom"; // Import useParams
 import Paper from "../../component/common/Paper";
 import { StartTitle, Contents } from "../../component/common/Text";
 import Loading from "../../component/common/Loading";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Typography, List, ListItem } from "@mui/material"; // Add List, ListItem
+import { getRecommendById } from "../../api/myFitAPI/myFitRecommendAPI"; // Import API call
 
 const MyFitRecommend = () => {
-    const [recomList, setRecomList] = useState([]);
+    const { recommendId } = useParams(); // Get recommendId from URL
+    const [recommendation, setRecommendation] = useState(null); // Single recommendation object
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 나중에 사용자 정보 기반 필터 가능
-    const disabilityType = "시각장애";
-
     useEffect(() => {
-        const loadRecommend = async () => {
+        const loadRecommendation = async () => {
+            if (!recommendId) {
+                setError("추천 ID가 제공되지 않았습니다.");
+                setLoading(false);
+                return;
+            }
             try {
-                const response = await fetch("/data/recommendations.json");
-                const json = await response.json();
-
-                // 장애 유형 기준 필터
-                const filtered = json.filter(
-                    (rec) => rec.disabilityType === disabilityType
-                );
-                setRecomList(filtered);
+                // Fetch single recommendation from backend
+                const data = await getRecommendById(recommendId);
+                setRecommendation(data);
             } catch (err) {
                 console.error(err);
                 setError("추천 운동 데이터를 불러오는 데 실패했습니다.");
@@ -31,55 +30,61 @@ const MyFitRecommend = () => {
                 setLoading(false);
             }
         };
-        loadRecommend();
-    }, []);
+        loadRecommendation();
+    }, [recommendId]); // Rerun when recommendId changes
 
     if (loading) return <Loading />;
     if (error) return <Contents>{error}</Contents>;
-
-    const columns = ["운동명", "강도", "빈도", "시간"];
-    const tableData = recomList.map((rec) => ({
-        운동명: rec.recommendMvmNm,
-        강도: rec.intensity,
-        빈도: rec.frequency,
-        시간: rec.duration,
-    }));
+    if (!recommendation) return <Contents>추천 운동 데이터를 찾을 수 없습니다.</Contents>;
 
     return (
         <Box sx={{ p: 3 }}>
-            <StartTitle>추천 운동</StartTitle>
+            <StartTitle>추천 운동 상세</StartTitle>
 
             <Paper sx={{ p: 2, mb: 3 }}>
-                <CustomTable columns={columns} datas={tableData} />
-            </Paper>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                    {recommendation.recommendMvmNm}
+                </Typography>
 
-            {/* 상세 정보 + 영상 */}
-            {recomList.map((rec) => (
-                <Paper key={rec.recommendMvmNm} sx={{ p: 2, mb: 3 }}>
-                    <Typography variant="h6" fontWeight="bold">
-                        {rec.recommendMvmNm}
+                <Typography variant="subtitle1" color="text.secondary">
+                    강도: {recommendation.intensity} | 빈도: {recommendation.frequency} | 시간: {recommendation.duration}
+                </Typography>
+
+                {recommendation.rank && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                        랭크: {recommendation.rank} 등급
                     </Typography>
+                )}
 
-                    <Contents>
-                        강도: {rec.intensity}
-                        <br />
-                        빈도: {rec.frequency}
-                        <br />
-                        시간: {rec.duration}
-                    </Contents>
-
-                    {rec.videoUrl && (
-                        <Button
-                            variant="contained"
-                            sx={{ mt: 1 }}
-                            href={rec.videoUrl}
-                            target="_blank"
-                        >
-                            운동 영상 보기
-                        </Button>
-                    )}
-                </Paper>
-            ))}
+                <Typography variant="h6" fontWeight="bold" sx={{ mt: 3, mb: 1 }}>
+                    운동 콘텐츠
+                </Typography>
+                {recommendation.contents && recommendation.contents.length > 0 ? (
+                    <List>
+                        {recommendation.contents.map((content, index) => (
+                            <Paper key={index} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
+                                <Typography variant="subtitle1" fontWeight="bold">
+                                    {content.sportsStepNm}
+                                </Typography>
+                                {content.videoUrl && (
+                                    <Button
+                                        variant="contained"
+                                        sx={{ mt: 1 }}
+                                        href={content.videoUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer" // Security best practice
+                                    >
+                                        운동 영상 보기
+                                    </Button>
+                                )}
+                                {!content.videoUrl && <Typography variant="body2" color="text.secondary">영상 없음</Typography>}
+                            </Paper>
+                        ))}
+                    </List>
+                ) : (
+                    <Contents>관련 운동 콘텐츠가 없습니다.</Contents>
+                )}
+            </Paper>
         </Box>
     );
 };
