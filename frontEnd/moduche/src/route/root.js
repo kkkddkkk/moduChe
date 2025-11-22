@@ -10,6 +10,7 @@ import adminRouter from "./adminRouter";
 import communityRouter from "./communityRouter";
 import noticeRouter from "./noticeRouter";
 import bannerRouter from "./bannerRouter";
+import inquiryRouter from "./inquiryRouter";
 
 const Loading = <div>Loading...</div>;
 const Main = lazy(() => import("../pages/Main/Main"));
@@ -126,6 +127,15 @@ const root = createBrowserRouter([
                     </Suspense>
                 ),
                 children: myPageRouter(),
+            },
+            {
+                path: "inquiry",
+                element: (
+                    <Suspense fallback={Loading}>
+                        <LayoutForAll />
+                    </Suspense>
+                ),
+                children: inquiryRouter(),
             },
             {
                 path: "admin-window",
