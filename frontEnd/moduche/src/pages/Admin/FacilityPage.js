@@ -38,7 +38,7 @@ import Paper from "../../component/common/Paper";
 // axios 인스턴스 + JWT
 // ----------------------
 const http = axios.create({
-    baseURL: API_SERVER_HOST, // ex) http://localhost:8080
+    baseURL: API_SERVER_HOST,
     withCredentials: false,
 });
 
@@ -57,7 +57,7 @@ const FACILITIES_ENDPOINT = "/api/facilities";
 
 // 라벨 매핑
 const FACILITY_TYPE_LABEL = {
-    REHAB_CENTER: "필라테스",
+    REHAB_CENTER: "재활 센터",
     AQUA_THERAPY: "수중 재활",
     SPORTS_GYM: "장애인 체육관",
 };
@@ -75,19 +75,15 @@ const STATUS_COLOR = {
 };
 
 function FacilityPage() {
-    // DB에서 가져올 시설 리스트
     const [list, setList] = useState([]);
 
-    // 필터 상태
     const [keyword, setKeyword] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [typeFilter, setTypeFilter] = useState("ALL");
 
-    // 페이지네이션
     const [page, setPage] = useState(1);
     const rowsPerPage = 5;
 
-    // 상세 다이얼로그용 상태
     const [detailOpen, setDetailOpen] = useState(false);
     const [selected, setSelected] = useState(null);
 
@@ -96,46 +92,25 @@ function FacilityPage() {
     // ----------------------
     const fetchFacilities = async () => {
         try {
-            const resp = await http.get(FACILITIES_ENDPOINT, {
-                params: {
-                    // 나중에 서버 필터 붙일 때 사용
-                    // status: statusFilter === "ALL" ? undefined : statusFilter,
-                    // type: typeFilter === "ALL" ? undefined : typeFilter,
-                    // q: keyword || undefined,
-                },
-            });
-
+            const resp = await http.get(FACILITIES_ENDPOINT);
             const data = resp.data;
-            // Page<FacilityDto> 또는 List<FacilityDto> 모두 대응
             const facilities = data?.content ?? data ?? [];
-
             setList(Array.isArray(facilities) ? facilities : []);
         } catch (e) {
-            console.error(
-                "시설 목록 로드 실패",
-                e.response?.status,
-                (e.response?.config?.baseURL || "") +
-                    (e.response?.config?.url || ""),
-                e.response?.data || e.message
-            );
+            console.error("시설 목록 로드 실패", e);
         }
     };
 
-    // 최초 진입 시 1회 호출
     useEffect(() => {
         fetchFacilities();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleRefresh = () => {
-        fetchFacilities();
-    };
+    const handleRefresh = () => fetchFacilities();
 
     const handleExport = () => {
         console.log("⬇ 시설 목록 다운로드 (엑셀/CSV 예정)");
     };
 
-    // 새 시설 등록 팝업
     const handleCreateFacility = () => {
         const w = 520;
         const h = 640;
@@ -148,17 +123,18 @@ function FacilityPage() {
             document.documentElement?.clientWidth ??
             window.screen?.width ??
             0;
+
         const viewportH =
             window.innerHeight ??
             document.documentElement?.clientHeight ??
             window.screen?.height ??
             0;
 
-        const availW = (window.screen?.availWidth ?? viewportW) || 1;
-        const systemZoom = viewportW / availW;
+        const availW = window.screen?.availWidth ?? viewportW;
+        const systemZoom = viewportW / (availW || 1);
 
-        const left = (viewportW - w) / 2 / (systemZoom || 1) + dualScreenLeft;
-        const top = (viewportH - h) / 2 / (systemZoom || 1) + dualScreenTop;
+        const left = (viewportW - w) / 2 / systemZoom + dualScreenLeft;
+        const top = (viewportH - h) / 2 / systemZoom + dualScreenTop;
 
         window.open(
             "/admin-window/facilities/new",
@@ -167,7 +143,6 @@ function FacilityPage() {
         );
     };
 
-    // 리스트에서 facilityId로 찾아서 상세 다이얼로그 오픈
     const handleView = (facilityId) => {
         const found = list.find(
             (f) => String(f.facilityId) === String(facilityId)
@@ -177,7 +152,6 @@ function FacilityPage() {
         setDetailOpen(true);
     };
 
-    // 팝업에서 오는 postMessage 수신 → 리스트에 추가
     useEffect(() => {
         const onMessage = (event) => {
             if (event.origin !== window.location.origin) return;
@@ -185,11 +159,11 @@ function FacilityPage() {
             const { type, payload } = event.data || {};
             if (type === "FACILITY_CREATED" && payload) {
                 setList((prev) => {
-                    const dup = prev.some(
+                    const exists = prev.some(
                         (f) =>
                             String(f.facilityId) === String(payload.facilityId)
                     );
-                    return dup ? prev : [payload, ...prev];
+                    return exists ? prev : [payload, ...prev];
                 });
             }
         };
@@ -202,7 +176,7 @@ function FacilityPage() {
     const filteredList = useMemo(() => {
         const kw = keyword.trim().toLowerCase();
 
-        return (list || []).filter((row) => {
+        return list.filter((row) => {
             const name = row.facilityName || "";
             const addr = row.facilityAddress || "";
             const idStr = row.facilityId != null ? String(row.facilityId) : "";
@@ -211,7 +185,7 @@ function FacilityPage() {
                 kw === "" ||
                 name.toLowerCase().includes(kw) ||
                 addr.toLowerCase().includes(kw) ||
-                idStr.toLowerCase().includes(kw);
+                idStr.includes(kw);
 
             const matchStatus =
                 statusFilter === "ALL" ? true : row.status === statusFilter;
@@ -234,16 +208,13 @@ function FacilityPage() {
         setPage(1);
     }, [keyword, statusFilter, typeFilter, list]);
 
-    const activeCount = useMemo(
-        () => filteredList.filter((f) => f.status === "ACTIVE").length,
-        [filteredList]
-    );
-    const recruitingCount = useMemo(
-        () => filteredList.filter((f) => f.status === "RECRUITING").length,
-        [filteredList]
-    );
+    const activeCount = filteredList.filter(
+        (f) => f.status === "ACTIVE"
+    ).length;
+    const recruitingCount = filteredList.filter(
+        (f) => f.status === "RECRUITING"
+    ).length;
 
-    // 상세 다이얼로그 내부 한 줄
     const DetailRow = ({ label, value }) => (
         <Stack
             direction="row"
@@ -284,28 +255,21 @@ function FacilityPage() {
                     boxShadow: 1,
                 }}
             >
-                {/* 상단 영역 */}
                 <Box sx={{ mb: 3 }}>
                     <Typography
                         variant="h5"
                         fontWeight={700}
                         sx={{
-                            lineHeight: 1.3,
-                            color: "primary.main",
-                            mb: 1,
                             textAlign: { xs: "left", sm: "center" },
+                            color: "primary.main",
                         }}
                     >
                         시설 관리
                     </Typography>
-
                     <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{
-                            lineHeight: 1.5,
-                            textAlign: { xs: "left", sm: "center" },
-                        }}
+                        sx={{ textAlign: { xs: "left", sm: "center" } }}
                     >
                         DB facility 테이블 기준으로 시설 정보를 조회·관리합니다.
                     </Typography>
@@ -313,29 +277,22 @@ function FacilityPage() {
 
                 <Divider sx={{ mb: 3 }} />
 
-                {/* 옵션 바 */}
+                {/* 옵션 영역 */}
                 <Box
                     sx={{
                         display: "flex",
                         flexDirection: { xs: "column", md: "row" },
-                        flexWrap: "wrap",
-                        alignItems: { xs: "stretch", md: "center" },
                         justifyContent: "space-between",
                         rowGap: 2,
                         columnGap: 2,
                         p: 2,
                         mb: 2,
+                        borderRadius: 2,
                         border: "1px solid",
                         borderColor: "divider",
-                        borderRadius: 2,
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        bgcolor: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? theme.palette.background.default
-                                : theme.palette.grey[50],
                     }}
                 >
-                    {/* 왼쪽 필터 영역 */}
+                    {/* 필터 영역 */}
                     <Box
                         sx={{
                             display: "flex",
@@ -343,32 +300,15 @@ function FacilityPage() {
                             alignItems: "center",
                             rowGap: 1.5,
                             columnGap: 1.5,
-                            minWidth: 0,
                         }}
                     >
                         <TextField
                             select
-                            label="상태"
                             size="small"
+                            label="상태"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            sx={{
-                                minWidth: 130,
-                                "& .MuiOutlinedInput-root": {
-                                    borderRadius: 2,
-                                    backgroundColor: "background.paper",
-                                    "& fieldset": { borderColor: "divider" },
-                                    "&:hover fieldset": {
-                                        borderColor: "primary.light",
-                                    },
-                                    "&.Mui-focused fieldset": {
-                                        borderColor: "primary.main",
-                                    },
-                                },
-                                "& .MuiInputLabel-root": {
-                                    fontSize: "0.75rem",
-                                },
-                            }}
+                            sx={{ minWidth: 130 }}
                         >
                             <MenuItem value="ALL">전체</MenuItem>
                             <MenuItem value="ACTIVE">운영 중</MenuItem>
@@ -378,27 +318,11 @@ function FacilityPage() {
 
                         <TextField
                             select
-                            label="시설 타입"
                             size="small"
+                            label="시설 타입"
                             value={typeFilter}
                             onChange={(e) => setTypeFilter(e.target.value)}
-                            sx={{
-                                minWidth: 150,
-                                "& .MuiOutlinedInput-root": {
-                                    borderRadius: 2,
-                                    backgroundColor: "background.paper",
-                                    "& fieldset": { borderColor: "divider" },
-                                    "&:hover fieldset": {
-                                        borderColor: "primary.light",
-                                    },
-                                    "&.Mui-focused fieldset": {
-                                        borderColor: "primary.main",
-                                    },
-                                },
-                                "& .MuiInputLabel-root": {
-                                    fontSize: "0.75rem",
-                                },
-                            }}
+                            sx={{ minWidth: 150 }}
                         >
                             <MenuItem value="ALL">전체</MenuItem>
                             <MenuItem value="REHAB_CENTER">재활 센터</MenuItem>
@@ -413,31 +337,12 @@ function FacilityPage() {
                             placeholder="시설명 / 시설ID / 주소 검색"
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
-                            sx={{
-                                minWidth: { xs: "100%", md: 260 },
-                                "& .MuiOutlinedInput-root": {
-                                    borderRadius: 5,
-                                    backgroundColor: "background.paper",
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                                    "& fieldset": {
-                                        borderColor: "transparent",
-                                    },
-                                    "&:hover fieldset": {
-                                        borderColor: "primary.light",
-                                    },
-                                    "&.Mui-focused fieldset": {
-                                        borderColor: "primary.main",
-                                    },
-                                },
-                            }}
+                            sx={{ minWidth: { xs: "100%", md: 260 } }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <SearchIcon
-                                            sx={{
-                                                color: "text.disabled",
-                                                fontSize: 20,
-                                            }}
+                                            sx={{ color: "text.disabled" }}
                                         />
                                     </InputAdornment>
                                 ),
@@ -445,27 +350,18 @@ function FacilityPage() {
                         />
                     </Box>
 
-                    {/* 오른쪽: 통계 + 액션 */}
+                    {/* 오른쪽 버튼/통계 */}
                     <Stack
                         direction="row"
+                        spacing={1.5}
                         alignItems="center"
                         flexWrap="wrap"
-                        spacing={1.5}
-                        sx={{
-                            width: { xs: "100%", md: "auto" },
-                            justifyContent: {
-                                xs: "space-between",
-                                md: "flex-end",
-                            },
-                        }}
                     >
-                        <Box sx={{ textAlign: "right", mr: 1 }}>
+                        <Box sx={{ textAlign: "right" }}>
                             <Typography
                                 sx={{
                                     fontSize: "0.8rem",
                                     color: "text.secondary",
-                                    fontWeight: 400,
-                                    whiteSpace: "nowrap",
                                 }}
                             >
                                 총 {filteredList.length}곳
@@ -474,8 +370,6 @@ function FacilityPage() {
                                 sx={{
                                     fontSize: "0.8rem",
                                     fontWeight: 600,
-                                    whiteSpace: "nowrap",
-                                    color: "text.primary",
                                 }}
                             >
                                 운영 중 {activeCount}곳 · 모집 중{" "}
@@ -488,133 +382,53 @@ function FacilityPage() {
                             variant="contained"
                             startIcon={<AddIcon />}
                             onClick={handleCreateFacility}
-                            sx={{
-                                borderRadius: 2,
-                                textTransform: "none",
-                                fontWeight: 600,
-                                fontSize: "0.8rem",
-                                px: 1.5,
-                                py: 1,
-                                whiteSpace: "nowrap",
-                            }}
+                            sx={{ textTransform: "none" }}
                         >
                             새 시설 등록
                         </Button>
 
                         <Tooltip title="새로고침">
-                            <IconButton
-                                size="small"
-                                onClick={handleRefresh}
-                                sx={{
-                                    borderRadius: 2,
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                    "&:hover": {
-                                        bgcolor: "primary.main",
-                                        color: "#fff",
-                                        borderColor: "primary.main",
-                                    },
-                                    width: 32,
-                                    height: 32,
-                                }}
-                            >
+                            <IconButton size="small" onClick={handleRefresh}>
                                 <RefreshIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
 
                         <Tooltip title="내보내기">
-                            <IconButton
-                                size="small"
-                                onClick={handleExport}
-                                sx={{
-                                    borderRadius: 2,
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                    "&:hover": {
-                                        bgcolor: "success.main",
-                                        color: "#fff",
-                                        borderColor: "success.main",
-                                    },
-                                    width: 32,
-                                    height: 32,
-                                }}
-                            >
+                            <IconButton size="small" onClick={handleExport}>
                                 <DownloadIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
                     </Stack>
                 </Box>
 
-                {/* 테이블 (연락처 컬럼 없음) */}
+                {/* 테이블 */}
                 <Box
                     sx={{
                         borderRadius: 2,
                         border: "1px solid",
                         borderColor: "divider",
-                        boxShadow: 0,
                         maxHeight: 480,
                         overflow: "auto",
-                        "&::-webkit-scrollbar": { width: 6, height: 6 },
-                        "&::-webkit-scrollbar-thumb": {
-                            bgcolor: "rgba(0,0,0,0.2)",
-                            borderRadius: 3,
-                        },
                     }}
                 >
                     <Table stickyHeader size="small">
                         <TableHead>
-                            <TableRow
-                                sx={{
-                                    backgroundColor: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? theme.palette.grey[900]
-                                            : theme.palette.grey[100],
-                                    "& th": {
-                                        fontWeight: 600,
-                                        whiteSpace: "nowrap",
-                                        fontSize: "0.8rem",
-                                        color: "text.primary",
-                                    },
-                                }}
-                            >
-                                <TableCell sx={{ minWidth: 90 }}>
-                                    시설ID
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 160 }}>
-                                    시설명
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 130 }}>
-                                    시설 타입
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 220 }}>
-                                    주소
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 160 }}>
-                                    운영 시간
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 180 }}>
-                                    접근성 정보
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 90 }}>
-                                    상태
-                                </TableCell>
-                                <TableCell align="right" sx={{ minWidth: 80 }}>
-                                    액션
-                                </TableCell>
+                            <TableRow>
+                                <TableCell>시설ID</TableCell>
+                                <TableCell>시설명</TableCell>
+                                <TableCell>시설 타입</TableCell>
+                                <TableCell>주소</TableCell>
+                                <TableCell>운영 시간</TableCell>
+                                {/* 접근성 정보 제거됨 */}
+                                <TableCell>상태</TableCell>
+                                <TableCell align="right">액션</TableCell>
                             </TableRow>
                         </TableHead>
 
                         <TableBody>
                             {pagedList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell
-                                        colSpan={8}
-                                        align="center"
-                                        sx={{
-                                            py: 6,
-                                            color: "text.secondary",
-                                        }}
-                                    >
+                                    <TableCell colSpan={7} align="center">
                                         조건에 맞는 시설이 없습니다.
                                     </TableCell>
                                 </TableRow>
@@ -624,11 +438,6 @@ function FacilityPage() {
                                         key={row.facilityId}
                                         hover
                                         sx={{
-                                            "&:last-of-type td": {
-                                                borderBottom: 0,
-                                            },
-                                            transition:
-                                                "background-color 0.15s ease-in-out",
                                             "&:hover": {
                                                 backgroundColor:
                                                     "rgba(0,0,0,0.03)",
@@ -638,21 +447,13 @@ function FacilityPage() {
                                         <TableCell
                                             sx={{
                                                 fontFamily: "monospace",
-                                                fontSize: "0.8rem",
                                             }}
                                         >
                                             {row.facilityId}
                                         </TableCell>
-
-                                        <TableCell
-                                            sx={{
-                                                fontWeight: 500,
-                                                fontSize: "0.9rem",
-                                            }}
-                                        >
+                                        <TableCell>
                                             {row.facilityName}
                                         </TableCell>
-
                                         <TableCell>
                                             <Chip
                                                 label={
@@ -661,65 +462,23 @@ function FacilityPage() {
                                                     ] || row.facilityType
                                                 }
                                                 size="small"
-                                                color={
-                                                    row.facilityType ===
-                                                    "REHAB_CENTER"
-                                                        ? "primary"
-                                                        : "default"
-                                                }
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    fontSize: "0.7rem",
-                                                    px: 1,
-                                                }}
                                             />
                                         </TableCell>
-
-                                        <TableCell
-                                            sx={{
-                                                fontSize: "0.8rem",
-                                                whiteSpace: "nowrap",
-                                                color: "text.secondary",
-                                            }}
-                                        >
+                                        <TableCell>
                                             {row.facilityAddress}
                                         </TableCell>
+                                        <TableCell>{row.openHours}</TableCell>
 
-                                        <TableCell
-                                            sx={{
-                                                fontSize: "0.8rem",
-                                                whiteSpace: "nowrap",
-                                            }}
-                                        >
-                                            {row.openHours}
-                                        </TableCell>
-
-                                        <TableCell
-                                            sx={{
-                                                fontSize: "0.75rem",
-                                                color: "text.secondary",
-                                            }}
-                                        >
-                                            {row.accessibilityFeatures}
-                                        </TableCell>
+                                        {/* 접근성 정보 제거됨 */}
 
                                         <TableCell>
                                             <Chip
                                                 label={
                                                     STATUS_LABEL[row.status] ||
-                                                    row.status ||
-                                                    ""
+                                                    row.status
                                                 }
                                                 size="small"
-                                                color={
-                                                    STATUS_COLOR[row.status] ||
-                                                    "default"
-                                                }
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    fontSize: "0.7rem",
-                                                    px: 1,
-                                                }}
+                                                color={STATUS_COLOR[row.status]}
                                             />
                                         </TableCell>
 
@@ -749,25 +508,23 @@ function FacilityPage() {
                     <Pagination
                         count={pageCount}
                         page={page}
-                        onChange={(_, value) => setPage(value)}
+                        onChange={(_, v) => setPage(v)}
                         color="primary"
                         size="small"
-                        siblingCount={1}
-                        boundaryCount={1}
                         showFirstButton
                         showLastButton
                     />
                 </Stack>
             </Paper>
 
-            {/* 시설 상세 다이얼로그 */}
+            {/* 상세 다이얼로그 */}
             <Dialog
                 open={detailOpen}
                 onClose={() => setDetailOpen(false)}
                 maxWidth="sm"
                 fullWidth
             >
-                <DialogTitle sx={{ fontWeight: 700, pb: 1.5 }}>
+                <DialogTitle sx={{ fontWeight: 700 }}>
                     시설 상세 정보
                 </DialogTitle>
                 <DialogContent dividers sx={{ px: 3 }}>
@@ -830,20 +587,16 @@ function FacilityPage() {
                             />
                         </Box>
                     ) : (
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ py: 2 }}
-                        >
+                        <Typography sx={{ py: 2 }}>
                             선택된 시설이 없습니다.
                         </Typography>
                     )}
                 </DialogContent>
                 <DialogActions sx={{ px: 3, py: 1.5 }}>
                     <Button
-                        onClick={() => setDetailOpen(false)}
                         variant="contained"
                         size="small"
+                        onClick={() => setDetailOpen(false)}
                     >
                         닫기
                     </Button>
