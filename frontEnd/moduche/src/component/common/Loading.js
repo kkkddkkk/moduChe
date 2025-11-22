@@ -6,7 +6,7 @@ export default function Loading({ open, text = '로딩중...' }) {
     const mainColor = theme.palette.primary.main;
   return (
     <Backdrop
-      sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.modal + 1 }}
+      sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.modal + 1000 }}
       open={open}
     >
       <Box display="flex" alignItems="center" gap={2}>
