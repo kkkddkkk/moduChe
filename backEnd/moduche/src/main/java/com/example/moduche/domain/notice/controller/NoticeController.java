@@ -44,7 +44,7 @@ public class NoticeController {
 		Page<FetchNoticeDTO> notices = noticeService.getNotices(page, size, keyword, isVisible, isPinned);
 	    NoticePageResponseDTO dto = NoticePageResponseDTO.builder()
 	            .notices(notices.getContent())
-	            .totalElements(notices.getTotalElements())
+	            .totalElements(noticeRepository.findNoticesNum())
 	            .totalPages(notices.getTotalPages())
 	            .currentPage(notices.getNumber() + 1) // 0-based → 1-based
 	            .activatedElements(noticeRepository.findActivatedNum())

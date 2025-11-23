@@ -43,6 +43,9 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
 	        @Param("isVisible") Boolean isVisible,
 	        @Param("isPinned") Boolean isPinned);
 	
+	@Query("SELECT COUNT(n) FROM Notice n")
+	Long findNoticesNum();
+	
 	@Query("SELECT COUNT(n) FROM Notice n WHERE n.isVisible = true")
 	Long findActivatedNum();
 

@@ -31,6 +31,7 @@ import { fetchNotice } from '../../api/admin/NoticeAPI';
 import { useApi } from '../../hook/useAPI';
 import { dateFormat, numberFormat } from '../../component/common/Functions';
 import { fetchCommunity } from '../../api/admin/CommunityAPI';
+import CommunityDialog from '../../component/admin/CommunityDialog';
 
 function FacilityPage() {
   // DB에서 가져올 시설 리스트
@@ -43,7 +44,7 @@ function FacilityPage() {
     ACTIVE: '활동',
     INACTIVE: '비활동',
     BANNED: '정지',
-    DELETED: '활동 종료'
+    DELETED: '활동 종료',
   };
 
   const STATUS_COLOR = {
@@ -53,7 +54,6 @@ function FacilityPage() {
     BANNED: 'error',
     DELETED: 'text.secondary',
   };
-
 
   const [totalElement, setTotalElement] = useState('');
   const [activeCount, setActiveCount] = useState('');
@@ -69,13 +69,18 @@ function FacilityPage() {
   const rowsPerPage = 5;
   const [totalPage, setTotalPage] = useState(0);
 
+  //다이얼로그
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [communityId, setCommunityId] = useState('');
+
+
   const { callApi: fetchCommunityAPI } = useApi(fetchCommunity);
   const fetch = async () => {
     const res = await fetchCommunityAPI(
       page - 1,
       rowsPerPage,
       keyword,
-      statusFilter
+      statusFilter,
     );
     const content = res.data.communities;
     console.log(res.data);
@@ -126,8 +131,9 @@ function FacilityPage() {
   };
 
   // 리스트에서 facilityId로 찾아서 상세 다이얼로그 오픈
-  const handleView = (noticeId) => {
-    handleCreateOrUpdateNotice(true, noticeId);
+  const handleView = (ci) => {
+    setCommunityId(ci);
+    setDetailOpen(true);
   };
 
   // 팝업에서 오는 postMessage 수신 → 리스트에 추가
@@ -327,7 +333,8 @@ function FacilityPage() {
                 color: 'text.primary',
               }}
             >
-              승인대기 {numberFormat(registeredCount)}건 / 활성화 {numberFormat(activeCount)}건 / 비활성화{' '}
+              승인대기 {numberFormat(registeredCount)}건 / 활성화{' '}
+              {numberFormat(activeCount)}건 / 비활성화{' '}
               {numberFormat(totalElement - activeCount - registeredCount)}건
             </Typography>
           </Box>
@@ -492,14 +499,9 @@ function FacilityPage() {
 
                   <TableCell align="center">
                     <Chip
-                      label={
-                        STATUS_LABEL[row.status]
-                      }
+                      label={STATUS_LABEL[row.status]}
                       size="small"
-                      color={
-                        STATUS_COLOR[row.status] ||
-                        'default'
-                      }
+                      color={STATUS_COLOR[row.status] || 'default'}
                       sx={{
                         fontWeight: 600,
                         fontSize: '0.7rem',
@@ -512,7 +514,7 @@ function FacilityPage() {
                     <Tooltip title="상세 보기">
                       <IconButton
                         size="small"
-                        onClick={() => handleView(row.noticeId)}
+                        onClick={() => handleView(row.communityId)}
                       >
                         <VisibilityIcon fontSize="small" />
                       </IconButton>
@@ -524,6 +526,12 @@ function FacilityPage() {
           </TableBody>
         </Table>
       </Box>
+
+      <CommunityDialog
+        detailOpen={detailOpen}
+        setDetailOpen={setDetailOpen}
+        communityId={communityId}
+      />
 
       {/* 페이지네이션 */}
       <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>

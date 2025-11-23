@@ -57,9 +57,10 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     
 	// 김도경: adminPage - communityList
 	@Query("SELECT new com.example.moduche.domain.admin.dto.FetchCommunityDTO("+
-			"c.communityId, c.name, c.createdAt, c.owner.name, c.founder, "+ 
+			"c.communityId, c.name, c.createdAt, fu.roleInFac, c.founder, "+ 
 			"c.status) " +
-			"FROM Community c WHERE (:keyword IS NULL OR "+ 
+			"FROM Community c JOIN c.owner u JOIN FacilityUser fu on fu.user = u "+
+			"WHERE (:keyword IS NULL OR "+ 
 			"str(c.communityId) LIKE CONCAT('%', :keyword, '%') OR " + 
 			"c.name LIKE CONCAT('%', :keyword, '%') OR "+ 
 			"c.founder LIKE CONCAT('%', :keyword, '%')) " + 
@@ -75,4 +76,8 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
 	//승인 신청 list 수
 	@Query("SELECT COUNT(c) FROM Community c WHERE c.status = 'REGISTERED'")
 	Long findRegisteredNum();
+	
+	//전체 list 수
+	@Query("SELECT COUNT(c) FROM Community c")
+	Long findCommunityNum();
 }

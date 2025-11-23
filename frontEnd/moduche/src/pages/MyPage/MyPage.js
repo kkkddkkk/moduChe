@@ -41,7 +41,7 @@ const MyPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const accessToken = localStorage.getItem('accessToken');
-  const role = getRoleFromToken(accessToken).toLowerCase();
+  const role = getRoleFromToken(accessToken)?.toLowerCase();
   const { loggedIn } = getUserContext();
 
   const [title, setTitle] = useState('');

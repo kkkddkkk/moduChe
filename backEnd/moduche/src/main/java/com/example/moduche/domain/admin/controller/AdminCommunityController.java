@@ -50,7 +50,7 @@ public class AdminCommunityController {
 		
 		AdminCommunityPageResponseDTO dto  = AdminCommunityPageResponseDTO.builder()
 				.communities(communities.getContent())
-	            .totalElements(communities.getTotalElements())
+	            .totalElements(communityRepository.findCommunityNum())
 	            .totalPages(communities.getTotalPages())
 	            .currentPage(communities.getNumber() + 1) // 0-based → 1-based
 	            .activedElements(communityRepository.findActivedNum())

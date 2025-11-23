@@ -105,7 +105,7 @@ public class AuthController {
 	}
 	
 	@PutMapping("/quit")
-	public ResponseEntity<?> quit(LogoutDTO dto) {
+	public ResponseEntity<?> quit(@RequestBody LogoutDTO dto) {
 	    authService.deleteToken(dto.getUsername());
 	    
 	    ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
