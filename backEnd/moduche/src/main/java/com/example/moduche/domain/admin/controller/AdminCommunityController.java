@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.moduche.domain.admin.dto.AdminCommunityPageResponseDTO;
 import com.example.moduche.domain.admin.dto.FetchCommunityDTO;
+import com.example.moduche.domain.admin.dto.FetchCommunityDetailDTO;
 import com.example.moduche.domain.admin.service.AdminCommunityService;
 import com.example.moduche.domain.community.enums.CommunityStatus;
 import com.example.moduche.domain.community.repository.CommunityRepository;
@@ -60,29 +61,21 @@ public class AdminCommunityController {
 		return new Response(StatusEnum.OK, "", dto);
 	}
 
-//	@GetMapping("/fetchNoticeDetail")
-//	public Response fetchNoticeDetail(@RequestParam(name = "noticeId") Long noticeId) {
-//
-//		NoticeDTO dto = noticeService.getNoticeDetail(noticeId);
-//		System.out.println(dto);
-//		return new Response(StatusEnum.OK, "", dto);
-//	}
-//
-//	@PostMapping("/createNotice")
-//	public Response createNotice(@RequestPart("data") NoticeDTO dto,
-//			@RequestPart(value = "images", required = false) List<MultipartFile> images) {
-//		Notice notice = noticeService.createNotice(dto, images);
-//
-//		return new Response(StatusEnum.OK, "", dto);
-//	}
-//
-//	@PutMapping("/modifyNotice")
-//	public Response modifyNotice(@RequestPart("data") ModifyNoticeDTO dto,
-//			@RequestPart(value = "images", required = false) List<MultipartFile> images) {
-//		Notice notice = noticeService.modifyNotice(dto, images);
-//
-//		return new Response(StatusEnum.OK, "", dto);
-//	}
+	@GetMapping("/fetchCommunityDetail")
+	public Response fetchCommunityDetail(@RequestParam(name = "communityId") Long communityId) {
+
+		FetchCommunityDetailDTO dto = adminCommunityService.getCommunityDetail(communityId);
+		return new Response(StatusEnum.OK, "", dto);
+	}
+
+	@PutMapping("/modifyCommunityStatus")
+	public Response modifyCommunityStatus(@RequestParam(name = "communityId") Long communityId,
+			@RequestParam(name = "status") String status) {
+		
+		adminCommunityService.modifyCommunityStatus(communityId, CommunityStatus.valueOf(status));
+
+		return new Response(StatusEnum.OK, "", null);
+	}
 //
 //	@DeleteMapping("/deleteNotice")
 //	public Response deleteNotice(@RequestParam("noticeId") Long noticeId) {

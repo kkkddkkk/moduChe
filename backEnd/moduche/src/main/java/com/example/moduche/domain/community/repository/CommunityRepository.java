@@ -12,6 +12,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.moduche.domain.admin.dto.FetchCommunityDTO;
+import com.example.moduche.domain.admin.dto.FetchCommunityDetailDTO;
+import com.example.moduche.domain.community.dto.CommunityAddressDTO;
 import com.example.moduche.domain.community.entity.Community;
 import com.example.moduche.domain.community.enums.CommunityStatus;
 import com.example.moduche.domain.main.dto.CloseCommunityDTO;
@@ -80,4 +82,21 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
 	//전체 list 수
 	@Query("SELECT COUNT(c) FROM Community c")
 	Long findCommunityNum();
+	
+	//김도경: adminPage = communityDetail
+	@Query("SELECT new com.example.moduche.domain.admin.dto.FetchCommunityDetailDTO("+
+			"c.communityId, c.name, c.purpose, c.founder, fu.roleInFac, u.phone, "+ 
+			"c.status, cp.postId, cp.title) " +
+			"FROM Community c JOIN c.owner u JOIN FacilityUser fu on fu.user = u "+
+			"JOIN CommunityPost cp on cp.community = c "+
+			"WHERE c.communityId = :communityId")
+	Optional<FetchCommunityDetailDTO> findFetchCommunityDetailDTO(
+			@Param("communityId") Long communityId);
+	
+	@Query("SELECT new com.example.moduche.domain.community.dto.CommunityAddressDTO("+
+			"c.address, c.addressDetail) " +
+			"FROM Community c WHERE c.communityId = :communityId")
+	Optional<CommunityAddressDTO> findCommunityAddress(
+			@Param("communityId") Long communityId);
+	
 }

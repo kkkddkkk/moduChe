@@ -26,12 +26,14 @@ import { useUser } from '../../context/UserContext';
 import { useApi } from '../../hook/useAPI';
 import Loading from '../common/Loading';
 import { logOut } from '../../api/accountAPI/AuthAPI';
+import MenuModal from './MenuModal';
 
 const Header = () => {
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
   const headerRef = useRef(null);
   const [openSearch, setOpenSearch] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
@@ -59,6 +61,7 @@ const Header = () => {
 
   const clickSearchButton = () => {
     setOpenSearch(!openSearch);
+    setOpenModal(false);
   };
 
   const { callApi: logoutAPI, loading, done } = useApi(logOut);
@@ -141,21 +144,37 @@ const Header = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center', // 세로 가운데 정렬
-                gap: 1, // 항목 간 간격
-              }}
-            >
-              <HeaderMenu onClick={() => navigate(`/notice`)}>
-                공지사항
-              </HeaderMenu>
-              <MenuBar />
-              <HeaderMenu onClick={() => navigate(`/community/home`)}>
-                동아리
-              </HeaderMenu>
-            </Box>
+            {isMdUp ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center', // 세로 가운데 정렬
+                  gap: 1, // 항목 간 간격
+                }}
+              >
+                <HeaderMenu onClick={() => navigate(`/notice`)}>
+                  공지사항
+                </HeaderMenu>
+                <MenuBar />
+                <HeaderMenu onClick={() => navigate(`/community/home`)}>
+                  문의하기(경로수정 필요)
+                </HeaderMenu>
+                <MenuBar />
+                <HeaderMenu onClick={() => navigate(`/community/home`)}>
+                  동아리
+                </HeaderMenu>
+                <MenuBar />
+                <HeaderMenu onClick={() => navigate(`/community/home`)}>
+                  강좌(경로수정 필요)
+                </HeaderMenu>
+                <MenuBar />
+                <HeaderMenu onClick={() => navigate(`/community/home`)}>
+                  추천운동(경로수정 필요)
+                </HeaderMenu>
+              </Box>
+            ) : (
+              <></>
+            )}
 
             <Box
               display={'flex'}
@@ -167,10 +186,13 @@ const Header = () => {
                 <SearchIcon sx={{ color: menuColor, fontWeight: 'bold' }} />
               </HeaderIcon>
               {!isMdUp ? (
-                <HeaderIcon>
-                  {' '}
-                  <MenuIcon />
-                </HeaderIcon>
+                <>
+                  <HeaderIcon onClick={() => setOpenModal(!openModal)}>
+                    {' '}
+                    <MenuIcon />
+                  </HeaderIcon>
+                  <MenuModal open={openModal} setOpen={setOpenModal} />
+                </>
               ) : (
                 <Box
                   sx={{

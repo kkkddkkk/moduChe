@@ -22,4 +22,5 @@ public class FetchCommunityDTO {
 	private String username;// 제목
 	private String founder; //운영 기관
 	private CommunityStatus status;//활성화 여부
+	
 }
