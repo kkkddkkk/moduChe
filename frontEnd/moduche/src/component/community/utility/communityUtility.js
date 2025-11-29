@@ -1,11 +1,14 @@
 //날짜 문자열 가공 함수.
 export const formattedDate = (createdAt) => {
-    return new Date(createdAt).toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    });
+    const date = new Date(createdAt);
+
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+
+    return `${yyyy}년 ${mm}월 ${dd}일`;
 };
+
 
 //문자열 자르기 함수.
 export const sliceContent = (text, limit) => {

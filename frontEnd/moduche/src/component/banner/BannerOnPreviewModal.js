@@ -11,8 +11,9 @@ import {
     Link,
 } from "@mui/material";
 import { useState, useEffect } from "react";
+import { formatBannerPeriod, getBannerType } from "./utility/bannerUtility";
 
-const BannerPreviewModal = ({ data, open, onClose, OnApprove, OnDecline }) => {
+const BannerOnPreviewModal = ({ data, open, onClose, onDelete }) => {
     const [reason, setReason] = useState("");
     const [isSafeUrl, setIsSafeUrl] = useState(true);
 
@@ -30,7 +31,6 @@ const BannerPreviewModal = ({ data, open, onClose, OnApprove, OnDecline }) => {
 
     if (!data) return null;
 
-    console.log(data);
     const handleDownload = () => {
         const link = document.createElement("a");
         link.href = data.imageUrl;
@@ -57,14 +57,14 @@ const BannerPreviewModal = ({ data, open, onClose, OnApprove, OnDecline }) => {
             }}
         >
             <DialogTitle sx={{ fontWeight: 700, textAlign: "center" }}>
-                배너 상세 정보
+                출력 배너 상세 정보
             </DialogTitle>
 
             <DialogContent dividers>
                 {/* --------------------- 이미지 미리보기 영역 --------------------- */}
                 <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" fontWeight={700} mb={1}>
-                        이미지 미리보기
+                        출력 이미지 미리보기
                     </Typography>
 
                     <Box
@@ -93,30 +93,24 @@ const BannerPreviewModal = ({ data, open, onClose, OnApprove, OnDecline }) => {
 
                 {/* --------------------- 기본 정보 --------------------- */}
                 <Typography variant="h6" fontWeight={700} mb={2}>
-                    배너 정보
+                    출력 배너 정보
                 </Typography>
 
                 <Stack spacing={1.2}>
-                    <InfoRow label="ID" value={data.id} />
-                    <InfoRow label="배너 위치" value={data.bannerTypeLabel} />
-                    <InfoRow label="우선순위" value={data.priorityLabel} />
+                    <InfoRow label="배너 고유 번호" value={`BA-${data.id}`} />
+                    <InfoRow label="출력 배너 유횽" value={getBannerType(data.bannerTypeLabel)} />
+                    <InfoRow label="출력 중요도" value={data.priorityLabel} />
                     <InfoRow
                         label="노출 기간"
-                        value={`${data.durationDays}일`}
+                        value={formatBannerPeriod(data.startDate, data.endDate)}
                     />
-                    <InfoRow label="상태" value={data.status} />
-                    <InfoRow
-                        label="신청일"
-                        value={new Date(data.appliedAt).toLocaleString()}
-                    />
-                    <InfoRow label="결제 ID" value={data.paymentId} />
                 </Stack>
 
                 <Divider sx={{ my: 2 }} />
 
                 {/* --------------------- 광고 요청자 정보 --------------------- */}
                 <Typography variant="h6" fontWeight={700} mb={2}>
-                    신청자 정보
+                    등록자 정보
                 </Typography>
 
                 <Stack spacing={1.2}>
@@ -150,16 +144,12 @@ const BannerPreviewModal = ({ data, open, onClose, OnApprove, OnDecline }) => {
 
             {/* --------------------- 하단 액션 버튼 --------------------- */}
             <DialogActions>
-                <Button variant="contained" color="success" onClick={() =>OnApprove(data.id)}>
-                    승인
-                </Button>
-
                 <Button
                     variant="contained"
                     color="error"
-                    onClick={() => OnDecline(reason)}
+                    onClick={() => onDelete(data.id)}
                 >
-                    거절
+                    내리기
                 </Button>
             </DialogActions>
         </Dialog>
@@ -174,4 +164,4 @@ const InfoRow = ({ label, value }) => (
     </Box>
 );
 
-export default BannerPreviewModal;
+export default BannerOnPreviewModal;

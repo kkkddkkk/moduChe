@@ -1,119 +1,70 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Box,
     Typography,
     Stack,
-    IconButton,
-    Tooltip,
     TextField,
     MenuItem,
-    Chip,
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableRow,
+    TableHead,
     Pagination,
+    Divider,
     InputAdornment,
     Button,
-    Divider,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Grid,
-    Paper as MuiPaper,
-    Snackbar,
-    Alert,
-    Badge,
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
 import Paper from "../../component/common/Paper";
-import BannerApplyManageRow from "../../component/banner/BannerApplyManageRow";
-import BannerApplyPreviewModal from "../../component/banner/BannerApplyPreviewModal";
-import {
-    acceptBannerApply,
-    declineBannerApply,
-    fetchBannerAppyList,
-} from "../../api/bannerAPI/bannerAPI";
-import RejectReasonModal from "../../component/banner/RejectReasonModal";
+import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
+
+import { fetchBannerOnList, expireBanner } from "../../api/bannerAPI/bannerAPI";
+import BannerOnPreviewModal from "../../component/banner/BannerOnPreviewModal";
+import BannerOnManageRow from "../../component/banner/BannerOnManageRow";
 import { useNavigate } from "react-router-dom";
 
-export default function BannersApplyPage() {
+export default function BannerOnPage() {
     const navigate = useNavigate();
 
     const [page, setPage] = useState(1);
     const [type, setType] = useState("ALL");
+    const [status, setStatus] = useState("ALL");
     const [search, setSearch] = useState("");
     const [totalPages, setTotalPages] = useState(1);
+    const [banners, setBanners] = useState([]);
 
-    const [applies, setApplies] = useState(null);
-
-    const [selectedApply, setSelectedApply] = useState(null);
+    const [selectedBanner, setSelectedBanner] = useState(null);
     const [openDetail, setOpenDetail] = useState(false);
 
-    const [openReject, setOpenReject] = useState(false);
-    const [loading, setLoading] = useState(false);
-
     useEffect(() => {
-        console.log("type: " + type);
         loadData();
-    }, [page, search, type]);
+    }, [page, type, status, search]);
 
     const loadData = async () => {
-        setLoading(true);
-        try {
-            // 실제 API 호출
-            const data = await fetchBannerAppyList({
-                page: page - 1,
-                size: 5,
-                search,
-                type,
-            });
-            setLoading(false);
+        const data = await fetchBannerOnList({
+            page: page - 1,
+            size: 10,
+            type,
+            status,
+            search,
+        });
 
-            setApplies(data.content);
-            setTotalPages(data.totalPages);
-        } catch (e) {
-            setLoading(false);
-            console.error("배너 신청 내역 조회 실패:", e);
-        }
+        setBanners(data.content);
+        setTotalPages(data.totalPages);
+    };
+
+    const handleExpire = async (id) => {
+        console.log("철회: " + id);
+        await expireBanner(id);
+        setOpenDetail(false);
+        loadData();
     };
 
     const handleDetail = (data) => {
-        setSelectedApply(data);
+        setSelectedBanner(data);
         setOpenDetail(true);
-    };
-
-    const handleApprove = async (bannerId) => {
-        setLoading(true);
-        try {
-            // 실제 API 호출
-            await acceptBannerApply(bannerId);
-            setLoading(false);
-            setOpenDetail(false);
-            loadData();
-        } catch (e) {
-            setLoading(false);
-            console.error("배너 신청 내역 조회 실패:", e);
-        }
-    };
-
-    const handleDecline = async (reason) => {
-        if (!selectedApply) return;
-
-        setLoading(true);
-        try {
-            await declineBannerApply(selectedApply.id, reason);
-            setOpenReject(false);
-            setOpenDetail(false);
-            loadData();
-        } catch (e) {
-            console.error("배너 신청 거절 실패:", e);
-        } finally {
-            setLoading(false);
-        }
     };
 
     return (
@@ -138,7 +89,7 @@ export default function BannersApplyPage() {
                         textAlign: { xs: "left", sm: "center" },
                     }}
                 >
-                    배너 신청 관리
+                    출력 배너 관리
                 </Typography>
                 <Typography
                     variant="body2"
@@ -148,13 +99,13 @@ export default function BannersApplyPage() {
                         textAlign: { xs: "left", sm: "center" },
                     }}
                 >
-                    등록된 배너 신청의 출력 승인 및 거절을 할 수 있습니다.
+                    배너의 위치, 기간을 확인하고 필요시 관리할 수 있습니다.
                 </Typography>
 
                 <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => navigate("/admin/banners")}
+                    onClick={() => navigate("/admin/banners-apply")}
                     sx={{
                         borderRadius: 55,
                         height: 32,
@@ -168,13 +119,13 @@ export default function BannersApplyPage() {
                         py: 1,
                     }}
                 >
-                    출력 배너 확인
+                    신청 배너 확인
                 </Button>
             </Box>
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* 옵션 바 (CalculatePage 스타일 통일) */}
+            {/* 필터 */}
             <Box
                 sx={{
                     display: "flex",
@@ -196,38 +147,89 @@ export default function BannersApplyPage() {
                             : theme.palette.grey[50],
                 }}
             >
-                <TextField
-                    select
-                    label="배너 타입"
-                    size="small"
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
+                <Box
                     sx={{
-                        minWidth: 130,
-                        "& .MuiOutlinedInput-root": {
-                            borderRadius: 2,
-                            backgroundColor: "background.paper",
-                            "& fieldset": { borderColor: "divider" },
-                            "&:hover fieldset": {
-                                borderColor: "primary.light",
-                            },
-                            "&.Mui-focused fieldset": {
-                                borderColor: "primary.main",
-                            },
-                        },
-                        "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                        display: "flex",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                        rowGap: 1.5,
+                        columnGap: 1.5,
+                        minWidth: 0,
                     }}
                 >
-                    <MenuItem value="ALL">전체</MenuItem>
-                    <MenuItem value="MAIN">메인</MenuItem>
-                    <MenuItem value="HEADER">헤더</MenuItem>
-                    <MenuItem value="SIDE">사이드</MenuItem>
-                </TextField>
+                    <TextField
+                        select
+                        label="배너 타입"
+                        size="small"
+                        value={type}
+                        onChange={(e) => setType(e.target.value)}
+                        sx={{
+                            minWidth: 130,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                backgroundColor: "background.paper",
+                                "& fieldset": { borderColor: "divider" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                            "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                        }}
+                    >
+                        <MenuItem value="ALL">전체</MenuItem>
+                        <MenuItem value="MAIN">메인</MenuItem>
+                        <MenuItem value="HEADER">헤더</MenuItem>
+                        <MenuItem value="SIDE">사이드</MenuItem>
+                    </TextField>
+                    <TextField
+                        select
+                        label="상태"
+                        size="small"
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        sx={{
+                            minWidth: 130,
+                            "& .MuiOutlinedInput-root": {
+                                borderRadius: 2,
+                                backgroundColor: "background.paper",
+                                "& fieldset": { borderColor: "divider" },
+                                "&:hover fieldset": {
+                                    borderColor: "primary.light",
+                                },
+                                "&.Mui-focused fieldset": {
+                                    borderColor: "primary.main",
+                                },
+                            },
+                            "& .MuiInputLabel-root": { fontSize: "0.75rem" },
+                        }}
+                    >
+                        <MenuItem value="ALL">전체</MenuItem>
+                        <MenuItem value="ON">출력중</MenuItem>
+                        <MenuItem value="WAIT">예정됨</MenuItem>
+                        <MenuItem value="EXPIRED">만료됨</MenuItem>
+                    </TextField>
+                </Box>
+
                 <TextField
                     size="small"
                     placeholder="배너 신청자 이름 검색"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon
+                                    sx={{
+                                        color: "text.disabled",
+                                        fontSize: 20,
+                                    }}
+                                />
+                            </InputAdornment>
+                        ),
+                    }}
                     sx={{
                         minWidth: { xs: "100%", md: 260 },
                         "& .MuiOutlinedInput-root": {
@@ -242,18 +244,6 @@ export default function BannersApplyPage() {
                                 borderColor: "primary.main",
                             },
                         },
-                    }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon
-                                    sx={{
-                                        color: "text.disabled",
-                                        fontSize: 20,
-                                    }}
-                                />
-                            </InputAdornment>
-                        ),
                     }}
                 />
             </Box>
@@ -283,45 +273,46 @@ export default function BannersApplyPage() {
                         minWidth: 920,
                     }}
                 >
-                    <TableHead>
-                        <TableRow
-                            sx={{
-                                "& th": {
-                                    fontWeight: 600,
-                                    whiteSpace: "nowrap",
-                                    fontSize: "0.8rem",
-                                    color: "text.primary",
-                                },
-                            }}
-                        >
-                            <TableCell sx={{ width: 100 }}>신청 ID</TableCell>
-                            <TableCell sx={{ width: 100 }}>신청 유형</TableCell>
-                            <TableCell sx={{ width: 100 }}>신청 기간</TableCell>
+                    <TableHead
+                        sx={{
+                            "& th": {
+                                fontWeight: 600,
+                                whiteSpace: "nowrap",
+                                fontSize: "0.8rem",
+                                color: "text.primary",
+                            },
+                        }}
+                    >
+                        <TableRow>
+                            <TableCell sx={{ width: 100 }}>배너 ID</TableCell>
+                            <TableCell sx={{ width: 100 }}>출력 유형</TableCell>
+                            <TableCell sx={{ width: 100 }}>출력 시작</TableCell>
+                            <TableCell sx={{ width: 100 }}>출력 종료</TableCell>
+
                             <TableCell sx={{ width: 100 }}>
-                                신청 중요도
+                                출력 중요도
                             </TableCell>
-                            <TableCell sx={{ width: 100 }}>신청인</TableCell>
-                            <TableCell sx={{ width: 100 }}>신청일</TableCell>
+                            <TableCell sx={{ width: 100 }}>등록자</TableCell>
                             <TableCell sx={{ width: 100 }} align="right">
                                 액션
                             </TableCell>
                         </TableRow>
                     </TableHead>
 
-                    <TableBody sx={{}}>
-                        {applies?.length === 0 ? (
+                    <TableBody>
+                        {banners.length === 0 ? (
                             <TableRow>
                                 <TableCell
                                     colSpan={7}
                                     align="center"
                                     sx={{ py: 6, color: "text.secondary" }}
                                 >
-                                    등록된 배너 신청 내역이 없습니다.
+                                    등록된 배너 내역이 없습니다.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            applies?.map((data) => (
-                                <BannerApplyManageRow
+                            banners.map((data) => (
+                                <BannerOnManageRow
                                     apply={data}
                                     onDetail={(data) => handleDetail(data)}
                                 />
@@ -331,31 +322,21 @@ export default function BannersApplyPage() {
                 </Table>
             </Box>
 
-            <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
+            {/*페이지네이션 */}
+            <Stack direction="row" justifyContent="center" mt={2}>
                 <Pagination
                     count={totalPages}
                     page={page}
-                    onChange={(_, value) => setPage(value)}
-                    color="primary"
-                    size="small"
-                    siblingCount={1}
-                    boundaryCount={1}
-                    showFirstButton
-                    showLastButton
+                    onChange={(_, v) => setPage(v)}
                 />
             </Stack>
 
-            <BannerApplyPreviewModal
-                data={selectedApply}
+            {/*상세 모달 */}
+            <BannerOnPreviewModal
                 open={openDetail}
+                data={selectedBanner}
                 onClose={() => setOpenDetail(false)}
-                OnApprove={(id) => handleApprove(id)}
-                OnDecline={() => setOpenReject(true)}
-            />
-            <RejectReasonModal
-                open={openReject}
-                onClose={() => setOpenReject(false)}
-                onConfirm={(reason) => handleDecline(reason)}
+                onDelete={(id) => handleExpire(id)}
             />
         </Paper>
     );

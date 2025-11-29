@@ -22,6 +22,7 @@ export function SideBannerSmall({ adImage, clickURL, position = "left" }) {
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
 
     useEffect(() => {
         const handleScroll = () => {
@@ -111,7 +112,7 @@ export function SideBannerSmall({ adImage, clickURL, position = "left" }) {
                             fontWeight={600}
                             sx={{ color: "#fff", fontSize: 12 }}
                         >
-                            {isMobile ? "광고" : "스폰서 광고"}
+                            {isMobile || isTablet ? "광고" : "스폰서 광고"}
                         </Typography>
 
                         {/* Info 툴팁 */}
@@ -157,6 +158,7 @@ export function SideBannerSmall({ adImage, clickURL, position = "left" }) {
     );
 }
 
+//120*1200
 export function HorizontalBanner({ adImage, clickURL }) {
     const handleAdClick = () => {
         if (clickURL) window.open(clickURL, "_blank");
@@ -164,13 +166,15 @@ export function HorizontalBanner({ adImage, clickURL }) {
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
 
     return (
         <Paper
             elevation={6}
             sx={{
                 position: "relative",
-                width: "100%",
+                alignContent:"center",
+                width: "80%",
                 height: 120,
                 borderRadius: 2,
                 overflow: "hidden",
@@ -215,7 +219,7 @@ export function HorizontalBanner({ adImage, clickURL }) {
                     fontWeight={600}
                     sx={{ color: "#fff", fontSize: 12 }}
                 >
-                    {isMobile ? "광고" : "스폰서 광고"}
+                    {isMobile || isTablet ? "광고" : "스폰서 광고"}
                 </Typography>
 
                 {/* Info 툴팁 */}

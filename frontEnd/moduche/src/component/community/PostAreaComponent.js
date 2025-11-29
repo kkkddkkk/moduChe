@@ -1,29 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import defaultClubImage from "./media/stretch.png";
 import {
     Box,
     Grid,
-    Card,
-    CardContent,
-    Typography,
-    TextField,
-    Button,
-    Select,
-    MenuItem,
     Pagination,
-    InputLabel,
-    FormControl,
-    CardMedia,
-    CardActionArea,
     useTheme,
     useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { TwoAlignedButtons } from "../common/Button";
 import { PostCard } from "../common/PostCard";
-import { HorizontalBanner } from "../common/SideBanner";
-
-import adImage from "./media/ready.png";
 
 const PostAreaComponent = ({ posts, totalPages, page, setPage }) => {
     console.log(posts);
@@ -49,10 +34,6 @@ const PostAreaComponent = ({ posts, totalPages, page, setPage }) => {
 
     return (
         <Box sx={{ p: 3, pt: 0 }}>
-            <HorizontalBanner
-                adImage={adImage}
-                clickURL={"https://namu.wiki/w/%ED%96%84%EC%8A%A4%ED%84%B0"}
-            />
             {/* 게시글 리스트 영역 */}
             <Grid
                 container

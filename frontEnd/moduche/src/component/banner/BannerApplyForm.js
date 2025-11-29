@@ -21,7 +21,11 @@ import { CenterTitle, SubTitle } from "../common/Text";
 import { ClipboardList } from "lucide-react";
 import CustomTextField from "../common/CustomTextField";
 import { RegisterTitle } from "../community/RegisterTitle";
-import { getBannerSize } from "./utility/bannerUtility";
+import {
+    formatPrice,
+    getBannerSize,
+    validateEmail,
+} from "./utility/bannerUtility";
 import {
     confirmBannerPayment,
     getAllBannerDurations,
@@ -35,7 +39,7 @@ import { useNavigate } from "react-router-dom";
 import { getUsernameFromToken, isLoggedIn } from "../../utils/auth";
 import DummyPaymentModal from "../payment/DummyPaymentModal";
 
-const BannerApplyForm = ({ onSubmit }) => {
+const BannerApplyForm = ({ onSubmit, onCheck }) => {
     const theme = useTheme();
     const navigate = useNavigate();
 
@@ -88,6 +92,7 @@ const BannerApplyForm = ({ onSubmit }) => {
         return finalPrice;
     };
 
+    
     const handleSubmit = async () => {
         if (!form.name || !form.contact || !form.targetUrl) {
             alert("필수 항목을 모두 입력해주세요.");
@@ -101,6 +106,11 @@ const BannerApplyForm = ({ onSubmit }) => {
             alert("비회원 비밀번호를 입력해주세요.");
             return;
         }
+        if (!validateEmail(form.contact)) {
+            alert("유효한 이메일 주소를 입력해주세요.");
+            return;
+        }
+
         const prePaymentPayload = {
             bannerTypeId: form.bannerTypeId,
             bannerDurationId: form.bannerDurationId,
@@ -114,7 +124,6 @@ const BannerApplyForm = ({ onSubmit }) => {
             setPayment(prePayment);
             // 결제 팝업 열기.
             setShowPaymentPopup(true);
-
         } catch (err) {
             console.error("결제 준비 실패:", err);
             alert("결제를 준비할 수 없습니다.");
@@ -134,7 +143,7 @@ const BannerApplyForm = ({ onSubmit }) => {
 
             console.log(donePaymentId);
 
-            if(!donePaymentId){
+            if (!donePaymentId) {
                 alert("donePaymentId가 들어오지 않음");
                 return;
             }
@@ -226,19 +235,44 @@ const BannerApplyForm = ({ onSubmit }) => {
                 >
                     <Grid container spacing={3}>
                         <Grid item size={12} p={2}>
-                            <SubTitle
+                            <Box
                                 sx={{
                                     display: "flex",
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
                                     alignItems: "center",
-                                    gap: 1,
                                     mb: 3,
                                 }}
                             >
-                                <ClipboardList
-                                    color={theme.palette.primary.main}
-                                />
-                                신청자 정보
-                            </SubTitle>
+                                <SubTitle
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                    }}
+                                >
+                                    <ClipboardList
+                                        color={theme.palette.primary.main}
+                                    />
+                                    신청자 정보
+                                </SubTitle>
+
+                                <OneAlignedButton
+                                    onClick={() => onCheck()}
+                                    sx={{
+                                        height: 38,
+                                        whiteSpace: "nowrap",
+                                        zIndex: 1000,
+                                        backgroundColor: "#1363b9",
+                                        fontWeight: 400,
+                                        borderRadius: "55px",
+                                    }}
+                                    align="right"
+                                    color="secondary"
+                                >
+                                    내 신청내역 확인
+                                </OneAlignedButton>
+                            </Box>
 
                             <Stack
                                 display={"flex"}
@@ -253,6 +287,8 @@ const BannerApplyForm = ({ onSubmit }) => {
                                     <CustomTextField
                                         placeholder={"이름"}
                                         padding={10}
+                                        data={applyAsMember ? localStorage.getItem("name") : form.name}
+                                        disabled={applyAsMember}
                                         sx={{
                                             "& .MuiInputBase-input.Mui-disabled":
                                                 {
@@ -270,9 +306,7 @@ const BannerApplyForm = ({ onSubmit }) => {
                                 >
                                     <RegisterTitle title={"신청자 연락처"} />
                                     <CustomTextField
-                                        placeholder={
-                                            "연락처 (전화번호 또는 이메일)"
-                                        }
+                                        placeholder={"이메일"}
                                         setData={(v) =>
                                             handleChange("contact", v)
                                         }
@@ -595,7 +629,8 @@ const BannerApplyForm = ({ onSubmit }) => {
                                                     key={p.id}
                                                     value={p.id}
                                                 >
-                                                    {p.label} (+{p.extraPrice}
+                                                    {p.label} (+
+                                                    {formatPrice(p.extraPrice)}
                                                     원)
                                                 </MenuItem>
                                             ))}
@@ -621,7 +656,11 @@ const BannerApplyForm = ({ onSubmit }) => {
                                 />
                                 배너 이미지
                             </SubTitle>{" "}
-                            <ImageUpload form={form} setForm={setForm} />
+                            <ImageUpload
+                                form={form}
+                                setForm={setForm}
+                                maxCount={1}
+                            />
                             <Typography
                                 fontSize={"0.9rem"}
                                 textAlign={"center"}

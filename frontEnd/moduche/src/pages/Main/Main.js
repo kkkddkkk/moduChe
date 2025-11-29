@@ -1,188 +1,222 @@
-import { Box, Grid, useMediaQuery, useTheme } from '@mui/material';
-import Layout from '../../component/common/Layout';
-import Slides from '../../component/common/Slides';
-import Paper from '../../component/common/Paper';
-import { SubTitle } from '../../component/common/Text';
-import { Handshake, MapPinned, UsersRound, Weight } from 'lucide-react';
-import MapSearch from '../../component/main/MapSearch';
-import { useEffect, useState } from 'react';
-import SafeMap from '../../component/main/SafeMap';
-import { MyPageText } from '../../component/myPage/MyPageTexts';
-import CustomTable from '../../component/common/CustomTable';
-import DistanceCalc from '../../component/main/DistanceCalc';
-import { getList } from '../../api/DistanceAPI';
-import { useApi } from '../../hook/useAPI';
-import { useNavigate } from 'react-router-dom';
-import { isLoggedIn } from '../../utils/auth';
+import { Box, Grid, useMediaQuery, useTheme } from "@mui/material";
+import Layout from "../../component/common/Layout";
+import Slides from "../../component/common/Slides";
+import Paper from "../../component/common/Paper";
+import { SubTitle } from "../../component/common/Text";
+import { Handshake, MapPinned, UsersRound, Weight } from "lucide-react";
+import MapSearch from "../../component/main/MapSearch";
+import { useEffect, useState } from "react";
+import SafeMap from "../../component/main/SafeMap";
+import { MyPageText } from "../../component/myPage/MyPageTexts";
+import CustomTable from "../../component/common/CustomTable";
+import DistanceCalc from "../../component/main/DistanceCalc";
+import { getList } from "../../api/DistanceAPI";
+import { useApi } from "../../hook/useAPI";
+import { useNavigate } from "react-router-dom";
+import { isLoggedIn } from "../../utils/auth";
+import { fetchMainBanners } from "../../api/bannerAPI/bannerAPI";
 
 const Main = () => {
-  const testBannerImg = [
-    { src: '/forTest/TEST_BANNER_1.png', url: '/account/login' },
-    { src: '/forTest/TEST_BANNER_2.png', url: '/account/joinUs' },
-    { src: '/forTest/TEST_BANNER_3.png', url: '' },
-  ];
+    const testBannerImg = [
+        { src: "/forTest/TEST_BANNER_1.png", url: "/account/login" },
+        { src: "/forTest/TEST_BANNER_2.png", url: "/account/joinUs" },
+        { src: "/forTest/TEST_BANNER_3.png", url: "" },
+    ];
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isNotDeskTop = useMediaQuery(theme.breakpoints.down('lg'));
-  const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const isNotDeskTop = useMediaQuery(theme.breakpoints.down("lg"));
+    const navigate = useNavigate();
 
-  const [loca, setLoca] = useState('');
-  const [lat, setLat] = useState(37.5665);
-  const [lng, setLng] = useState(126.978);
+    const [loca, setLoca] = useState("");
+    const [lat, setLat] = useState(37.5665);
+    const [lng, setLng] = useState(126.978);
 
-  const [course, setCourse] = useState([]);
-  const [community, setCommunity] = useState([]);
-  const [facility, setFacility] = useState([]);
-  const [communityMark, setCommunityMark] = useState([]);
-  const [facilityMark, setFacilityMark] = useState([]);
+    const [course, setCourse] = useState([]);
+    const [community, setCommunity] = useState([]);
+    const [facility, setFacility] = useState([]);
+    const [communityMark, setCommunityMark] = useState([]);
+    const [facilityMark, setFacilityMark] = useState([]);
 
-  const distanceFormat = (m) => {
-    if (m >= 1000) {
-      return `약 ${(m / 1000).toFixed(1)}km`;
-    } else {
-      return `약 ${m?.toFixed(0)}m`;
-    }
-  };
+    const [banners, setBanners] = useState([]);
 
-  function phoneFormat(numbers) {
-    // 숫자만 추출 (혹시 모를 공백/하이픈 제거)
-    numbers = numbers?.replace(/\D/g, '');
-
-    if (numbers?.startsWith('01')) {
-      // 휴대폰: 010-0000-0000 / 011-000-0000 등
-      return numbers?.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
-    } else if (numbers?.startsWith('02')) {
-      // 서울 번호: 02-000-0000 / 02-0000-0000
-      return numbers?.replace(/^(\d{2})(\d{3,4})(\d{4})$/, '$1-$2-$3');
-    } else {
-      // 일반 지역 번호: 031-000-0000 / 031-0000-0000
-      return numbers?.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
-    }
-  }
-
-  const { callApi: getListAPI, loading } = useApi(getList);
-  useEffect(() => {
-    const fetch = async () => {
-      const res = await getListAPI(lat, lng);
-      const data = res.data;
-      const communities = data.communities.map((c) => ({
-        communityId: c.communityId,
-        동아리명: c.name,
-        목적: c.purpose,
-        거리: distanceFormat(c.distance),
-        담당기관: c.founder,
-        활동일: c.scheduleDetail,
-      }));
-      const markC = data.communities.map((c) => ({
-        lat: c.geoLat,
-        lng: c.geoLng,
-        name: c.name,
-      }));
-
-      const facilities = data.facilities.map((f) => ({
-        facilityId: f.facilityId,
-        기관명: f.facilityName,
-        종목: f.facilityType,
-        거리: distanceFormat(f.distance),
-        영업시간: f.openHours || '전화 문의',
-        연락처: phoneFormat(f.facilityPhone),
-        lat: f.geoLat,
-        lng: f.geoLng,
-      }));
-      const markF = data.facilities.map((f) => ({
-        lat: f.geoLat,
-        lng: f.geoLng,
-        name: f.facilityName,
-      }));
-      setCommunity(communities);
-      setFacility(facilities);
-      setCommunityMark(markC);
-      setFacilityMark(markF);
+    const distanceFormat = (m) => {
+        if (m >= 1000) {
+            return `약 ${(m / 1000).toFixed(1)}km`;
+        } else {
+            return `약 ${m?.toFixed(0)}m`;
+        }
     };
-    fetch();
-  }, [lat, lng]);
 
-  const handleClickCommunity = (id, column, data) => {
-    if (!isLoggedIn()) {
-      alert('로그인이 필요한 메뉴입니다.');
-      navigate(`/account/login`);
-    } else {
-      navigate(`/community/details/${id}`);
+    function phoneFormat(numbers) {
+        // 숫자만 추출 (혹시 모를 공백/하이픈 제거)
+        numbers = numbers?.replace(/\D/g, "");
+
+        if (numbers?.startsWith("01")) {
+            // 휴대폰: 010-0000-0000 / 011-000-0000 등
+            return numbers?.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
+        } else if (numbers?.startsWith("02")) {
+            // 서울 번호: 02-000-0000 / 02-0000-0000
+            return numbers?.replace(/^(\d{2})(\d{3,4})(\d{4})$/, "$1-$2-$3");
+        } else {
+            // 일반 지역 번호: 031-000-0000 / 031-0000-0000
+            return numbers?.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
+        }
     }
-  };
 
-  return (
-    <>
-      <Layout outer space={2}>
-        <Slides isBanner={true} datas={testBannerImg} />
-        <Grid
-          size={12}
-          padding={2}
-          display={'flex'}
-          alignContent={'center'}
-          gap={1}
-          marginTop={'5%'}
-        >
-          <MapPinned />
-          <SubTitle>내 근처에 있는...</SubTitle>
-        </Grid>
-        <Grid size={isMobile ? 12 : isNotDeskTop ? 6 : 4}>
-          <Paper>
-            <Layout space={2}>
-              <MapSearch
-                loca={loca}
-                setLoca={setLoca}
-                setLat={setLat}
-                setLng={setLng}
-              />
-              <Grid size={12} marginTop={'5%'}>
-                <SafeMap
-                  lat={lat}
-                  lng={lng}
-                  setLoca={setLoca}
-                  setLat={setLat}
-                  setLng={setLng}
-                  markersC={communityMark}
-                  markersF={facilityMark}
-                />
-              </Grid>
+    const { callApi: getListAPI, loading } = useApi(getList);
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await getListAPI(lat, lng);
+            const data = res.data;
+            const communities = data.communities.map((c) => ({
+                communityId: c.communityId,
+                동아리명: c.name,
+                목적: c.purpose,
+                거리: distanceFormat(c.distance),
+                담당기관: c.founder,
+                활동일: c.scheduleDetail,
+            }));
+            const markC = data.communities.map((c) => ({
+                lat: c.geoLat,
+                lng: c.geoLng,
+                name: c.name,
+            }));
+
+            const facilities = data.facilities.map((f) => ({
+                facilityId: f.facilityId,
+                기관명: f.facilityName,
+                종목: f.facilityType,
+                거리: distanceFormat(f.distance),
+                영업시간: f.openHours || "전화 문의",
+                연락처: phoneFormat(f.facilityPhone),
+                lat: f.geoLat,
+                lng: f.geoLng,
+            }));
+            const markF = data.facilities.map((f) => ({
+                lat: f.geoLat,
+                lng: f.geoLng,
+                name: f.facilityName,
+            }));
+            setCommunity(communities);
+            setFacility(facilities);
+            setCommunityMark(markC);
+            setFacilityMark(markF);
+        };
+        fetch();
+    }, [lat, lng]);
+
+    //작성자: 고은설.
+    //기능: 메인 페이지 로드와 함께 가점 상위 3개 메인 배너 조회.
+    useEffect(() => {
+        (async () => {
+            const data = await fetchMainBanners();
+            setBanners(data);
+        })();
+    }, []);
+
+    const handleClickCommunity = (id, column, data) => {
+        if (!isLoggedIn()) {
+            alert("로그인이 필요한 메뉴입니다.");
+            navigate(`/account/login`);
+        } else {
+            navigate(`/community/details/${id}`);
+        }
+    };
+
+    return (
+        <>
+            <Layout outer space={2}>
+                <Slides isBanner={true} datas={banners} />
+                <Grid
+                    size={12}
+                    padding={2}
+                    display={"flex"}
+                    alignContent={"center"}
+                    gap={1}
+                    marginTop={"5%"}
+                >
+                    <MapPinned />
+                    <SubTitle>내 근처에 있는...</SubTitle>
+                </Grid>
+                <Grid size={isMobile ? 12 : isNotDeskTop ? 6 : 4}>
+                    <Paper>
+                        <Layout space={2}>
+                            <MapSearch
+                                loca={loca}
+                                setLoca={setLoca}
+                                setLat={setLat}
+                                setLng={setLng}
+                            />
+                            <Grid size={12} marginTop={"5%"}>
+                                <SafeMap
+                                    lat={lat}
+                                    lng={lng}
+                                    setLoca={setLoca}
+                                    setLat={setLat}
+                                    setLng={setLng}
+                                    markersC={communityMark}
+                                    markersF={facilityMark}
+                                />
+                            </Grid>
+                        </Layout>
+                    </Paper>
+                </Grid>
+                <Grid size={isMobile ? 12 : isNotDeskTop ? 6 : 8}>
+                    <Paper sx={{ marginBottom: "5%" }}>
+                        <Layout space={2}>
+                            <Grid size={12}>
+                                <MyPageText icon={<Weight />}>
+                                    체육 시설
+                                </MyPageText>
+                                <Box marginTop={"2%"} />
+                                <CustomTable
+                                    datas={facility}
+                                    columns={[
+                                        "기관명",
+                                        "종목",
+                                        "거리",
+                                        "영업시간",
+                                        "연락처",
+                                    ]}
+                                    id="facilityId"
+                                    padding={1}
+                                />
+                            </Grid>
+                            <Box marginTop={"5%"} />
+                            <Grid size={12}>
+                                <MyPageText icon={<Handshake />}>
+                                    모집 중 동아리
+                                </MyPageText>
+                                <Box marginTop={"2%"} />
+                                <CustomTable
+                                    datas={community}
+                                    columns={[
+                                        "동아리명",
+                                        "목적",
+                                        "거리",
+                                        "담당기관",
+                                        "활동일",
+                                    ]}
+                                    id="communityId"
+                                    padding={1}
+                                    hover={[
+                                        "동아리명",
+                                        "목적",
+                                        "거리",
+                                        "담당기관",
+                                        "활동일",
+                                    ]}
+                                    clickEvent={handleClickCommunity}
+                                    hoverColor={theme.palette.text.primary}
+                                />
+                            </Grid>
+                        </Layout>
+                    </Paper>
+                </Grid>
             </Layout>
-          </Paper>
-        </Grid>
-        <Grid size={isMobile ? 12 : isNotDeskTop ? 6 : 8}>
-          <Paper sx={{ marginBottom: '5%' }}>
-            <Layout space={2}>
-              <Grid size={12}>
-                <MyPageText icon={<Weight />}>체육 시설</MyPageText>
-                <Box marginTop={'2%'} />
-                <CustomTable
-                  datas={facility}
-                  columns={['기관명', '종목', '거리', '영업시간', '연락처']}
-                  id="facilityId"
-                  padding={1}
-                />
-              </Grid>
-              <Box marginTop={'5%'} />
-              <Grid size={12}>
-                <MyPageText icon={<Handshake />}>모집 중 동아리</MyPageText>
-                <Box marginTop={'2%'} />
-                <CustomTable
-                  datas={community}
-                  columns={['동아리명', '목적', '거리', '담당기관', '활동일']}
-                  id="communityId"
-                  padding={1}
-                  hover={['동아리명', '목적', '거리', '담당기관', '활동일']}
-                  clickEvent={handleClickCommunity}
-                  hoverColor={theme.palette.text.primary}
-                />
-              </Grid>
-            </Layout>
-          </Paper>
-        </Grid>
-      </Layout>
-      <Layout space={2}></Layout>
-    </>
-  );
+            <Layout space={2}></Layout>
+        </>
+    );
 };
 export default Main;

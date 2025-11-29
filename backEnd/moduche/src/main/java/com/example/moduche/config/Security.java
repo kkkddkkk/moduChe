@@ -47,7 +47,8 @@ public class Security {
 						// Preflight 요청 허용
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers("/", "/api/auth/**", "/api/signIn/**", "/api/email/**", "/api/find/**",
-								"/api/noticeForAll/**", "/api/main/**","/api/course/**")
+								"/api/noticeForAll/**", "/api/main/**", "/api/course/**", "/api/payment/**",
+								"/api/banner/**", "/api/redis/**")
 						.permitAll().anyRequest().authenticated())
 
 				// ✅ JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
