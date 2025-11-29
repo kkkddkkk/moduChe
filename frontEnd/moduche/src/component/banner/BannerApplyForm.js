@@ -92,7 +92,6 @@ const BannerApplyForm = ({ onSubmit, onCheck }) => {
         return finalPrice;
     };
 
-    
     const handleSubmit = async () => {
         if (!form.name || !form.contact || !form.targetUrl) {
             alert("필수 항목을 모두 입력해주세요.");
@@ -213,12 +212,16 @@ const BannerApplyForm = ({ onSubmit, onCheck }) => {
         const isUser = isLoggedIn(localStorage.getItem("accessToken"));
         setLoggedIn(isUser);
         setApplyAsMember(isUser);
+
         if (isUser) {
+            const userName = localStorage.getItem("name");
+            handleChange("name", userName);
             handleChange(
                 "applicantLoginId",
                 getUsernameFromToken(localStorage.getItem("accessToken"))
             );
         }
+
         loadData();
     }, []);
 
@@ -287,7 +290,11 @@ const BannerApplyForm = ({ onSubmit, onCheck }) => {
                                     <CustomTextField
                                         placeholder={"이름"}
                                         padding={10}
-                                        data={applyAsMember ? localStorage.getItem("name") : form.name}
+                                        data={
+                                            applyAsMember
+                                                ? localStorage.getItem("name")
+                                                : form.name
+                                        }
                                         disabled={applyAsMember}
                                         sx={{
                                             "& .MuiInputBase-input.Mui-disabled":
