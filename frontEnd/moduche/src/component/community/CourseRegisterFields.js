@@ -1,208 +1,87 @@
 // src/component/community/CourseRegisterFields.jsx
 
 import {
-  Autocomplete,
   Box,
-  TextField,
-  Tooltip,
-  Typography,
-  useTheme,
-  useMediaQuery,
+  Button,
+  FormControl,
+  FormControlLabel,
   Grid,
+  Radio,
+  RadioGroup,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
   alpha,
 } from "@mui/material";
-import { CalendarCheck, ClipboardList, Receipt } from "lucide-react";
 import { SubTitle } from "../common/Text";
-import { RegisterTitle } from "./RegisterTitle";
-import CustomTextField from "../common/CustomTextField";
 import Paper from "../common/Paper";
+import CustomTextField from "../common/CustomTextField";
+import { RegisterTitle } from "../community/RegisterTitle";
+import SearchMap from "../main/MapSearch"; // 주소 검색 컴포넌트 (파일 이름에 맞게 조정)
 import { useEffect, useState } from "react";
 
-// 🔥 회원가입 때 쓰던 시설 검색 API 재사용
-import { getFacilityList } from "../../api/accountAPI/signInAPI";
-
-export const CourseRegisterFields = ({
-  form,
-  setForm,
-  onChange,
-  facility,
-  setFacility,
-}) => {
+export const CourseRegisterFields = ({ form, setForm, onChange, facility }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
 
-  // ✅ 시설 자동완성용 상태
-  const [facilities, setFacilities] = useState([]);
-  const [search, setSearch] = useState("");
+  // ====== 운영 주기(정기/비정기) 및 요일/주기 선택 로컬 상태 ======
+  const [scheduleType, setScheduleType] = useState(form.scheduleType ?? "정기");
+  const [selectedDays, setSelectedDays] = useState(form.selectedDays ?? []);
+  const [selectedWeeks, setSelectedWeeks] = useState(form.selectedWeeks ?? []);
 
-  // 🔍 시설명 검색 → 백엔드에서 목록 가져오기
+  // 최초 한 번 form 값으로 동기화
   useEffect(() => {
-    if (search.length < 2) {
-      setFacilities([]);
-      return;
-    }
+    setScheduleType(form.scheduleType ?? "정기");
+    setSelectedDays(form.selectedDays ?? []);
+    setSelectedWeeks(form.selectedWeeks ?? []);
+  }, [form]);
 
-    const fetch = async () => {
-      try {
-        const res = await getFacilityList(search); // 회원가입에서 쓰던 거 그대로
-        setFacilities(res.data);
-      } catch (e) {
-        console.error("시설 목록 조회 실패:", e);
+  // 정기/비정기 선택
+  const handleScheduleTypeChange = (e) => {
+    const value = e.target.value;
+    setScheduleType(value);
+    setForm((prev) => {
+      const next = { ...prev, scheduleType: value };
+      if (value === "정기") {
+        // 정기로 바꾸면 customDate 초기화
+        next.customDate = "";
+      } else {
+        // 비정기면 요일/주기 초기화
+        next.selectedDays = [];
+        next.selectedWeeks = [];
+        next.weekFrequency = "매주";
       }
-    };
+      return next;
+    });
+  };
 
-    fetch();
-  }, [search]);
+  const handleWeekToggle = (week) => {
+    const next = selectedWeeks.includes(week)
+      ? selectedWeeks.filter((w) => w !== week)
+      : [...selectedWeeks, week];
+    setSelectedWeeks(next);
+    setForm((prev) => ({ ...prev, selectedWeeks: next }));
+  };
+
+  const handleDayToggle = (day) => {
+    const next = selectedDays.includes(day)
+      ? selectedDays.filter((d) => d !== day)
+      : [...selectedDays, day];
+    setSelectedDays(next);
+    setForm((prev) => ({ ...prev, selectedDays: next }));
+  };
+
+  const handleWeekFrequency = (value) => {
+    setForm((prev) => ({ ...prev, weekFrequency: value }));
+  };
+
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
     <>
-      {/* 기본 정보 */}
-      <Grid size={isMobile || isTablet ? 12 : 6} sx={{ mb: 2 }}>
-        <SubTitle
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            pl: 2,
-          }}
-        >
-          <ClipboardList color={theme.palette.primary.main} />
-          기본 정보
-        </SubTitle>
-
-        <Paper
-          sx={{
-            p: 3,
-            position: "relative",
-            borderRadius: 2,
-            overflow: "hidden",
-            backgroundColor: theme.palette.background.paper,
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              left: 0,
-              top: 0,
-              width: 4,
-              height: "100%",
-              borderRadius: `100px 0 0 100px`,
-              backgroundColor: theme.palette.primary.main,
-            },
-          }}
-        >
-          {/* 강좌명 */}
-          <Grid size={12} sx={{ mb: 3 }}>
-            <RegisterTitle title={"강좌명"} />
-            <CustomTextField
-              data={form.name || ""}
-              setData={(value) =>
-                setForm((prev) => ({
-                  ...prev,
-                  name: value,
-                }))
-              }
-              placeholder="예: Adaptive Pilates — Core Strength for All"
-              padding={10}
-            />
-          </Grid>
-
-          {/* 강사명 (지금은 백엔드에 안 보내지만 UI는 유지) */}
-          <Grid size={12} sx={{ mb: 3 }}>
-            <RegisterTitle title={"강사명"} />
-            <CustomTextField
-              data={form.instructor || ""}
-              setData={(value) =>
-                setForm((prev) => ({
-                  ...prev,
-                  instructor: value,
-                }))
-              }
-              placeholder="예: Jamie Park"
-              padding={10}
-            />
-          </Grid>
-
-          {/* 강좌 종목 (화면용) */}
-          <Grid size={12} sx={{ mb: 3 }}>
-            <RegisterTitle title={"강좌 종목"} />
-            <CustomTextField
-              data={form.courseTypeName || ""}
-              setData={(value) =>
-                setForm((prev) => ({
-                  ...prev,
-                  courseTypeName: value,
-                }))
-              }
-              placeholder={"예: 요가, 수영, 농구, 배드민턴"}
-              padding={10}
-            />
-          </Grid>
-
-          {/* ✅ 시설명 선택 (Autocomplete) */}
-          <Grid size={12} sx={{ mb: 3 }}>
-            <RegisterTitle title={"시설명"} />
-            <Autocomplete
-              options={facilities}
-              getOptionLabel={(option) => option.name?.toString() || ""}
-              value={facility || null}
-              onChange={(event, newValue) => {
-                setFacility(newValue || null);
-
-                setForm((prev) => ({
-                  ...prev,
-                  facilityId: newValue ? newValue.id : null, // 🔥 PK
-                  facilityName: newValue ? newValue.name : "",
-                  address: newValue ? newValue.loca : "",
-                }));
-              }}
-              renderOption={(props, option, { index }) => (
-                <li {...props} key={index}>
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    width="100%"
-                  >
-                    <Typography>{option.name}</Typography>
-                    <Tooltip title={option.loca} arrow placement="right">
-                      <Typography>
-                        {option.loca && option.loca.length > 15
-                          ? option.loca.substring(0, 15) + "..."
-                          : option.loca}
-                      </Typography>
-                    </Tooltip>
-                  </Box>
-                </li>
-              )}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="시설명을 입력해서 검색"
-                  variant="standard"
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              )}
-              isOptionEqualToValue={(option, val) => option.id === val?.id}
-              noOptionsText="등록되지 않은 시설입니다."
-            />
-          </Grid>
-
-          {/* 최대 참가 인원 */}
-          <Grid size={12}>
-            <RegisterTitle title={"최대 참가 인원"} />
-            <TextField
-              name="maxParticipants"
-              type="number"
-              fullWidth
-              placeholder="예: 10"
-              value={form.maxParticipants || ""}
-              onChange={onChange}
-            />
-          </Grid>
-        </Paper>
-      </Grid>
-
-      {/* 운영 일정 */}
+      {/* ================== 1. 시설 정보 블럭 (읽기 전용) ================== */}
       <Grid size={isMobile || isTablet ? 12 : 6}>
         <SubTitle
           sx={{
@@ -212,10 +91,8 @@ export const CourseRegisterFields = ({
             pl: 2,
           }}
         >
-          <CalendarCheck color={theme.palette.primary.main} />
-          운영 일정
+          시설 정보
         </SubTitle>
-
         <Paper
           sx={{
             p: 3,
@@ -236,60 +113,32 @@ export const CourseRegisterFields = ({
             },
           }}
         >
-          {/* 위치 – 시설 선택하면 자동 채워짐 (읽기 전용) */}
-          <Grid container size={12} sx={{ mb: 4.5 }}>
-            <RegisterTitle title={"활동 위치"} />
+          {/* 시설명 */}
+          <Grid size={12} sx={{ mb: 2 }}>
+            <RegisterTitle title="시설명" />
             <CustomTextField
-              data={form.address || ""}
+              data={form.facilityName || facility?.facilityName || ""}
               setData={() => {}}
-              placeholder="시설 선택 시 주소가 자동으로 입력됩니다."
+              disabled={true}
               padding={10}
-              disabled
             />
           </Grid>
 
-          {/* 기간 */}
-          <Grid container sx={{ mb: 4.5 }}>
-            <Grid item size={6}>
-              <RegisterTitle title={"시작일"} />
-              <TextField
-                type="date"
-                name="startDate"
-                value={form.startDate || ""}
-                onChange={onChange}
-              />
-            </Grid>
-            <Grid item size={6}>
-              <RegisterTitle title={"종료일"} />
-              <TextField
-                type="date"
-                name="endDate"
-                value={form.endDate || ""}
-                onChange={onChange}
-              />
-            </Grid>
-          </Grid>
-
-          {/* 운영 주기 */}
-          <Grid item size={12} sx={{ mb: 2.4 }}>
-            <RegisterTitle title={"운영 주기"} />
+          {/* 시설 주소 */}
+          <Grid size={12}>
+            <RegisterTitle title="시설 주소" />
             <CustomTextField
-              data={form.scheduleInfo || ""}
-              setData={(value) =>
-                setForm((prev) => ({
-                  ...prev,
-                  scheduleInfo: value,
-                }))
-              }
-              placeholder="예: Weekly • Tue/Thu • 8 Sessions / 4 Weeks"
+              data={form.facilityAddress || facility?.facilityAddress || ""}
+              setData={() => {}}
+              disabled={true}
               padding={10}
             />
           </Grid>
         </Paper>
       </Grid>
 
-      {/* 수강료 및 세션 */}
-      <Grid size={12} sx={{ mt: 2 }}>
+      {/* ================== 2. 실제 활동 위치 (주소검색 사용) ================== */}
+      <Grid size={isMobile || isTablet ? 12 : 6}>
         <SubTitle
           sx={{
             display: "flex",
@@ -298,10 +147,8 @@ export const CourseRegisterFields = ({
             pl: 2,
           }}
         >
-          <Receipt color={theme.palette.primary.main} />
-          수강료 및 세션
+          실제 활동 위치
         </SubTitle>
-
         <Paper
           sx={{
             p: 3,
@@ -322,48 +169,268 @@ export const CourseRegisterFields = ({
             },
           }}
         >
-          <Grid container size={12}>
-            <Grid item size={5.5}>
-              {/* 수강료 */}
-              <RegisterTitle title={"수강료"} sx={{ mt: 3 }} />
+          {/* 활동 장소 이름 */}
+          <Grid size={12} sx={{ mb: 2 }}>
+            <RegisterTitle title="활동 장소 이름" />
+            <CustomTextField
+              data={form.activityPlaceName || ""}
+              setData={(v) =>
+                setForm((prev) => ({ ...prev, activityPlaceName: v }))
+              }
+              placeholder="예: ○○ 체육관, ○○ 복지관 등"
+              padding={10}
+            />
+          </Grid>
+
+          {/* 주소 검색 */}
+          <Grid container size={12} sx={{ mb: 1 }}>
+            <RegisterTitle title="활동 주소" />
+            <SearchMap
+              loca={form.activityAddress || ""}
+              setLoca={(addr) =>
+                setForm((prev) => ({ ...prev, activityAddress: addr }))
+              }
+              lat={form.activityGeoLat}
+              setLat={(lat) =>
+                setForm((prev) => ({ ...prev, activityGeoLat: lat }))
+              }
+              lng={form.activityGeoLng}
+              setLng={(lng) =>
+                setForm((prev) => ({ ...prev, activityGeoLng: lng }))
+              }
+              disabled={false}
+            />
+          </Grid>
+
+          {/* 상세 주소 */}
+          <Grid size={12}>
+            <CustomTextField
+              data={form.activityAddressDetail || ""}
+              setData={(v) =>
+                setForm((prev) => ({ ...prev, activityAddressDetail: v }))
+              }
+              placeholder="상세 주소를 입력해주세요"
+              padding={10}
+            />
+          </Grid>
+        </Paper>
+      </Grid>
+
+      {/* ================== 3. 운영 / 세션 설정 블럭 (기존 로직 복구) ================== */}
+      <Grid size={12} sx={{ mt: 3 }}>
+        <SubTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            pl: 2,
+          }}
+        >
+          운영 정보
+        </SubTitle>
+        <Paper
+          sx={{
+            p: 3,
+            position: "relative",
+            borderRadius: 2,
+            overflow: "hidden",
+            backgroundColor: theme.palette.background.paper,
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              left: 0,
+              top: 0,
+              width: 4,
+              height: "100%",
+              borderRadius: `100px 0 0 100px`,
+              backgroundColor: theme.palette.primary.main,
+            },
+          }}
+        >
+          {/* 최대 인원, 포맷, 타입 등 기존 필드가 있었다면 여기 붙이면 됨 */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={4}>
+              <RegisterTitle title="최대 모집 인원" />
               <TextField
-                name="price"
+                name="maxParticipants"
                 type="number"
                 fullWidth
-                placeholder="예: 120000"
-                value={form.price || ""}
+                placeholder="1"
+                value={form.maxParticipants || ""}
                 onChange={onChange}
-                sx={{ mb: 3 }}
-              />
-
-              {/* 환불 정책 */}
-              <RegisterTitle title={"환불 정책"} />
-              <CustomTextField
-                data={form.refundPolicy || ""}
-                setData={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    refundPolicy: value,
-                  }))
-                }
-                placeholder="예: 첫 수업 24시간 전 100% 환불"
               />
             </Grid>
 
-            <Grid item size={1} />
+            <Grid item xs={12} md={4}>
+              <RegisterTitle title="진행 방식" />
+              <TextField
+                name="format"
+                fullWidth
+                placeholder="OFFLINE / ONLINE / HYBRID"
+                value={form.format || "OFFLINE"}
+                onChange={onChange}
+              />
+            </Grid>
 
-            {/* 세션 구성 */}
-            <Grid item size={5.5}>
-              <RegisterTitle title={"세션 구성"} />
-              <CustomTextField
-                data={form.sessionInfo || ""}
-                setData={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    sessionInfo: value,
-                  }))
-                }
-                placeholder="예: Block A (Nov 1–30) / Session 1: Nov 07 19:00"
+            <Grid item xs={12} md={4}>
+              <RegisterTitle title="강좌 타입 코드" />
+              <TextField
+                name="courseType"
+                fullWidth
+                placeholder="예: BBALL, SWIM ..."
+                value={form.courseType || ""}
+                onChange={onChange}
+              />
+            </Grid>
+          </Grid>
+
+          {/* === 활동 주기 (정기 / 비정기) === */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12}>
+              <RegisterTitle title="활동 주기" />
+            </Grid>
+
+            {/* 정기/비정기 라디오 */}
+            <Grid item xs={12}>
+              <FormControl>
+                <RadioGroup
+                  row
+                  value={scheduleType}
+                  onChange={handleScheduleTypeChange}
+                >
+                  <FormControlLabel
+                    value="정기"
+                    control={<Radio />}
+                    label="정기"
+                  />
+                  <FormControlLabel
+                    value="비정기"
+                    control={<Radio />}
+                    label="비정기"
+                  />
+                </RadioGroup>
+              </FormControl>
+            </Grid>
+
+            {/* 정기일 때: 매주/격주/매월 + 요일 선택 */}
+            {scheduleType === "정기" && (
+              <>
+                <Grid item xs={12} md={6}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ mb: 1, color: theme.palette.text.secondary }}
+                  >
+                    주기 선택
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    {["매주", "격주", "매월"].map((w) => (
+                      <Button
+                        key={w}
+                        size="small"
+                        variant={
+                          form.weekFrequency === w ? "contained" : "outlined"
+                        }
+                        onClick={() => handleWeekFrequency(w)}
+                      >
+                        {w}
+                      </Button>
+                    ))}
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ mb: 1, color: theme.palette.text.secondary }}
+                  >
+                    요일 선택
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    {["월", "화", "수", "목", "금", "토", "일"].map((d) => (
+                      <Button
+                        key={d}
+                        size="small"
+                        variant={
+                          selectedDays.includes(d) ? "contained" : "outlined"
+                        }
+                        onClick={() => handleDayToggle(d)}
+                      >
+                        {d}
+                      </Button>
+                    ))}
+                  </Box>
+                </Grid>
+              </>
+            )}
+
+            {/* 비정기일 때: 설명 텍스트 */}
+            {scheduleType === "비정기" && (
+              <Grid item xs={12}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 1, color: theme.palette.text.secondary }}
+                >
+                  활동 일정 설명
+                </Typography>
+                <CustomTextField
+                  data={form.operationSchedule || ""}
+                  setData={(v) =>
+                    setForm((prev) => ({ ...prev, operationSchedule: v }))
+                  }
+                  placeholder="예: 5월 5일, 8월 중 3회 등"
+                  padding={10}
+                />
+              </Grid>
+            )}
+          </Grid>
+
+          {/* === 세션 기간 / 시간 === */}
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={3}>
+              <RegisterTitle title="세션 시작일" />
+              <TextField
+                name="sessionStartDate"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={form.sessionStartDate || ""}
+                onChange={onChange}
+                inputProps={{ min: todayStr }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <RegisterTitle title="세션 종료일" />
+              <TextField
+                name="sessionEndDate"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={form.sessionEndDate || ""}
+                onChange={onChange}
+                inputProps={{ min: todayStr }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <RegisterTitle title="시작 시간" />
+              <TextField
+                name="sessionStartTime"
+                type="time"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={form.sessionStartTime || ""}
+                onChange={onChange}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <RegisterTitle title="종료 시간" />
+              <TextField
+                name="sessionEndTime"
+                type="time"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={form.sessionEndTime || ""}
+                onChange={onChange}
               />
             </Grid>
           </Grid>

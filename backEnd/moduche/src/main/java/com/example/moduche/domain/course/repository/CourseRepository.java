@@ -2,6 +2,7 @@
 package com.example.moduche.domain.course.repository;
 
 import com.example.moduche.domain.course.Course;
+import com.example.moduche.domain.course.CourseType;
 import com.example.moduche.domain.course.DTO.CourseListResponse;
 
 import org.springframework.data.domain.Page;
@@ -12,7 +13,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface CourseRepository extends JpaRepository<Course, Long> {
+public interface CourseRepository extends JpaRepository<Course, Long>,CourseSearchRepositoryCustom {
 
     
 	 @EntityGraph(attributePaths={"facility","courseType","createdBy"})
@@ -21,4 +22,5 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
 	    // 🔹 강좌 리스트용 (생성일 내림차순)
 	    Page<Course> findAllByOrderByCreatedAtDesc(Pageable pageable);
+	   
 }

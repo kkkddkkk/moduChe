@@ -4,12 +4,16 @@ package com.example.moduche.domain.course.service;
 import com.example.moduche.domain.course.Course;
 import com.example.moduche.domain.course.DTO.CourseListResponse;
 import com.example.moduche.domain.course.repository.CourseRepository;
+import com.example.moduche.global.AWS.service.S3UrlSigner;   // 🔥 Presigned URL 추가
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URL;
+import java.time.Duration;
 import java.util.List;
 
 @Service
@@ -18,13 +22,14 @@ import java.util.List;
 public class CourseListServiceImpl implements CourseListService {
 
     private final CourseRepository courseRepository;
+    private final S3UrlSigner s3UrlSigner;  // 🔥 주입
 
     @Override
     public List<CourseListResponse> getCourseList() {
 
         System.out.println("=== [CourseListService] getCourseList 호출됨");
 
-        // ✅ 일단 첫 페이지 12개만 가져오기 (0-based page index)
+        // 첫 페이지 12개
         Pageable pageable = PageRequest.of(0, 12);
         var page = courseRepository.findAllByOrderByCreatedAtDesc(pageable);
 
@@ -36,6 +41,20 @@ public class CourseListServiceImpl implements CourseListService {
     }
 
     private CourseListResponse toDto(Course c) {
+
+        // 🔥 Presigned URL 변환
+        String finalThumbUrl = null;
+        String key = c.getThumbnailUrl();   // 예: course/uuid.webp
+
+        if (key != null && !key.isBlank()) {
+            try {
+                URL signed = s3UrlSigner.sign(key, Duration.ofMinutes(30));
+                finalThumbUrl = signed.toString();
+            } catch (Exception e) {
+                System.out.println("=== [WARN] 썸네일 presigned 생성 실패: " + key);
+            }
+        }
+
         return CourseListResponse.builder()
                 .courseId(c.getCourseId())
                 .title(c.getTitle())
@@ -49,7 +68,10 @@ public class CourseListServiceImpl implements CourseListService {
                                 ? c.getFacility().getFacilityName()
                                 : "센터 미지정"
                 )
-                .thumbnailUrl(c.getThumbnailUrl())
+
+                // 🔥 여기!!! presigned URL 반환
+                .thumbnailUrl(finalThumbUrl)
+
                 .maxParticipants(c.getMaxParticipants())
                 .createdAt(c.getCreatedAt())
                 .build();

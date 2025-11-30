@@ -1,88 +1,91 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import defaultClubImage from "./media/stretch.png";
-import {
-    Box,
-    Grid,
-    Card,
-    CardContent,
-    Typography,
-    TextField,
-    Button,
-    Select,
-    MenuItem,
-    Pagination,
-    InputLabel,
-    FormControl,
-    CardMedia,
-    CardActionArea,
-    useTheme,
-    useMediaQuery,
-} from "@mui/material";
+import { Box, Grid, Pagination, useTheme, useMediaQuery } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { TwoAlignedButtons } from "../common/Button";
 import { PostCard } from "../common/PostCard";
 import { HorizontalBanner } from "../common/SideBanner";
 
 import adImage from "./media/ready.png";
 
 const PostAreaComponent = ({ posts, totalPages, page, setPage }) => {
-    console.log(posts);
-    const navigate = useNavigate();
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("md")); // 0~600px
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-    // 검색어, 정렬 옵션, 페이지 상태.
-    const [searchTerm, setSearchTerm] = useState("");
-    const [sortOption, setSortOption] = useState("latest");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("latest");
 
-    const handleSearch = () => {
-        console.log("검색어 입력:", searchTerm);
-    };
+  const handlePageChange = (_, value) => {
+    setPage(value);
+  };
 
-    const handleSortChange = (e) => {
-        setSortOption(e.target.value);
-    };
+  // ✅ 썸네일 안전하게 선택하는 함수
+  const resolveThumbnail = (post) => {
+    const raw =
+      post.representativeImage ||
+      post.thumbnailUrl ||
+      post.imageUrl ||
+      post.photoUrl; // 혹시 다른 이름으로 올 수도 있으니 후보 추가
 
-    const handlePageChange = (_, value) => {
-        setPage(value);
-    };
+    if (!raw) return defaultClubImage;
+    if (typeof raw !== "string") return defaultClubImage;
 
-    return (
-        <Box sx={{ p: 3, pt: 0 }}>
-            <HorizontalBanner
-                adImage={adImage}
-                clickURL={"https://namu.wiki/w/%ED%96%84%EC%8A%A4%ED%84%B0"}
-            />
-            {/* 게시글 리스트 영역 */}
-            <Grid
-                container
-                spacing={3}
-                justifyContent={isMobile ? "center" : "center"}
-            >
-                {posts.map((post) => (
-                    <Grid item xs={12} sm={6} md={3} key={post.id}>
-                        <PostCard
-                            type={"COMMUNITY"}
-                            clickURL={`/community/details/${post.postId}`}
-                            imageURL={
-                                post.representativeImage || defaultClubImage
-                            }
-                            postTitle={post.name}
-                            postDesc={post.desc}
-                            createdAt={post.createdAt}
-                            memberCount={post.memberCount}
-                            isSponsored={post.sponsored}
-                        />
-                    </Grid>
-                ))}
+    const trimmed = raw.trim();
+    if (!trimmed) return defaultClubImage;
+    if (trimmed === "(NULL)") return defaultClubImage;
+    if (trimmed.toLowerCase() === "null") return defaultClubImage;
+
+    return trimmed;
+  };
+
+  // ✅ 설명 텍스트도 여러 케이스 대응
+  const resolveDesc = (post) => post.purpose ?? post.summary ?? post.desc ?? "";
+
+  return (
+    <Box sx={{ p: 3, pt: 0 }}>
+      <HorizontalBanner
+        adImage={adImage}
+        clickURL={"https://namu.wiki/w/%ED%96%84%EC%8A%A4%ED%84%B0"}
+      />
+
+      <Grid
+        container
+        spacing={3}
+        justifyContent={isMobile ? "center" : "center"}
+      >
+        {posts.map((post, idx) => {
+          const thumbnail = resolveThumbnail(post);
+          const desc = resolveDesc(post);
+
+          // id 안전하게 선택 (postId > communityId > idx)
+          const key = post.postId ?? post.communityId ?? idx;
+
+          return (
+            <Grid item xs={12} sm={6} md={3} key={key}>
+              <PostCard
+                type={"COMMUNITY"}
+                clickURL={`/community/details/${post.postId}`}
+                imageURL={thumbnail}
+                postTitle={post.name}
+                postDesc={desc}
+                createdAt={post.createdAt}
+                memberCount={post.memberCount}
+                isSponsored={post.sponsored}
+              />
             </Grid>
+          );
+        })}
+      </Grid>
 
-            {/* 하단 페이지네이션 */}
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                <Pagination count={totalPages} page={page} onChange={handlePageChange} />
-            </Box>
-        </Box>
-    );
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={handlePageChange}
+        />
+      </Box>
+    </Box>
+  );
 };
 
 export default PostAreaComponent;
