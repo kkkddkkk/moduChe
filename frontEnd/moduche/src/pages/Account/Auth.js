@@ -3,7 +3,7 @@ import Layout from '../../component/common/Layout';
 import Paper from '../../component/common/Paper';
 import { Box, Grid, useMediaQuery, useTheme } from '@mui/material';
 import { CenterTitle, Contents100 } from '../../component/common/Text';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import CustomTextField from '../../component/common/CustomTextField';
 import { OneAlignedButton } from '../../component/common/Button';
 import { getRoleFromToken, getUsernameFromToken } from '../../utils/auth';
@@ -24,22 +24,35 @@ const Auth = () => {
   const accessToken = localStorage.getItem('accessToken');
 
   const { callApi: checkPasswordAPI, loading, done } = useApi(checkPassword);
-  const handleCheckPassword = async () => {
+  const handleCheckPassword = useCallback(async () => {
     const res = await checkPasswordAPI(
       getUsernameFromToken(accessToken),
       password,
     );
     setChecked(res.data);
-  };
+  }, [password]);
 
   useEffect(() => {
-    document.body.style.overflow ='hidden';
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        handleCheckPassword();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleCheckPassword]);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
     if (!done) return;
     if (!checked) {
       alert('비밀번호가 일치하지 않습니다.');
       setPasswordError(true);
-    }else{
-      document.body.style.overflow ='auto';
+    } else {
+      document.body.style.overflow = 'auto';
     }
   }, [done, checked]);
 

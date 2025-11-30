@@ -15,16 +15,17 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends JpaRepository<User, Long> {
 	
 	//김도경: id로 row 찾기
-    @Query("SELECT u FROM User u WHERE u.username = :username")
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.status = 'ACTIVE'")
     Optional<User> findByUserName(@Param("username") String username);
     
     //김도경: 이메일로 row 찾기
-    @Query("SELECT u FROM User u WHERE u.email = :email")
+    @Query("SELECT u FROM User u WHERE u.email = :email AND u.status = 'ACTIVE'")
     Optional<User> findByEmail(@Param("email") String email);
     
 	//김도경: id로 name 찾기
-    @Query("SELECT u.name FROM User u WHERE u.username = :username")
+    @Query("SELECT u.name FROM User u WHERE u.username = :username AND u.status = 'ACTIVE'")
     Optional<String> findNameByUserName(@Param("username") String username);
+    
     
     Page<User> findByRole_RoleIdIn(List<Long> roleIds, Pageable pageable);
 }

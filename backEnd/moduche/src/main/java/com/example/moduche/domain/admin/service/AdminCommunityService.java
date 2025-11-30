@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.moduche.domain.admin.dto.FetchCommunityDTO;
+import com.example.moduche.domain.admin.dto.FetchCommunityDetailDTO;
+import com.example.moduche.domain.community.dto.CommunityAddressDTO;
+import com.example.moduche.domain.community.entity.Community;
 import com.example.moduche.domain.community.enums.CommunityStatus;
 import com.example.moduche.domain.community.repository.CommunityRepository;
 
@@ -26,6 +29,24 @@ public class AdminCommunityService {
 			String keyword, CommunityStatus status) {
 	    Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 	    return communityRepository.findFetchCommunityDTOList(pageable, keyword, status);
+	}
+	
+	public FetchCommunityDetailDTO getCommunityDetail(Long communityId) {
+		FetchCommunityDetailDTO dto = communityRepository.findFetchCommunityDetailDTO(communityId)
+				.orElseThrow();
+		CommunityAddressDTO addressDto = communityRepository.findCommunityAddress(communityId)
+				.orElseThrow();
+		
+		dto.setAddress(addressDto.getAddress()+" "+addressDto.getAddressDetail());
+		
+		return dto;
+	}
+	
+	//상태변경
+	@Transactional
+	public void modifyCommunityStatus(Long communityId, CommunityStatus status) {
+		Community community = communityRepository.findById(communityId).orElseThrow();
+		community.setStatus(status);
 	}
 
 }

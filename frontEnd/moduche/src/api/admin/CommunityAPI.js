@@ -14,42 +14,27 @@ export const fetchCommunity = async (page = 0, size = 10, keyword = null, status
   }
 };
 
-// export const fetchNoticeDetail = async (noticeId) => {
-//   try {
-//     const res = await api.get(`${NOTICE_SERVER_HOST}/fetchNoticeDetail`, {
-//       params: { noticeId },
-//     });
-//     return res.data;
-//   } catch (err) {
-//     handleApiError(err);
-//   }
-// };
+export const fetchCommunityDetail = async (communityId) => {
+  try {
+    const res = await api.get(`${COMMUNITY_SERVER_HOST}/fetchCommunityDetail`, {
+      params: { communityId },
+    });
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
 
-// export const createNotice = async (dto) => {
-//   try {
-//     const res = await api.post(`${NOTICE_SERVER_HOST}/createNotice`, dto, {
-//       headers: {
-//         'Content-Type': 'multipart/form-data',
-//       },
-//     });
-//     return res.data;
-//   } catch (err) {
-//     handleApiError(err);
-//   }
-// };
-
-// export const modifyNotice = async (dto) => {
-//   try {
-//     const res = await api.put(`${NOTICE_SERVER_HOST}/modifyNotice`, dto, {
-//       headers: {
-//         'Content-Type': 'multipart/form-data',
-//       },
-//     });
-//     return res.data;
-//   } catch (err) {
-//     handleApiError(err);
-//   }
-// };
+export const modifyCommunityStatus = async (communityId, status) => {
+  try {
+    const res = await api.put(`${COMMUNITY_SERVER_HOST}/modifyCommunityStatus`, null, {
+      params: { communityId, status },
+    });
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};
 
 // export const deleteNotice = async (noticeId) => {
 //   try {

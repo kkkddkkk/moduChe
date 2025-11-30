@@ -12,7 +12,8 @@ const AdministratorPage = lazy(() =>
     import("../pages/Admin/AdministratorPage")
 );
 const CalculatePage = lazy(() => import("../pages/Admin/CalculatePage"));
-const BannersPage = lazy(() => import("../pages/Admin/BannersPage"));
+const BannersPage = lazy(() => import("../pages/Admin/BannerOnPage"));
+const BannersApplyPage = lazy(() => import("../pages/Admin/BannersApplyPage"));
 const FacilityPage = lazy(() => import("../pages/Admin/FacilityPage"));
 const NoticePage = lazy(() => import("../pages/Admin/NoticePage"));
 const ClubApproval = lazy(() => import("../pages/Admin/ClubApproval"));
@@ -73,6 +74,14 @@ export default function adminRouter() {
                     element: (
                         <Suspense fallback={Loading}>
                             <BannersPage />
+                        </Suspense>
+                    ),
+                },
+                {
+                    path: "banners-apply",
+                    element: (
+                        <Suspense fallback={Loading}>
+                            <BannersApplyPage />
                         </Suspense>
                     ),
                 },

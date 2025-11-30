@@ -1,7 +1,7 @@
 import { Box, Divider, Grid, useMediaQuery, useTheme } from '@mui/material';
 import Layout from '../../component/common/Layout';
 import CustomTextField from '../../component/common/CustomTextField';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { OneAlignedButton } from '../../component/common/Button';
 import {
   CenterTitle,
@@ -47,7 +47,7 @@ const Login = () => {
   const { callApi: loginAPI, loading, done, setDone } = useApi(logIn);
   const { setName, setLoggedIn } = useUser(); //전역에 이름 저장
 
-  const tryLogin = async () => {
+  const tryLogin = useCallback(async () => {
     const dto = {
       loginId: id,
       password: password,
@@ -65,18 +65,31 @@ const Login = () => {
     localStorage.setItem('name', data.name);
     setName(data.name);
     setLoggedIn(true);
-  };
+  }, [id, password]);
 
   useEffect(() => {
     if (!done) return;
     alert(message);
-    if (!success){
+    if (!success) {
       setDone(false);
       return;
     }
     navigate('/');
   }, [done, success]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        tryLogin();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [tryLogin]);
+  
   //margin 주는 용도
   const LoginDivider = () => {
     return (

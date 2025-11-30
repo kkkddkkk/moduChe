@@ -87,6 +87,16 @@ const ManageAccount = () => {
     if (email === null || originForm === null) return;
     if (originForm.email === email) setEmailChecked(true);
   }, [email, originForm]);
+
+  useEffect(() => {
+    if (passwordChange) {
+    } else {
+      setPwError(false);
+      setChkPwError(false);
+      setPassword('');
+      setCheckPassword('');
+    }
+  }, [passwordChange]);
   //#endregion
 
   const { callApi: getAccountAPI } = useApi(getAccount);
@@ -201,20 +211,24 @@ const ManageAccount = () => {
                 />
               </Grid>
               <Grid size={1} paddingBottom={'1.5%'}>
-                {show1 ? (
-                  <EyeOff
-                    style={{ margin: 'auto 0' }}
-                    size={30}
-                    onClick={() => setShow1(false)}
-                    cursor={'pointer'}
-                  />
+                {passwordChange ? (
+                  show1 ? (
+                    <EyeOff
+                      style={{ margin: 'auto 0' }}
+                      size={30}
+                      onClick={() => setShow1(false)}
+                      cursor={'pointer'}
+                    />
+                  ) : (
+                    <Eye
+                      style={{ margin: 'auto 0' }}
+                      size={30}
+                      onClick={() => setShow1(true)}
+                      cursor={'pointer'}
+                    />
+                  )
                 ) : (
-                  <Eye
-                    style={{ margin: 'auto 0' }}
-                    size={30}
-                    onClick={() => setShow1(true)}
-                    cursor={'pointer'}
-                  />
+                  <></>
                 )}
               </Grid>
               <Grid size={4}>

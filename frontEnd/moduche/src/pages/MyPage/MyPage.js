@@ -12,6 +12,7 @@ import {
   Grid,
   useTheme,
   useMediaQuery,
+  Button,
 } from '@mui/material';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -22,10 +23,12 @@ import {
   individualList,
   MeunTemplate,
 } from '../../component/myPage/MyPageMenuList';
-import { getRoleFromToken } from '../../utils/auth';
+import { getRoleFromToken, getUsernameFromToken } from '../../utils/auth';
 import { getUserContext } from '../../context/UserContext';
 import Paper from '../../component/common/Paper';
 import Auth from '../Account/Auth';
+import { quit } from '../../api/accountAPI/AuthAPI';
+import { useApi } from '../../hook/useAPI';
 
 const MyPage = () => {
   const theme = useTheme();
@@ -38,7 +41,7 @@ const MyPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const accessToken = localStorage.getItem('accessToken');
-  const role = getRoleFromToken(accessToken).toLowerCase();
+  const role = getRoleFromToken(accessToken)?.toLowerCase();
   const { loggedIn } = getUserContext();
 
   const [title, setTitle] = useState('');
@@ -68,6 +71,15 @@ const MyPage = () => {
     return found ? found.key : null;
   }, [location.pathname]);
 
+    const { callApi: quitAPI } = useApi(quit);
+  const handleQuit = async () => {
+    if(!window.confirm("정말 탈퇴하시겠습니까?")) return;
+    await quitAPI(getUsernameFromToken(accessToken));
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('name');
+    navigate('/');
+  };
+
   return (
     <>
       <Auth />
@@ -89,7 +101,7 @@ const MyPage = () => {
           open
         >
           <Box sx={{ minHeight: 64, px: 2, fontWeight: 600 }}></Box>
-          <List sx={{ py: 0 }}>
+          <List sx={{ py: 0, flexGrow: 1 }}>
             <ListItemButton
               key={'role'}
               sx={{
@@ -143,6 +155,16 @@ const MyPage = () => {
               );
             })}
           </List>
+          <Box sx={{ p: 1, mb: 2 }}>
+            <Button
+              variant="contained"
+              color="error"
+              fullWidth
+              onClick={handleQuit}
+            >
+              탈퇴하기
+            </Button>
+          </Box>
         </Drawer>
         <Box sx={{ flexGrow: 1 }}>
           <Layout spacing={2}>

@@ -12,6 +12,7 @@ import com.example.moduche.domain.login.RefreshToken;
 import com.example.moduche.domain.login.User;
 import com.example.moduche.domain.login.dto.LoginRequestDTO;
 import com.example.moduche.domain.login.dto.LoginResponseDTO;
+import com.example.moduche.domain.login.enums.UserStatus;
 import com.example.moduche.domain.login.repository.EmailVerificationRepository;
 import com.example.moduche.domain.login.repository.RefreshTokenRepository;
 import com.example.moduche.global.security.JwtTokenProvider;
@@ -142,5 +143,11 @@ public class AuthService {
 		User user = userRepository.findByUserName(username).orElseThrow();
 		user.setPassword(passwordEncoder.encode(password));
 	}
-
+	
+	//탈퇴
+	@Transactional
+	public void quit(String username) {
+		User user = userRepository.findByUserName(username).orElseThrow();
+		user.setStatus(UserStatus.DELETED);
+	}
 }

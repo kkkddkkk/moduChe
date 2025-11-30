@@ -28,22 +28,15 @@ public class BannerApplyRepositoryCustomImpl implements BannerApplyRepositoryCus
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public Page<BannerApplyCardDTO> findCardsByStatus(BannerApplyStatus status, String search, Pageable pageable) {
+	public Page<BannerApplyCardDTO> findCardsByStatus(BannerApplyStatus status, String search, String bannerType, Pageable pageable) {
 
 		QBannerApply apply = QBannerApply.bannerApply;
 		
-		
+		 
 		List<BannerApply> debug = queryFactory
 		        .select(apply)
 		        .from(apply)
 		        .fetch();
-
-//		debug.forEach(a -> {
-//		    System.out.println("type=" + a.getBannerType());
-//		    System.out.println("duration=" + a.getBannerDuration());
-//		    System.out.println("priority=" + a.getBannerPriority());
-//		    System.out.println("payment=" + a.getPayment());
-//		});
 		
 		QBannerType type = QBannerType.bannerType;
 		QBannerDuration duration = QBannerDuration.bannerDuration;
@@ -53,8 +46,17 @@ public class BannerApplyRepositoryCustomImpl implements BannerApplyRepositoryCus
 		BooleanBuilder builder = new BooleanBuilder();
 		builder.and(apply.status.eq(status));
 
+		//검색 조건.
 		if (search != null && !search.isBlank()) {
-			builder.and(apply.ownerName.containsIgnoreCase(search).or(apply.contact.containsIgnoreCase(search)));
+		    builder.and(
+		        apply.ownerName.containsIgnoreCase(search)
+		            .or(apply.contact.containsIgnoreCase(search))
+		    );
+		}
+
+		//배너 타입 필터.
+		if (bannerType != null && !bannerType.equalsIgnoreCase("ALL")) {
+		    builder.and(apply.bannerType.label.eq(bannerType));
 		}
 
 		List<BannerApplyCardDTO> content = queryFactory
