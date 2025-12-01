@@ -1,7 +1,9 @@
 package com.example.moduche.repository;
 
 import com.example.moduche.domain.login.User;
+import com.example.moduche.domain.login.enums.UserStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -28,4 +30,36 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     
     Page<User> findByRole_RoleIdIn(List<Long> roleIds, Pageable pageable);
+    
+ // 관리자 페이지 회원 리스트 전용 (검색, 상태, roleId=3·4 등 모두 처리)
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.role.roleId IN :roleIds
+              AND (:statusEnum IS NULL OR u.status = :statusEnum)
+              AND (
+				    :search IS NULL OR 
+				    LOWER(u.username) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%')) OR
+				    LOWER(u.name) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%')) OR
+				    LOWER(u.email) LIKE LOWER(CONCAT('%', CAST(:search AS text), '%')) OR
+				    LOWER(FUNCTION('to_char', u.userId, '9999999999'))
+				        LIKE LOWER(CONCAT('%', CAST(:search AS text), '%'))
+			        )
+            """)
+    Page<User> searchMembers(
+            @Param("search") String search,
+            @Param("statusEnum") UserStatus statusEnum,
+            @Param("roleIds") List<Long> roleIds,
+            Pageable pageable
+    );
+
+    @Query("""
+    	    SELECT COUNT(u)
+    	    FROM User u
+    	    WHERE u.createdAt BETWEEN :start AND :end
+    	""")
+    	Long countByCreatedAtBetween(
+    	        @Param("start") LocalDateTime start,
+    	        @Param("end") LocalDateTime end
+    	);
+
 }
