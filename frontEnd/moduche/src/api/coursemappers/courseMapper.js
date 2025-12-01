@@ -97,27 +97,40 @@ export function mapHeaderToProps(header, desc) {
   const rawSessions = header.sessions ?? [];
   const datesBySession = header.datesBySession ?? {};
 
-  // 필요시 세션 표준화 (필드 이름 섞여 있어도 방어)
   const sessions = rawSessions.map((s, idx) => ({
-    id: s.sessionId ?? s.id ?? String(idx + 1),
+    // 🔹 백엔드 SessionDto.id 그대로 사용 ("S1", "S2", ...)
+    id: s.id ?? String(idx + 1),
+
+    // 🔹 라벨(있으면 모달에서 써먹을 수 있음)
+    label: s.label ?? null,
+
     startDate: s.startDate ?? null,
     endDate: s.endDate ?? null,
     startTime: s.startTime ?? null,
     endTime: s.endTime ?? null,
     interval: s.interval ?? 1,
     dowMask: s.dowMask ?? "0000000",
-    remaining: s.remaining ?? 0,
+
+    // 🔹 정원/잔여/현재 인원
+    remaining: typeof s.remaining === "number" ? s.remaining : 0,
+    capacity:
+      typeof s.capacity === "number"
+        ? s.capacity
+        : header.maxParticipants ?? null,
+    enrolled: typeof s.enrolled === "number" ? s.enrolled : null,
+
+    // 🔥 여기! 백엔드에서 넘어온 실제 PK
+    sessionDbId: s.sessionDbId ?? null,
+
     // dates가 세션 안에 있다면 이것도 보존
     dates: Array.isArray(s.dates) ? s.dates : undefined,
   }));
 
   const normalizedDatesBySession = {};
   sessions.forEach((s) => {
-    // 1순위: header.datesBySession
     if (Array.isArray(datesBySession[s.id])) {
       normalizedDatesBySession[s.id] = datesBySession[s.id];
     } else if (Array.isArray(s.dates)) {
-      // 2순위: 세션 내부 dates
       normalizedDatesBySession[s.id] = s.dates;
     } else {
       normalizedDatesBySession[s.id] = [];

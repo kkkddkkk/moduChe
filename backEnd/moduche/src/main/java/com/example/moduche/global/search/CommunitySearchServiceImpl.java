@@ -152,9 +152,88 @@ public class CommunitySearchServiceImpl implements CommunitySearchService {
     ) {
         List<Predicate> predicates = new ArrayList<>();
 
+        // 1) 삭제된 커뮤니티 제외
         predicates.add(cb.notEqual(community.get("status"), CommunityStatus.DELETED));
 
-        /* ... 기존 검색 조건 로직은 너 코드 그대로 유지 ... */
+        /* ===== 2) 키워드 검색: 커뮤니티 + 게시글 제목/해시태그 ===== */
+        String rawKeyword = req.getKeyword();
+        if (rawKeyword != null) {
+            String keyword = rawKeyword.trim();
+            if (!keyword.isEmpty()) {
+                String like = "%" + keyword.toLowerCase() + "%";
+
+                // (1) 커뮤니티 이름/목적
+                Predicate nameLike = cb.like(
+                        cb.lower(community.get("name")),
+                        like
+                );
+                Predicate purposeLike = cb.like(
+                        cb.lower(community.get("purpose")),
+                        like
+                );
+
+                // (2) 커뮤니티 게시글 제목/해시태그
+                Subquery<Long> postSub = parentQuery.subquery(Long.class);
+                Root<CommunityPost> post = postSub.from(CommunityPost.class);
+
+                postSub.select(cb.literal(1L))
+                       .where(
+                           cb.equal(post.get("community"), community),
+                           cb.equal(post.get("status"), CommunityPostStatus.REGISTERED),
+                           cb.or(
+                               cb.like(cb.lower(post.get("title")), like),
+                               cb.like(cb.lower(post.get("hashTags")), like)
+                           )
+                       );
+
+                Predicate postExists = cb.exists(postSub);
+
+                // (3) 세 개 중 하나라도 매치되면 OK
+                predicates.add(cb.or(
+                        nameLike,
+                        purposeLike,
+                        postExists
+                ));
+            }
+        }
+
+        /* ===== 3) 태그 검색 (커뮤니티 게시글 hashTags 기준) ===== */
+        // QuickSearchBar 에서 온 req.getTags() 는 ["휠체어", "농구"] 이런 식이라고 가정
+        List<String> tags = req.getTags();
+        if (tags != null && !tags.isEmpty()) {
+
+            List<Predicate> tagPredicates = new ArrayList<>();
+
+            for (String rawTag : tags) {
+                if (rawTag == null || rawTag.isBlank()) continue;
+
+                String tag = rawTag.trim().toLowerCase();
+                String likeTag = "%" + tag + "%";
+
+                // exists (
+                //   select 1 from CommunityPost p
+                //   where p.community = community
+                //     and p.status = REGISTERED
+                //     and lower(p.hashTags) like '%tag%'
+                // )
+                Subquery<Long> sub = parentQuery.subquery(Long.class);
+                Root<CommunityPost> post = sub.from(CommunityPost.class);
+
+                sub.select(cb.literal(1L))
+                   .where(
+                       cb.equal(post.get("community"), community),
+                       cb.equal(post.get("status"), CommunityPostStatus.REGISTERED),
+                       cb.like(cb.lower(post.get("hashTags")), likeTag)
+                   );
+
+                tagPredicates.add(cb.exists(sub));
+            }
+
+            // 태그 여러 개면 "그 중 하나라도 포함" (OR) 로 처리
+            if (!tagPredicates.isEmpty()) {
+                predicates.add(cb.or(tagPredicates.toArray(new Predicate[0])));
+            }
+        }
 
         return predicates;
     }

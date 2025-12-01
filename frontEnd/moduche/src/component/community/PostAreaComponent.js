@@ -19,7 +19,13 @@ const PostAreaComponent = ({ posts, totalPages, page, setPage }) => {
         justifyContent={isMobile ? "center" : "center"}
       >
         {posts.map((post) => (
-          <Grid item xs={12} sm={6} md={3} key={post.id}>
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            key={post.postId ?? post.communityId}
+          >
             <PostCard
               type={"COMMUNITY"}
               clickURL={`/community/details/${post.postId}`}

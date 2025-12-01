@@ -257,7 +257,7 @@ export default function CourseHeader({
             >
               Session
             </Typography>
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
               <StandardSelect
                 padding={8}
                 size={14}
@@ -267,15 +267,26 @@ export default function CourseHeader({
                 }
                 selected={selectedSessionOption}
                 setSelected={handleSessionSelect}
-                placeholder={"회차 선택"}
+                placeholder="회차 선택"
                 disabled={sessionOptions.length === 0}
                 renderValue={(value) => {
                   const opt =
                     sessionOptions.find((o) => o.value === value) ?? null;
+
                   return (
-                    <span style={{ color: opt ? "black" : "gray" }}>
+                    <Box
+                      component="span"
+                      sx={{
+                        display: "block",
+                        minWidth: 0, // 🔥 이거 필수
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        color: opt ? "black" : "gray",
+                      }}
+                    >
                       {opt ? opt.label : "회차 선택"}
-                    </span>
+                    </Box>
                   );
                 }}
               />

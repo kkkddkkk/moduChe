@@ -1,4 +1,3 @@
-// src/main/java/com/example/moduche/domain/course/DTO/CourseHeaderResponse.java
 package com.example.moduche.domain.course.DTO;
 
 import com.example.moduche.domain.course.Course;
@@ -24,10 +23,11 @@ public class CourseHeaderResponse {
     private LocalDate periodStart;
     private LocalDate periodEnd;
 
-    // 3) 운영 스케줄 한 줄 요약 (예: "매주 월화수목금")
+    // 3) 운영 스케줄 한 줄 요약
     private String scheduleLine;
 
     // 4) 세션 / 날짜 정보
+    //    🔥 이제 여기서 record SessionDto 사용
     private List<SessionDto> sessions;
     private Map<String, List<String>> datesBySession;
 
@@ -35,18 +35,18 @@ public class CourseHeaderResponse {
     private String defaultSessionId;
     private String defaultDate;
 
-    // 6) 태그 리스트 (헤더/디테일 공통)
+    // 6) 태그 리스트
     private List<String> tags;
 
     // 7) 시설 요약 정보
     private FacilityHeaderDto facility;
 
-    // 8) 🔥 실제 활동 장소(외부 체육관 등)
+    // 8) 실제 활동 장소
     private String activityPlaceName;
     private String activityAddress;
     private String activityAddressDetail;
 
-    // 9) 썸네일 및 메타 정보
+    // 9) 썸네일 및 메타
     private String thumbnailUrl;
     private Integer maxParticipants;
 

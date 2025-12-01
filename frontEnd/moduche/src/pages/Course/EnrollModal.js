@@ -12,6 +12,7 @@ import {
   Button,
 } from "@mui/material";
 import { Users } from "lucide-react";
+import dayjs from "dayjs"; // ✅ 추가
 import { postCourseEnroll } from "../../api/courseAPI";
 
 export default function EnrollModal({
@@ -20,6 +21,7 @@ export default function EnrollModal({
   course,
   courseId,
   sessionId,
+  sessionLabel,
   date,
   user,
   onSuccess,
@@ -27,7 +29,6 @@ export default function EnrollModal({
   const [submitting, setSubmitting] = useState(false);
 
   if (!course) {
-    // course 아직 안 로딩됐으면 모달 자체를 그리지 않음
     return null;
   }
 
@@ -37,19 +38,58 @@ export default function EnrollModal({
       return;
     }
 
+    // ✅ 1) courseId 숫자 변환
+    const numericCourseId =
+      typeof courseId === "string" ? Number(courseId) : courseId;
+
+    // ✅ 2) sessionId "S1", "1회차" 같은 문자열 → 숫자만 추출해서 Long으로 보냄
+    let numericSessionId = sessionId;
+    if (typeof numericSessionId === "string") {
+      numericSessionId = Number(numericSessionId);
+    }
+    if (!numericSessionId || Number.isNaN(numericSessionId)) {
+      alert("회차 정보가 올바르지 않습니다.");
+      return;
+    }
+
+    // ✅ 3) 날짜를 LocalDate 형식(YYYY-MM-DD)으로 통일
+    let isoDate = date;
+    if (typeof date === "string") {
+      // 이미 "2025-12-01" 형식이면 그대로 사용
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const d = dayjs(date);
+        if (!d.isValid()) {
+          alert("날짜 형식이 올바르지 않습니다.");
+          return;
+        }
+        isoDate = d.format("YYYY-MM-DD");
+      }
+    } else {
+      // Date나 dayjs 객체가 들어왔을 경우
+      const d = dayjs(date);
+      if (!d.isValid()) {
+        alert("날짜 형식이 올바르지 않습니다.");
+        return;
+      }
+      isoDate = d.format("YYYY-MM-DD");
+    }
+
     try {
       setSubmitting(true);
-      console.log("[EnrollModal] submit", { courseId, sessionId, date });
-      await postCourseEnroll(courseId, {
-        sessionId,
-        date, // "YYYY-MM-DD"
+      console.log("[EnrollModal] submit payload", {
+        courseId: numericCourseId,
+        sessionId: numericSessionId,
+        date: isoDate,
       });
 
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        onClose?.();
-      }
+      await postCourseEnroll(numericCourseId, {
+        sessionId: numericSessionId,
+        date: isoDate,
+      });
+
+      if (onSuccess) onSuccess();
+      else onClose?.();
+
       alert("수강 신청이 접수되었습니다.");
     } catch (e) {
       console.error("수강신청 실패", e);
@@ -62,8 +102,6 @@ export default function EnrollModal({
       setSubmitting(false);
     }
   };
-
-  const session = course.sessions?.find((s) => s.id === sessionId) ?? null;
 
   return (
     <Dialog
@@ -96,15 +134,16 @@ export default function EnrollModal({
             <Typography variant="subtitle2" color="text.secondary">
               회차
             </Typography>
-            <Typography variant="body1">
-              {session ? session.label ?? `${session.id}회차` : "-"}
-            </Typography>
+            <Typography variant="body1">{sessionLabel || "-"}</Typography>
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle2" color="text.secondary">
               날짜
             </Typography>
-            <Typography variant="body1">{date || "-"}</Typography>
+            <Typography variant="body1">
+              {/* 화면에는 보기 좋게 보여줘도 됨 */}
+              {date || "-"}
+            </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "right" }}>
             <Typography

@@ -33,6 +33,12 @@ export default function CourseSidebar({
 
   const selected = sessions?.find((s) => s.id === sessionId) ?? null;
 
+  const clientSessionId = selected?.id;
+
+  // 실제 DB에 저장할 sessionId (PK)
+  const dbSessionId = selected?.sessionDbId;
+
+  // ✅ 남은 자리: props > 선택된 세션
   const remaining =
     typeof spotsLeft === "number"
       ? spotsLeft
@@ -40,16 +46,28 @@ export default function CourseSidebar({
       ? selected.remaining
       : undefined;
 
-  const enrolled =
-    typeof capacity === "number" && typeof remaining === "number"
-      ? Math.max(0, capacity - remaining)
+  // ✅ 정원: 선택된 세션 > props
+  const effectiveCapacity =
+    typeof selected?.capacity === "number"
+      ? selected.capacity
+      : typeof capacity === "number"
+      ? capacity
       : undefined;
 
+  // ✅ 현재 수강 인원: 선택된 세션 > (정원 - remaining)
+  const enrolled =
+    typeof selected?.enrolled === "number"
+      ? selected.enrolled
+      : typeof effectiveCapacity === "number" && typeof remaining === "number"
+      ? Math.max(0, effectiveCapacity - remaining)
+      : undefined;
+
+  // ✅ "0/20" 이런 라인
   const capacityLine =
-    typeof capacity === "number" && typeof enrolled === "number"
-      ? `${enrolled}/${capacity}`
-      : typeof capacity === "number"
-      ? `0/${capacity}`
+    typeof effectiveCapacity === "number" && typeof enrolled === "number"
+      ? `${enrolled}/${effectiveCapacity}`
+      : typeof effectiveCapacity === "number"
+      ? `0/${effectiveCapacity}`
       : "—";
 
   const spotsLeftLine =
@@ -166,10 +184,11 @@ export default function CourseSidebar({
   };
 
   const handleEnroll = () => {
-    if (onEnroll) {
+    if (onEnroll && selected) {
       onEnroll({
-        sessionId,
+        sessionId: selected.sessionDbId, // 백엔드로 보낼 PK
         date,
+        label: selected.label ?? `${selected.id}회차`,
       });
     }
   };
@@ -303,10 +322,21 @@ export default function CourseSidebar({
                   renderValue={(value) => {
                     const opt =
                       sessionOptions.find((o) => o.value === value) ?? null;
+
                     return (
-                      <span style={{ color: opt ? "black" : "gray" }}>
+                      <Box
+                        component="span"
+                        sx={{
+                          display: "block",
+                          // lg 이상에서는 한 줄 + ... 처리
+                          whiteSpace: { xs: "normal", sm: "nowrap" },
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          color: opt ? "black" : "gray",
+                        }}
+                      >
                         {opt ? opt.label : "회차 선택"}
-                      </span>
+                      </Box>
                     );
                   }}
                 />

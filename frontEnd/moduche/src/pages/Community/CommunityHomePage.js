@@ -7,7 +7,7 @@ import { isLoggedIn, isTokenExpired } from "../../utils/auth";
 import { useNavigate } from "react-router-dom";
 import BannerLayout from "../../component/common/BannerLayout";
 import CommunityHomeHeader from "../../component/community/CommunityHomeHeader";
-import QuickSearchBar from "../../pages/Course/QuickSearchBar";
+import QuickSearchBar from "../../component/common/QuickSearchBar";
 import PostAreaComponent from "../../component/community/PostAreaComponent";
 import { SubTitle } from "../../component/common/Text";
 
@@ -93,18 +93,26 @@ const CommunityHomePage = () => {
   // ✅ QuickSearchBar에서 결과 받기
   const handleQuickSearchResult = (items, total, payload) => {
     const normalized = (items || []).map((item) => ({
-      communityId: item.communityId,
+      // key / URL 용
+      postId: item.communityId,
+      // 카드에 보여줄 텍스트
       name: item.title,
-      purpose: item.summary,
+      desc: item.summary,
+      // 썸네일
       representativeImage: item.representativeImage,
       createdAt: item.createdAt,
+      // 검색 응답에는 없으니 기본값 0
       memberCount: item.memberCount ?? 0,
+      // 검색 결과는 일단 일반 목록으로 취급
+      sponsored: false,
+      // React key용 fallback
+      communityId: item.communityId,
     }));
 
     setSearchItems(normalized);
     setSearchTotal(total || 0);
     setLastSearchPayload(payload);
-    setPage(1); // 검색 시 페이지 1로 리셋
+    setPage(1);
   };
 
   const isSearchMode = !!searchItems;
@@ -151,6 +159,7 @@ const CommunityHomePage = () => {
               <Grid sx={{ m: 2, mt: 0, mb: 3 }} container>
                 <Grid item xs={12}>
                   <QuickSearchBar
+                    boardType="COMMUNITY"
                     onResult={handleQuickSearchResult}
                     initialPayload={lastSearchPayload}
                   />

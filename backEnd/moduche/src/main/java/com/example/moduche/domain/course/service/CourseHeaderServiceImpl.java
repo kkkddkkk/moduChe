@@ -5,11 +5,12 @@ import com.example.moduche.domain.course.CourseSession;
 import com.example.moduche.domain.course.DTO.CourseHeaderResponse;
 import com.example.moduche.domain.course.DTO.FacilityHeaderDto;
 import com.example.moduche.domain.course.DTO.SessionDto;
+import com.example.moduche.domain.course.Enums.EnrollmentStatus;
+import com.example.moduche.domain.course.repository.CourseEnrollmentRepository;
 import com.example.moduche.domain.course.repository.CourseRepository;
 import com.example.moduche.domain.course.repository.CourseSessionRepository;
-import com.example.moduche.domain.enrollment.EnrollmentRepository;
-import com.example.moduche.global.AWS.service.S3UrlSigner;
 
+import com.example.moduche.global.AWS.service.S3UrlSigner;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,8 +28,8 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
 
     private final CourseRepository courseRepository;
     private final CourseSessionRepository sessionRepository;
-    private final EnrollmentRepository enrollmentRepository;
-    private final S3UrlSigner s3UrlSigner;   // 🔥 Presigned URL 생성기
+    private final CourseEnrollmentRepository enrollmentRepository;
+    private final S3UrlSigner s3UrlSigner;
 
     /** 상세 날짜 표시용 포맷: "Nov 04 19:00" */
     private static final DateTimeFormatter UI_DT =
@@ -39,13 +40,11 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
 
         System.out.println(">>> getHeader called with id = " + courseId);
 
-        var opt = courseRepository.findHeaderById(courseId);
-        System.out.println(">>> findHeaderById(" + courseId + ") present = " + opt.isPresent());
-
-        Course c = opt.orElseThrow(() -> {
-            System.out.println(">>> NO course found with id = " + courseId);
-            return new NoSuchElementException("Course not found: " + courseId);
-        });
+        Course c = courseRepository.findHeaderById(courseId)
+                .orElseThrow(() -> {
+                    System.out.println(">>> NO course found with id = " + courseId);
+                    return new NoSuchElementException("Course not found: " + courseId);
+                });
 
         System.out.println(">>> building header response for courseId = " + c.getCourseId());
 
@@ -57,11 +56,11 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
         List<SessionDto> sessionDtos = new ArrayList<>();
         Map<String, List<String>> datesBySession = new LinkedHashMap<>();
 
-        int sidIndex = 1; // S1, S2, S3 …
+        int sidIndex = 1; // "S1", "S2", ...
+
         for (CourseSession s : sessions) {
             if (s.getStartDate() == null || s.getEndDate() == null) continue;
 
-            // 세션을 월 단위 Block으로 쪼갬
             List<LocalDate[]> monthlyBlocks = splitIntoMonthlyBlocks(
                     s.getStartDate(),
                     s.getEndDate()
@@ -73,18 +72,33 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
 
                 String sid = "S" + sidIndex;
 
-                // 용량: 세션 override > 코스 maxParticipants
+                // ✅ 정원: override > course.maxParticipants
                 int capacity = (s.getCapacityOverride() != null)
                         ? s.getCapacityOverride()
                         : (c.getMaxParticipants() != null ? c.getMaxParticipants() : 0);
 
-                // 현재 신청 수
-                long enrolled = enrollmentRepository.countSessionEnrolled(courseId, s.getSessionId());
-                int remaining = Math.max(0, capacity - (int) enrolled);
+                // ✅ 승인(APPROVED)된 인원 수
+                long approvedCount = enrollmentRepository
+                	    .countByCourse_CourseIdAndSessionIdAndStatus(
+                	        c.getCourseId(),
+                	        s.getSessionId(),
+                	        EnrollmentStatus.APPROVED
+                	    );
+                int enrolled = (int) approvedCount;
 
-                // 라벨
-                String label = buildBlockLabelWithDetail(s, blockStart, blockEnd, sidIndex, c);
+                // ✅ 잔여석 = 정원 - 승인 인원
+                int remaining = Math.max(0, capacity - enrolled);
 
+                // 🔹 회차 라벨
+                String label = buildBlockLabelWithDetail(
+                        s,
+                        blockStart,
+                        blockEnd,
+                        sidIndex,
+                        c
+                );
+
+                // 🔥 SessionDto 생성
                 SessionDto dto = new SessionDto(
                         sid,
                         label,
@@ -96,12 +110,26 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
                         s.getDowMask(),
                         s.getInterval(),
                         capacity,
-                        (int) enrolled
+                        enrolled,
+                        s.getSessionId()   // ✅ 실제 DB PK
                 );
                 sessionDtos.add(dto);
 
-                // block 범위 안에서만 날짜 생성
-                datesBySession.put(sid, generateDateTimesForSessionWithin(s, blockStart, blockEnd));
+                datesBySession.put(
+                        sid,
+                        generateDateTimesForSessionWithin(s, blockStart, blockEnd)
+                );
+
+                // (선택) 디버그 로그
+                System.out.printf(
+                        "[HEADER DEBUG] courseId=%d, sessionDbId=%d, sid=%s, cap=%d, enrolled=%d, remaining=%d%n",
+                        c.getCourseId(),
+                        s.getSessionId(),
+                        sid,
+                        capacity,
+                        enrolled,
+                        remaining
+                );
 
                 sidIndex++;
             }
@@ -109,10 +137,15 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
 
         // 3) 기본 선택값: 첫 세션의 첫 날짜
         String defaultSessionId = sessionDtos.isEmpty() ? null : sessionDtos.get(0).id();
-        String defaultDate = (defaultSessionId == null || datesBySession.get(defaultSessionId).isEmpty())
-                ? null : datesBySession.get(defaultSessionId).get(0);
+        String defaultDate = null;
+        if (defaultSessionId != null) {
+            List<String> firstDates = datesBySession.get(defaultSessionId);
+            if (firstDates != null && !firstDates.isEmpty()) {
+                defaultDate = firstDates.get(0);
+            }
+        }
 
-        // 4) 기간 계산
+        // 4) 전체 기간 계산
         LocalDate periodStart = sessions.stream()
                 .map(CourseSession::getStartDate)
                 .filter(Objects::nonNull)
@@ -125,7 +158,7 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
                 .max(LocalDate::compareTo)
                 .orElse(null);
 
-        // 5) 운영주기 라인
+        // 5) 운영주기 한 줄 (operationSchedule > 세션 정보 > datesBySession 순으로 fallback)
         String scheduleLine;
         if (!isBlank(c.getOperationSchedule())) {
             scheduleLine = c.getOperationSchedule();
@@ -138,7 +171,7 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
         // 6) 태그
         List<String> tags = buildTagsFromCourse(c);
 
-        // 7) 시설 요약
+        // 7) 시설 요약 정보
         FacilityHeaderDto facility = (c.getFacility() == null) ? null :
                 new FacilityHeaderDto(
                         c.getFacility().getFacilityId(),
@@ -148,13 +181,11 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
                         toStringOrNull(c.getFacility().getGeoLng())
                 );
 
-        // 8) 바이라인: 왼쪽=강사/계정 이름, 오른쪽=시설 이름
+        // 8) 바이라인 (왼쪽: 강사/생성자, 오른쪽: 시설명)
         String bylineName;
         if (!isBlank(c.getInstructorName())) {
-            // 1순위: 강사 이름
             bylineName = c.getInstructorName();
         } else if (c.getCreatedBy() != null && !isBlank(c.getCreatedBy().getName())) {
-            // 2순위: 강좌 만든 계정 이름
             bylineName = c.getCreatedBy().getName();
         } else {
             bylineName = "Instructor";
@@ -167,7 +198,6 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
         // 9) 썸네일 presigned URL
         String thumbnailUrl = null;
         String thumbKey = c.getThumbnailUrl();   // ex) "course/xxxxx.webp"
-
         if (!isBlank(thumbKey)) {
             URL signed = s3UrlSigner.sign(thumbKey, Duration.ofMinutes(30));
             thumbnailUrl = signed.toString();
@@ -175,11 +205,11 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
 
         System.out.println("=== DEBUG: returning header for courseId = " + c.getCourseId());
 
-        // 10) 최종 응답
+        // 🔟 최종 응답 DTO
         return CourseHeaderResponse.builder()
                 .title(c.getTitle())
-                .bylineName(bylineName)    // 👈 왼쪽: 강사/생성자
-                .bylineOrg(bylineOrg)      // 👈 오른쪽: 시설명
+                .bylineName(bylineName)
+                .bylineOrg(bylineOrg)
                 .periodStart(periodStart)
                 .periodEnd(periodEnd)
                 .scheduleLine(scheduleLine)
@@ -196,8 +226,9 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
                 .build();
     }
 
-    /* ================= 내부 유틸 ================= */
+    /* ====================== 내부 유틸들 ====================== */
 
+    /** 세션의 start~end를 월별 block 리스트로 쪼갬 */
     private List<LocalDate[]> splitIntoMonthlyBlocks(LocalDate start, LocalDate end) {
         List<LocalDate[]> blocks = new ArrayList<>();
         if (start == null || end == null || start.isAfter(end)) return blocks;
@@ -214,10 +245,10 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
             blocks.add(new LocalDate[]{blockStart, blockEnd});
             curStart = blockEnd.plusDays(1);
         }
-
         return blocks;
     }
 
+    /** "1회차 · 2025.11.29 ~ 2025.12.20 · 매주 월수 18:00 ~ 20:00" 형태 라벨 생성 */
     private String buildBlockLabelWithDetail(
             CourseSession s,
             LocalDate blockStart,
@@ -263,6 +294,7 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
         return sb.toString();
     }
 
+    /** block 범위 안에서만 수업 날짜/시간 리스트 생성 ("Nov 04 19:00" 형태) */
     private List<String> generateDateTimesForSessionWithin(
             CourseSession s,
             LocalDate blockStart,
@@ -323,6 +355,7 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
         };
     }
 
+    /** datesBySession 기반으로 "Weekly • Mon/Wed • N Sessions / M Weeks" 형태 문자열 만들기 */
     private String buildScheduleLineFromGeneratedDates(Map<String, List<String>> datesBySession) {
         List<LocalDate> days = datesBySession.values().stream()
                 .flatMap(List::stream)
@@ -353,6 +386,7 @@ public class CourseHeaderServiceImpl implements CourseHeaderService {
         return dt.toLocalDate();
     }
 
+    /** 코스의 장애타입 / 보조인 / 편의제공을 태그로 변환 */
     private static List<String> buildTagsFromCourse(Course c) {
         List<String> tags = new ArrayList<>();
         if (c.getDisabilityType() != null) {

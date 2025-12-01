@@ -1,3 +1,4 @@
+// src/main/java/com/example/moduche/domain/facility/dto/EnrollmentForFacilityResponse.java
 package com.example.moduche.domain.facility.dto;
 
 import com.example.moduche.domain.course.Enums.EnrollmentStatus;

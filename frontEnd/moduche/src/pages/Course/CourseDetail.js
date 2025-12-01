@@ -22,6 +22,9 @@ export default function CourseDetail() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [enrollSessionId, setEnrollSessionId] = useState(null); // 실제 DB PK
+  const [enrollSessionLabel, setEnrollSessionLabel] = useState(""); // 모달에 보여줄 회차 텍스트
+  const [enrollDate, setEnrollDate] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [ui, setUi] = useState(null);
@@ -252,40 +255,52 @@ export default function CourseDetail() {
               date={date}
               setDate={setDate}
               capacity={ui.maxParticipants ?? 0}
-              price={ui.price} // 있으면
-              onEnroll={() => {
-                // ✅ 1) 비로그인: 로그인 페이지로 보내기
+              price={ui.price}
+              onEnroll={({
+                sessionId: dbSessionId,
+                date: selectedDate,
+                label,
+              }) => {
+                // 1) 비로그인 처리
                 if (!currentUser) {
                   alert("수강신청을 하려면 로그인이 필요합니다.");
-
-                  // 로그인 페이지 경로는 프로젝트에 맞게 수정 (/login /auth/login 등)
                   navigate("/account/login", {
-                    state: {
-                      from: location.pathname, // 나중에 되돌아오기용
-                    },
+                    state: { from: location.pathname },
                   });
                   return;
                 }
 
-                // ✅ 2) 로그인 되어있으면 모달 오픈
+                // 2) 로그인 된 경우: 모달에서 사용할 실제 PK/날짜 저장
+                setEnrollSessionId(dbSessionId); // 🔥 여기서 DB PK 저장|
+                setEnrollSessionLabel(label || "");
+                setEnrollDate(selectedDate);
+
+                // 3) 모달 오픈
                 setEnrollOpen(true);
               }}
             />
           </Box>
         </Box>
 
+        {/** 🔥🔥 여기 콘솔 찍어보기 */}
+        {console.log("[CourseDetail -> EnrollModal props]", {
+          sessionId: enrollSessionId,
+          sessionLabel: enrollSessionLabel,
+          date: enrollDate,
+        })}
         {/* ✅ 수강신청 모달 */}
         <EnrollModal
           open={enrollOpen}
           onClose={() => setEnrollOpen(false)}
           course={ui}
           courseId={courseId}
-          sessionId={sessionId}
-          date={date}
+          sessionId={enrollSessionId} // 🔥 실제 DB PK
+          sessionLabel={enrollSessionLabel}
+          date={enrollDate} // 🔥 모달에서 선택한 날짜
           user={currentUser}
           onSuccess={() => {
             setEnrollOpen(false);
-            // 여기서는 "신청 접수"까지만, 잔여석은 시설 측 승인 후에 줄어들게 설계한 상태
+            // 필요하면 여기서 새로 헤더 다시 로드해서 잔여석 갱신해도 됨
           }}
         />
       </Container>

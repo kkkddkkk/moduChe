@@ -1,15 +1,17 @@
+// src/main/java/com/example/moduche/global/search/CourseSearchServiceImpl.java
 package com.example.moduche.global.search;
 
 import com.example.moduche.domain.course.Course;
-import com.example.moduche.domain.course.Course.CourseStatus;
 import com.example.moduche.domain.facility.Facility;
 import com.example.moduche.domain.tag.Tag;
+import com.example.moduche.global.AWS.service.AWSService;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.Locale;
 public class CourseSearchServiceImpl implements CourseSearchService {
 
     private final EntityManager em;
+    private final AWSService awsService;
 
     @Override
     public SearchResponse<CourseSearchResultDto> search(SearchRequest req) {
@@ -47,24 +50,30 @@ public class CourseSearchServiceImpl implements CourseSearchService {
                         course.get("courseId"),
                         course.get("title"),
                         course.get("summary"),
-                        course.get("thumbnailUrl"),
+                        course.get("thumbnailUrl"),         // ⬅️ 일단 S3 key 그대로
                         facility.get("facilityName"),
                         facility.get("facilityAddress"),
-                        cb.nullLiteral(LocalDate.class), // periodStart
-                        cb.nullLiteral(LocalDate.class), // periodEnd
+                        cb.nullLiteral(LocalDate.class),     // periodStart (지금은 미사용)
+                        cb.nullLiteral(LocalDate.class),     // periodEnd   (지금은 미사용)
                         course.get("format"),
                         course.get("status"),
-                        course.get("viewCount")
+                        course.get("viewCount"),
+                        course.get("createdAt")              // ✅ 등록일
                 ))
-                .where(predicates.toArray(new Predicate[0]));
+          .where(predicates.toArray(new Predicate[0]));
 
         applySort(cb, cq, course, req.getSortBy());
 
-        List<CourseSearchResultDto> items = em.createQuery(cq)
+        // 🔹 1단계: DB에서 가져온 원본 DTO들 (thumbnailUrl = S3 key)
+        List<CourseSearchResultDto> baseItems = em.createQuery(cq)
                 .setFirstResult(page * size)
                 .setMaxResults(size)
                 .getResultList();
 
+        // 🔹 2단계: 썸네일만 프리사인 URL로 치환한 DTO 리스트
+        List<CourseSearchResultDto> items = baseItems.stream()
+                .map(this::signThumbnailIfNeeded)
+                .toList();
 
         /* ======================
          * 2) total count 쿼리
@@ -77,13 +86,38 @@ public class CourseSearchServiceImpl implements CourseSearchService {
                 buildPredicates(cb, countQuery, countRoot, countFacility, req);
 
         countQuery.select(cb.count(countRoot))
-                .where(countPredicates.toArray(new Predicate[0]));
+                  .where(countPredicates.toArray(new Predicate[0]));
 
         long total = em.createQuery(countQuery).getSingleResult();
 
         return new SearchResponse<>(items, total);
     }
 
+    /** S3 key로 온 썸네일을 프리사인 URL로 변환 */
+    private CourseSearchResultDto signThumbnailIfNeeded(CourseSearchResultDto base) {
+        String key = base.getThumbnailUrl();
+        String signedUrl = null;
+
+        if (key != null && !key.isBlank()) {
+            signedUrl = awsService.toPreSignedUrl(key, Duration.ofMinutes(10));
+        }
+
+        // ⚠️ 생성자 파라미터 순서 = DTO 필드 순서 그대로
+        return new CourseSearchResultDto(
+                base.getCourseId(),
+                base.getTitle(),
+                base.getSummary(),
+                signedUrl,                      // ✅ 여기만 URL로 교체
+                base.getFacilityName(),
+                base.getAddress(),
+                base.getPeriodStart(),
+                base.getPeriodEnd(),
+                base.getFormat(),
+                base.getStatus(),
+                base.getViewCount(),
+                base.getCreatedAt()
+        );
+    }
 
     /**
      * 공통 where 조건 + tag 서브쿼리 처리
@@ -135,7 +169,7 @@ public class CourseSearchServiceImpl implements CourseSearchService {
             ));
         }
 
-        /* 5) onlyUpcoming */
+        /* 5) onlyUpcoming: 앞으로 열릴 강좌만 */
         if (Boolean.TRUE.equals(req.getOnlyUpcoming())) {
             predicates.add(cb.equal(course.get("status"), Course.CourseStatus.PUBLISHED));
             predicates.add(cb.greaterThanOrEqualTo(
@@ -155,20 +189,28 @@ public class CourseSearchServiceImpl implements CourseSearchService {
 
             if (!normalized.isEmpty()) {
 
-                /* exists (select 1 from course_tag t where t.course_id = course.id AND tag.name IN (...)) */
+                /*
+                 exists (
+                   select 1
+                   from Tag t
+                   join t.courses c
+                   where c.courseId = course.courseId
+                     and lower(t.name) in (:normalized)
+                 )
+                 */
                 Subquery<Long> sub = cq.subquery(Long.class);
                 Root<Tag> tagRoot = sub.from(Tag.class);
 
-                Join<Tag, Course> tagCourseJoin = tagRoot.join("courses", JoinType.INNER); 
-                // ★ Tag.entity의 mappedBy로 조인됨 (필드명 맞을 것)
+                Join<Tag, Course> tagCourseJoin =
+                        tagRoot.join("courses", JoinType.INNER);  // Tag 엔티티의 필드명 "courses" 기준
 
                 Expression<String> tagName = cb.lower(tagRoot.get("name"));
 
                 sub.select(cb.literal(1L))
-                        .where(
-                                cb.equal(tagCourseJoin.get("courseId"), course.get("courseId")),
-                                tagName.in(normalized)
-                        );
+                   .where(
+                       cb.equal(tagCourseJoin.get("courseId"), course.get("courseId")),
+                       tagName.in(normalized)
+                   );
 
                 predicates.add(cb.exists(sub));
             }
@@ -176,7 +218,6 @@ public class CourseSearchServiceImpl implements CourseSearchService {
 
         return predicates;
     }
-
 
     /** 정렬 */
     private void applySort(CriteriaBuilder cb, CriteriaQuery<?> cq, Root<Course> course, String sortBy) {
