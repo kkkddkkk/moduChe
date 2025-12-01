@@ -47,7 +47,18 @@ public class AuthService {
 		}
 		
 		User user = userOp.get();//Id가 있으면 user get
-		String password = user.getPassword();//table에 저장된 password
+	      
+	      /* 추가된 부분 ─ 정지 계정 로그인 차단 */
+	       if (user.getStatus() == UserStatus.SUSPENDED) {
+	           return LoginResponseDTO.builder()
+	                   .message("정지된 계정입니다.")
+	                   .name(user.getName())
+	                   .idSuccess(true)
+	                   .allSuccess(false)
+	                   .build();
+	       }
+	      
+	      String password = user.getPassword();//table에 저장된 password
 		if(!passwordEncoder.matches(dto.getPassword(), password)) {//비밀번호가 일치하지 않을 경우
 			LoginResponseDTO responseDTO = LoginResponseDTO.builder()
 					.message("비밀번호가 일치하지 않습니다.")

@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@SpringBootApplication(scanBasePackages = "com.example.moduche")                 // ✅ 컴포넌트 스캔
-@EntityScan(basePackages = "com.example.moduche.domain")                        // ✅ 엔티티 스캔
-//@EnableJpaRepositories(basePackages = "com.example.moduche.domain")         // ✅ 리포지토리 패키지(없어도 OK, 있으면 경로 맞춰주세요)
+@SpringBootApplication(scanBasePackages = "com.example.moduche")
+@EntityScan(basePackages = "com.example.moduche")
+@EnableJpaRepositories(basePackages = "com.example.moduche")         // ✅ 리포지토리 패키지(없어도 OK, 있으면 경로 맞춰주세요)
 @EnableTransactionManagement
 @EnableJpaAuditing
 @EnableScheduling

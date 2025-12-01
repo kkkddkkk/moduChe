@@ -86,3 +86,7 @@ sourceSets {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.named('compileJava') {
+    options.compilerArgs.add('-parameters')
+}
