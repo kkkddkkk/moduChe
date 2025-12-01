@@ -8,6 +8,7 @@ import CourseImage from "./CourseImage";
 import CourseHeader from "./CourseHeader";
 import CourseDescription from "./CourseDescription";
 import CourseSidebar from "./CourseSidebar";
+import Loading from "../../component/common/Loading";
 
 import {
   getCourseHeader,
@@ -15,30 +16,34 @@ import {
   getEnrollProfile,
 } from "../../api/courseAPI";
 import { mapHeaderToProps } from "../../api/coursemappers/courseMapper";
-import Loading from "../../component/common/Loading";
 import EnrollModal from "./EnrollModal";
 
 export default function CourseDetail() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 🔹 수강신청 모달 관련 상태
   const [enrollSessionId, setEnrollSessionId] = useState(null); // 실제 DB PK
   const [enrollSessionLabel, setEnrollSessionLabel] = useState(""); // 모달에 보여줄 회차 텍스트
   const [enrollDate, setEnrollDate] = useState("");
 
+  // 🔹 데이터/로딩/에러 상태
   const [loading, setLoading] = useState(true);
   const [ui, setUi] = useState(null);
   const [desc, setDesc] = useState(null);
   const [error, setError] = useState(null);
 
+  // 🔹 세션/날짜/잔여석 상태
   const [sessionId, setSessionId] = useState("");
   const [date, setDate] = useState("");
   const [spotsLeft, setSpotsLeft] = useState(0);
 
+  // 🔹 현재 로그인 유저 / 모달 오픈 여부
   const [currentUser, setCurrentUser] = useState(null);
   const [enrollOpen, setEnrollOpen] = useState(false);
 
-  // ✅ 기본 sessionId / date 계산
+  // ✅ 기본 sessionId / date 계산 로직
   const computeInitialSessionAndDate = (mapped) => {
     const sessions = mapped.sessions ?? [];
     const datesBySession = mapped.datesBySession ?? {};
@@ -46,6 +51,7 @@ export default function CourseDetail() {
     let sid = mapped.defaultSessionId || sessions[0]?.id || "";
     let first = (sid && datesBySession[sid] && datesBySession[sid][0]) || "";
 
+    // defaultSessionId에도 날짜가 없으면, 다른 세션에서라도 첫 날짜를 찾는다.
     if (!first) {
       for (const s of sessions) {
         const arr = datesBySession[s.id] || [];
@@ -78,6 +84,7 @@ export default function CourseDetail() {
 
         const mapped = mapHeaderToProps(headerRes, descRes);
         console.log("[ui.thumbnailUrl after map]", mapped.thumbnailUrl);
+
         setUi(mapped);
         setDesc(descRes);
 
@@ -117,7 +124,7 @@ export default function CourseDetail() {
     })();
   }, []);
 
-  // 🔁 세션 바뀔 때마다 해당 세션의 좌석/날짜 동기화
+  // 🔁 세션 변경 시, 해당 세션의 잔여석 & 첫 날짜 동기화
   useEffect(() => {
     if (!ui || !sessionId) return;
 
@@ -220,7 +227,7 @@ export default function CourseDetail() {
                   periodStart={ui.periodStart}
                   periodEnd={ui.periodEnd}
                   scheduleLine={ui.scheduleLine}
-                  tags={ui.tags}
+                  tags={tags}
                   locationText={ui.locationText}
                 />
               </Box>
@@ -230,7 +237,7 @@ export default function CourseDetail() {
             <CourseDescription
               hasDetail={true}
               html={desc?.description}
-              tags={desc?.tags ?? ui.tags}
+              tags={tags}
               locationText={ui.locationText}
             />
           </Box>
@@ -271,7 +278,7 @@ export default function CourseDetail() {
                 }
 
                 // 2) 로그인 된 경우: 모달에서 사용할 실제 PK/날짜 저장
-                setEnrollSessionId(dbSessionId); // 🔥 여기서 DB PK 저장|
+                setEnrollSessionId(dbSessionId); // 실제 DB PK
                 setEnrollSessionLabel(label || "");
                 setEnrollDate(selectedDate);
 
@@ -282,25 +289,25 @@ export default function CourseDetail() {
           </Box>
         </Box>
 
-        {/** 🔥🔥 여기 콘솔 찍어보기 */}
         {console.log("[CourseDetail -> EnrollModal props]", {
           sessionId: enrollSessionId,
           sessionLabel: enrollSessionLabel,
           date: enrollDate,
         })}
+
         {/* ✅ 수강신청 모달 */}
         <EnrollModal
           open={enrollOpen}
           onClose={() => setEnrollOpen(false)}
           course={ui}
           courseId={courseId}
-          sessionId={enrollSessionId} // 🔥 실제 DB PK
+          sessionId={enrollSessionId} // 실제 DB PK
           sessionLabel={enrollSessionLabel}
-          date={enrollDate} // 🔥 모달에서 선택한 날짜
+          date={enrollDate} // 선택한 날짜
           user={currentUser}
           onSuccess={() => {
             setEnrollOpen(false);
-            // 필요하면 여기서 새로 헤더 다시 로드해서 잔여석 갱신해도 됨
+            // 필요하면 여기서 새로 헤더 다시 로딩해서 잔여석 갱신 가능
           }}
         />
       </Container>

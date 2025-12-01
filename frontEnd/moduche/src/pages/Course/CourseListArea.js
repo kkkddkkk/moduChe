@@ -1,17 +1,12 @@
-// src/component/course/CourseListArea.jsx
+// src/pages/Course/CourseListArea.jsx
 import { useState, useEffect } from "react";
 import {
   Box,
   Grid,
-  TextField,
   Button,
-  Select,
-  MenuItem,
-  Pagination,
-  InputLabel,
-  FormControl,
   useTheme,
   useMediaQuery,
+  Pagination,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { PostCard } from "../../component/common/PostCard";
@@ -24,7 +19,7 @@ const DEFAULT_COURSE_IMAGE =
 const AD_IMAGE =
   "https://images.unsplash.com/photo-1526403225475-4aa7c3a29c06?q=80&w=1200&auto=format&fit=crop";
 
-const CourseListArea = ({ items, total }) => {
+const CourseListArea = ({ items, total, onLoadingChange }) => {
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,14 +37,20 @@ const CourseListArea = ({ items, total }) => {
     if (items == null) {
       (async () => {
         try {
+          // ✅ 부모에게 "로딩 시작" 알리기
+          onLoadingChange && onLoadingChange(true);
+
           const data = await getCourseList();
           setCourses(data);
         } catch (err) {
           console.error("강좌 리스트 로딩 실패: ", err);
+        } finally {
+          // ✅ 로딩 종료
+          onLoadingChange && onLoadingChange(false);
         }
       })();
     }
-  }, [items]);
+  }, [items, onLoadingChange]);
 
   const handleSearch = () => {
     console.log("텍스트 검색어:", searchTerm, "정렬:", sortOption);
@@ -70,7 +71,15 @@ const CourseListArea = ({ items, total }) => {
   return (
     <Box sx={{ p: 3, pt: 2 }}>
       {/* 상단 버튼들 */}
-      <Box sx={{ display: "flex", gap: 1, flexGrow: 1, pb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1,
+          flexGrow: 1,
+          pb: 3,
+          justifyContent: "flex-end",
+        }}
+      >
         <Button
           variant="contained"
           color="primary"
@@ -88,22 +97,15 @@ const CourseListArea = ({ items, total }) => {
         >
           강좌 등록 신청
         </Button>
-
-        <Button
-          variant="outlined"
-          color="primary"
-          sx={{ whiteSpace: "nowrap" }}
-          onClick={() => navigate(`/course/manage`)}
-        >
-          내 강좌 관리
-        </Button>
       </Box>
 
-      {/* 가로 배너 */}
-      <HorizontalBanner
-        adImage={AD_IMAGE}
-        clickURL={"https://namu.wiki/w/%ED%96%84%EC%8A%A4%ED%84%B0"}
-      />
+      {/* 가로 배너 중앙 정렬 */}
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+        <HorizontalBanner
+          adImage={AD_IMAGE}
+          clickURL={"https://namu.wiki/w/%ED%96%84%EC%8A%A4%ED%84%B0"}
+        />
+      </Box>
 
       {/* 강좌 카드 리스트 */}
       <Grid
