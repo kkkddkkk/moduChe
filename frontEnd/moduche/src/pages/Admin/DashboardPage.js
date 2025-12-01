@@ -1,68 +1,20 @@
-// src/pages/Admin/DashboardPage.js
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
-    Grid,
-    Card,
-    CardContent,
-    Typography,
-    Stack,
-    Divider,
-    useTheme,
-    Box,
+    Grid, Card, CardContent, Typography, Stack, Divider,
+    useTheme, Box
 } from "@mui/material";
-
 import { useNavigate } from "react-router-dom";
-
-// recharts
 import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip as RechartsTooltip,
-    ResponsiveContainer,
-    BarChart,
-    Bar,
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+    ResponsiveContainer, BarChart, Bar,
 } from "recharts";
 
+import { getDashboardSummary, getDashboardTrend } from "../../api/dashboard/dashboardApi";
 import Paper from "../../component/common/Paper";
 
-/** ---------------------------
- * 더미 데이터 (나중에 API 연동)
- * -------------------------- */
-const dummySummary = {
-    totalUsers: 1287, // 전체 이용자 수
-    newUsersToday: 14, // 오늘 신규 가입자
-    totalRevenue: 53200000, // 누적 참여 결제액 (원)
-    pendingClubs: 5, // 승인 대기 동호회 수
-    pendingReports: 12, // 미처리 신고 수
-};
-
-// 최근 7일 프로그램 결제 금액 (원)
-const dummyRevenueTrend = [
-    { date: "10-18", amount: 3200000 },
-    { date: "10-19", amount: 2100000 },
-    { date: "10-20", amount: 4500000 },
-    { date: "10-21", amount: 3800000 },
-    { date: "10-22", amount: 5200000 },
-    { date: "10-23", amount: 6100000 },
-    { date: "10-24", amount: 4700000 },
-];
-
-// 최근 7일 신규 가입자 수
-const dummyUserTrend = [
-    { date: "10-18", newUsers: 8 },
-    { date: "10-19", newUsers: 5 },
-    { date: "10-20", newUsers: 11 },
-    { date: "10-21", newUsers: 9 },
-    { date: "10-22", newUsers: 12 },
-    { date: "10-23", newUsers: 10 },
-    { date: "10-24", newUsers: 14 },
-];
-
-/** 숫자 포맷 */
+// 숫자 포맷
 function formatNumber(n) {
+    if (n === null || n === undefined) return "-";
     return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
@@ -70,40 +22,85 @@ export default function DashboardPage() {
     const theme = useTheme();
     const navigate = useNavigate();
 
-    // KPI 카드 데이터
+    const [summary, setSummary] = useState({
+        totalUsers: 0,
+        newUsersToday: 0,
+        totalRevenue: 0,
+        pendingClubs: 0,
+        pendingReports: 0,
+    });
+
+    const [trend, setTrend] = useState({
+        revenue: [],
+        newUsers: [],
+    });
+
+    // API 호출
+    const loadDashboard = async () => {
+        try {
+            const summaryData = await getDashboardSummary();
+            setSummary(summaryData);
+
+            const trendData = await getDashboardTrend();
+
+            // 🔥 변환 필수: 백엔드 → 프론트가 사용하는 구조로 바꿔줌
+            setTrend({
+                revenue: trendData.revenueTrend.map((item) => ({
+                    date: item.date,
+                    amount: item.amount,
+                })),
+                newUsers: trendData.userTrend.map((item) => ({
+                    date: item.date,
+                    newUsers: item.count,
+                })),
+            });
+
+        } catch (e) {
+            console.error("대시보드 데이터 로드 실패:", e);
+        }
+    };
+
+
+    useEffect(() => {
+        loadDashboard();
+    }, []);
+
+    // KPI 카드 리스트
     const summaryList = useMemo(
         () => [
             {
                 label: "전체 이용자 수",
-                value: formatNumber(dummySummary.totalUsers),
-                sub: `오늘 신규 ${dummySummary.newUsersToday}명`,
+                value: formatNumber(summary.totalUsers),
+                sub: `오늘 신규 ${summary.newUsersToday}명`,
                 color: theme.palette.primary.main,
-                path: "/admin/members", // ✅ 이동 경로
+                path: "/admin/members",
             },
             {
                 label: "누적 참여 결제액",
-                value: formatNumber(dummySummary.totalRevenue) + "원",
-                sub: "프로그램·강좌 결제 기준",
+                value: formatNumber(summary.totalRevenue) + "원",
+                sub: "참여 프로그램 결제 기준",
                 color: theme.palette.success.main,
-                path: "/admin/calculate", // ✅ 이동 경로
+                path: "/admin/calculate",
             },
             {
-                label: "동호회 승인 대기",
-                value: dummySummary.pendingClubs + "건",
+                label: "승인 대기 동아리",
+                value: summary.pendingClubs + "건",
                 sub: "심사 필요",
                 color: theme.palette.warning.main,
+                path: "/admin/club-approval",
             },
             {
                 label: "미처리 신고",
-                value: dummySummary.pendingReports + "건",
+                value: summary.pendingReports + "건",
                 sub: "신속 조치 필요",
                 color: theme.palette.error.main,
+                path: "/admin/reports",
             },
         ],
-        [theme]
+        [summary, theme]
     );
 
-    // 축 포맷 함수
+    // 그래프 y축 포맷
     const moneyTickFormatter = (v) => `${formatNumber(v)}`;
     const userTickFormatter = (v) => `${v}`;
 
@@ -172,22 +169,18 @@ export default function DashboardPage() {
                             boxShadow: 1,
                             border: "1px solid",
                             borderColor: "divider",
-                            height: "100%",
                             display: "flex",
                             flexDirection: "row",
-                            alignItems: "stretch",
-                            overflow: "hidden",
                             cursor: item.path ? "pointer" : "default",
-                            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                            transition: "0.2s",
                             "&:hover": item.path
-                                ?   {
-                                        transform: "translateY(-4px)",
-                                        boxShadow: 3,
-                                    }
+                                ? {
+                                      transform: "translateY(-4px)",
+                                      boxShadow: 3,
+                                  }
                                 : undefined,
                         }}
                     >
-                        {/* 컬러 바 */}
                         <Box sx={{ width: 6, bgcolor: item.color }} />
 
                         <CardContent sx={{ flexGrow: 1, py: 2, px: 2 }}>
@@ -237,9 +230,6 @@ export default function DashboardPage() {
                         boxShadow: 1,
                         border: "1px solid",
                         borderColor: "divider",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
                     }}
                 >
                     <CardContent sx={{ flexGrow: 1, minHeight: 260 }}>
@@ -265,8 +255,9 @@ export default function DashboardPage() {
                                 </Typography>
                             </Box>
                         </Stack>
+
                         <ResponsiveContainer width="100%" height={200}>
-                            <LineChart data={dummyRevenueTrend}>
+                            <LineChart data={trend.revenue}>
                                 <CartesianGrid
                                     strokeDasharray="3 3"
                                     stroke={theme.palette.divider}
@@ -277,9 +268,8 @@ export default function DashboardPage() {
                                     tick={{ fontSize: 12 }}
                                 />
                                 <RechartsTooltip
-                                    formatter={(val) => `${formatNumber(val)} 원`}
-                                    labelFormatter={(label) =>
-                                        `${label} 결제`
+                                    formatter={(v) =>
+                                        `${formatNumber(v)} 원`
                                     }
                                 />
                                 <Line
@@ -301,9 +291,6 @@ export default function DashboardPage() {
                         boxShadow: 1,
                         border: "1px solid",
                         borderColor: "divider",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
                     }}
                 >
                     <CardContent sx={{ flexGrow: 1, minHeight: 260 }}>
@@ -329,8 +316,9 @@ export default function DashboardPage() {
                                 </Typography>
                             </Box>
                         </Stack>
+
                         <ResponsiveContainer width="100%" height={200}>
-                            <BarChart data={dummyUserTrend}>
+                            <BarChart data={trend.newUsers}>
                                 <CartesianGrid
                                     strokeDasharray="3 3"
                                     stroke={theme.palette.divider}
@@ -338,14 +326,11 @@ export default function DashboardPage() {
                                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                                 <YAxis
                                     allowDecimals={false}
-                                    tickFormatter={userTickFormatter}
                                     tick={{ fontSize: 12 }}
+                                    tickFormatter={userTickFormatter}
                                 />
                                 <RechartsTooltip
-                                    formatter={(val) => `${val} 명`}
-                                    labelFormatter={(label) =>
-                                        `${label} 가입`
-                                    }
+                                    formatter={(v) => `${v} 명`}
                                 />
                                 <Bar
                                     dataKey="newUsers"
@@ -377,6 +362,7 @@ export default function DashboardPage() {
                         운영 상태 요약
                     </Typography>
                     <Divider sx={{ mb: 3 }} />
+
                     <Grid container spacing={2}>
                         <Grid item xs={12} md={4}>
                             <Typography variant="body2" fontWeight={600}>
@@ -388,27 +374,29 @@ export default function DashboardPage() {
                                 sx={{ lineHeight: 1.5 }}
                             >
                                 아직 처리되지 않은 신고가{" "}
-                                <b>{dummySummary.pendingReports}건</b> 있습니다.
+                                <b>{summary.pendingReports}건</b> 있습니다.
                                 <br />
                                 “신고 관리”에서 게시글/댓글을 블라인드하거나
                                 삭제할 수 있습니다.
                             </Typography>
                         </Grid>
+
                         <Grid item xs={12} md={4}>
                             <Typography variant="body2" fontWeight={600}>
-                                승인 대기 동호회
+                                승인 대기 동아리
                             </Typography>
                             <Typography
                                 variant="body2"
                                 color="text.secondary"
                                 sx={{ lineHeight: 1.5 }}
                             >
-                                신규 동호회 신청{" "}
-                                <b>{dummySummary.pendingClubs}건</b>이 대기 중입니다.
+                                신규 동아리 신청{" "}
+                                <b>{summary.pendingClubs}건</b>이 대기 중입니다.
                                 <br />
                                 승인 시 이용자들에게 추천됩니다.
                             </Typography>
                         </Grid>
+
                         <Grid item xs={12} md={4}>
                             <Typography variant="body2" fontWeight={600}>
                                 운영 메모
