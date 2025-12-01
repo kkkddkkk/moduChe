@@ -100,7 +100,7 @@ const Main = () => {
       setFacilityMark(markF);
     };
     fetch();
-  }, [lat, lng, getListAPI]);
+  }, [lat, lng]);
 
   // 작성자: 고은설.
   // 기능: 메인 페이지 로드와 함께 가점 상위 3개 메인 배너 조회.
