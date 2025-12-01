@@ -20,107 +20,70 @@ import java.util.List;
 @RequiredArgsConstructor
 public class Security {
 
-	private final JwtFilter jwtFilter;
+    private final JwtFilter jwtFilter;
 
-	/**
-	 * 비밀번호 암호화 설정
-	 */
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-	/**
-	 * Spring Security 필터 체인 설정
-	 */
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
-				// ✅ CORS 설정 적용
-				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-				// ✅ CSRF 비활성화 (REST API에서는 일반적으로 비활성)
-				.csrf(csrf -> csrf.disable())
+        http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
 
-				// ✅ URL별 접근 권한 설정
-				.authorizeHttpRequests(auth -> auth
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        "/",
+                        "/api/auth/**",
+                        "/api/signIn/**",
+                        "/api/email/**",
+                        "/api/find/**",
+                        "/api/noticeForAll/**",
+                        "/api/main/**",
+                        "/api/course/**",
+                        "/api/search/**",
+                        "/api/payment/**",
+                        "/api/banner/**",
+                        "/api/redis/**",
+                        "/api/users/**",
+                        "/api/reports/**",
+                        "/api/admin/reports/**",
+                        "/api/admin/inquiries/**",
+                        "/api/admins/**",
+                        "/api/admin/dashboard/**",
+                        "/api/facilities/**"
+                ).permitAll()
 
-    /* ================================
-     * 🔓 1) 누구나 접근 가능한 공개 API (permitAll)
-     * ================================ */
-    .requestMatchers(
-        "/", 
-        "/api/auth/**",
-        "/api/signIn/**",
-        "/api/email/**",
-        "/api/find/**",
-        "/api/noticeForAll/**",
-        "/api/main/**",
-        "/api/course/**",
-        "/api/search/**",
-        "/api/payment/**",
-        "/api/banner/**",
-        "/api/redis/**",
-        "/api/users/**",
-        "/api/reports/**",
-        "/api/admin/reports/**",
-        "/api/admin/inquiries/**",     // 관리자 문의 관련 (권한은 컨트롤러 내부에서 체크)
-        "/api/admins/**",
-        "/api/admin/dashboard/**",
-        "/api/facilities/**"           // 시설 관리자 API → 내부에서 권한 체크
-    ).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/inquiries/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/inquiries/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/inquiries/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/inquiries/**").authenticated()
 
-    /* ================================
-     * 🔓 2) Inquiry GET 전체 공개
-     * ================================ */
-    .requestMatchers(HttpMethod.GET, "/api/inquiries/**").permitAll()
+                .anyRequest().authenticated()
+            )
 
-    /* ================================
-     * 🔐 3) Inquiry 작성/수정/삭제 = 로그인 필요
-     * ================================ */
-    .requestMatchers(HttpMethod.POST, "/api/inquiries/**").authenticated()
-    .requestMatchers(HttpMethod.PUT, "/api/inquiries/**").authenticated()
-    .requestMatchers(HttpMethod.DELETE, "/api/inquiries/**").authenticated()
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable());
 
-    /* ================================
-     * 🔐 4) 그 외 모든 요청 → 인증 필요
-     * ================================ */
-    .anyRequest().authenticated()
-)
+        return http.build();
+    }
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
 
-				// ✅ JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
-				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
-				// ✅ 기본 로그인 폼/HTTP Basic 인증 비활성화
-				.formLogin(form -> form.disable()).httpBasic(httpBasic -> httpBasic.disable());
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
 
-		return http.build();
-	}
-
-	/**
-	 * ✅ CORS 전역 설정 (React 등 외부 프론트엔드 접근 허용)
-	 */
-	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
-
-		// React 개발 서버 주소 (필요 시 추가 가능)
-		configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-
-		// 허용할 HTTP 메서드
-		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-
-		// 모든 헤더 허용
-		configuration.setAllowedHeaders(List.of("*"));
-
-		// 인증 정보(쿠키, JWT 등) 포함 요청 허용
-		configuration.setAllowCredentials(true);
-
-		// URL 패턴에 이 CORS 설정 적용
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration);
-
-		return source;
-	}
+        return source;
+    }
 }
