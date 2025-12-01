@@ -16,6 +16,7 @@ import {
 } from "../../utils/auth";
 import ConfirmModal from "../../component/community/ConfirmModal";
 import Loading from "../../component/common/Loading";
+import { createReport } from "../../api/reportAPI/reportAPI";
 
 const CommunityDetailPage = () => {
     const { id: postId } = useParams();
@@ -132,7 +133,59 @@ const CommunityDetailPage = () => {
         setOpenConfirm(true);
     };
 
-    const handleReportComment = () => {};
+    const submitReport = async (commentId) => {
+        try {
+            await createReport({
+                targetType: "COMMENT",
+                targetId: commentId,
+                reasonCode: "ABUSE",           // 임시 사유 코드
+                reasonDetail: "부적절한 언어", // 임시 설명
+            });
+
+            setModalTitle("신고 완료");
+            setModalContent("신고가 접수되었습니다.");
+            setIsOneBtn(true);
+            setModalEvent(() => () => setOpenConfirm(false));
+        } catch (err) {
+            console.error("신고 실패:", err);
+
+            setModalTitle("오류");
+            setModalContent("신고 처리 중 오류가 발생했습니다.");
+            setIsOneBtn(true);
+            setModalEvent(() => () => setOpenConfirm(false));
+        }
+    };
+
+    const handleReportComment = (commentId) => {
+        if (!isLoggedIn()) {
+            setModalTitle("로그인 필요");
+            setModalContent("로그인이 필요한 기능입니다.\n로그인 후 이용하실 수 있습니다.");
+            setIsOneBtn(true);
+            setNoEscape(true);
+            setModalEvent(() => () => navigate("/account/login"));
+            setOpenConfirm(true);
+            return;
+        }
+
+        const token = localStorage.getItem("accessToken");
+        if (!token || isTokenExpired(token)) {
+            setModalTitle("로그인 만료");
+            setModalContent("로그인이 만료되었습니다.\n다시 로그인해주세요.");
+            setIsOneBtn(true);
+            setNoEscape(true);
+            setModalEvent(() => () => navigate("/account/login"));
+            setOpenConfirm(true);
+            return;
+        }
+
+        // 신고 확인 모달
+        setModalTitle("댓글 신고");
+        setModalContent("해당 댓글을 신고하시겠습니까?");
+        setIsOneBtn(false);
+        setNoEscape(false);
+        setModalEvent(() => () => submitReport(commentId));
+        setOpenConfirm(true);
+    };
 
     //마운트 시 게시글 + 댓글 1페이지 로드.
     useEffect(() => {
