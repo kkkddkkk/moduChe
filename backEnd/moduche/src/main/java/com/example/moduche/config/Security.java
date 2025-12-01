@@ -48,8 +48,29 @@ public class Security {
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers("/", "/api/auth/**", "/api/signIn/**", "/api/email/**", "/api/find/**",
 								"/api/noticeForAll/**", "/api/main/**", "/api/course/**", "/api/payment/**",
-								"/api/banner/**", "/api/redis/**")
-						.permitAll().anyRequest().authenticated())
+								"/api/banner/**", "/api/redis/**", "/api/users/**", 
+								"/api/reports/**", "/api/admin/reports/**")
+						.permitAll()				
+						.requestMatchers(HttpMethod.GET, "/api/inquiries/**").permitAll()
+
+			            // 🔥 Inquiry 작성/수정/삭제 = 로그인 필요
+			            .requestMatchers(HttpMethod.POST, "/api/inquiries/**").authenticated()
+			            .requestMatchers(HttpMethod.PUT, "/api/inquiries/**").authenticated()
+			            .requestMatchers(HttpMethod.DELETE, "/api/inquiries/**").authenticated()
+
+			            // 🔥 관리자 Inquiry API도 Security에서는 permitAll
+			            // (실제 권한 체크는 AdminInquiryController.checkAdmin()에서 수행)
+			            .requestMatchers("/api/admin/inquiries/**").permitAll()
+
+			            // 🔥 시설 관리자 API도 Security에서는 permitAll
+			            // (내부 checkAdmin에서 막을 수 있음)
+			            .requestMatchers("/api/facilities/**").permitAll()
+
+			            // 🔥 기존 관리자 API도 permitAll
+			            .requestMatchers("/api/admins/**").permitAll()
+			            .requestMatchers("/api/admin/dashboard/**").permitAll()
+						.anyRequest().authenticated())
+
 
 				// ✅ JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -71,7 +92,7 @@ public class Security {
 		configuration.setAllowedOrigins(List.of("http://localhost:3000"));
 
 		// 허용할 HTTP 메서드
-		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
 		// 모든 헤더 허용
 		configuration.setAllowedHeaders(List.of("*"));

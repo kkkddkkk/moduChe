@@ -16,7 +16,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.moduche.domain.login.User;
+import com.example.moduche.domain.login.enums.UserStatus;
 import com.example.moduche.domain.login.repository.AccessibilityProfileRepository;
+import com.example.moduche.repository.UserRepository;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -33,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 public class JwtFilter extends OncePerRequestFilter {
 
 	private final JwtTokenProvider jwtTokenProvider;
+	private final UserRepository userRepository;
 
 	@Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -47,8 +51,28 @@ public class JwtFilter extends OncePerRequestFilter {
     	
     	String token = authorization.substring(7);
     	
-    	if(token != null && jwtTokenProvider.validateToken(token)) {
+    	if(token != null && jwtTokenProvider.validateToken(token)) {			
     		String username = jwtTokenProvider.getUsername(token);
+    		
+    		/* 추가된 부분 */
+            User user = userRepository.findByUserName(username).orElse(null);
+
+            // 삭제된 계정 (DB에 없음)
+            if (user == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("존재하지 않는 계정입니다.");
+                return;
+            }
+
+            // 정지된 계정
+            if (user.getStatus() == UserStatus.SUSPENDED) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("정지된 계정입니다.");
+                return;
+            }
+    		
     		String role = "ROLE_"+jwtTokenProvider.getRole(token);
     		
     		List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(role));
