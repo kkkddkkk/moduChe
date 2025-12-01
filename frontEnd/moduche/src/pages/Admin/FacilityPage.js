@@ -27,33 +27,15 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import DownloadIcon from "@mui/icons-material/FileDownload";
 import AddIcon from "@mui/icons-material/AddBusiness";
 
-import axios from "axios";
-import { API_SERVER_HOST, AUTH } from "../../component/common/Variables";
 import Paper from "../../component/common/Paper";
+import api from "../../api/axiosInstance";
+import DeleteIcon from "@mui/icons-material/DeleteForever";
 
-// ----------------------
-// axios 인스턴스 + JWT
-// ----------------------
-const http = axios.create({
-    baseURL: API_SERVER_HOST,
-    withCredentials: false,
-});
+const http = api;
 
-http.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem(AUTH.TOKEN_KEY);
-        if (token) {
-            config.headers[AUTH.HEADER_KEY] = AUTH.SCHEME + token;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-const FACILITIES_ENDPOINT = "/api/facilities";
+const FACILITIES_ENDPOINT = "/facilities";
 
 // 라벨 매핑
 const FACILITY_TYPE_LABEL = {
@@ -64,14 +46,18 @@ const FACILITY_TYPE_LABEL = {
 
 const STATUS_LABEL = {
     ACTIVE: "운영 중",
-    RECRUITING: "신규 모집 중",
-    PAUSED: "일시 중단",
+    SUSPENDED: "휴업",
+    CLOSED: "폐업",
+    INVALID: "등록말소",
+    UNKNOWN: "미등록/불명",
 };
 
 const STATUS_COLOR = {
     ACTIVE: "success",
-    RECRUITING: "warning",
-    PAUSED: "default",
+    SUSPENDED: "warning",
+    CLOSED: "error",
+    INVALID: "default",
+    UNKNOWN: "default",
 };
 
 function FacilityPage() {
@@ -79,7 +65,6 @@ function FacilityPage() {
 
     const [keyword, setKeyword] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
-    const [typeFilter, setTypeFilter] = useState("ALL");
 
     const [page, setPage] = useState(1);
     const rowsPerPage = 5;
@@ -107,8 +92,18 @@ function FacilityPage() {
 
     const handleRefresh = () => fetchFacilities();
 
-    const handleExport = () => {
-        console.log("⬇ 시설 목록 다운로드 (엑셀/CSV 예정)");
+    const handleDelete = async (facilityId) => {
+        if (!window.confirm("정말 이 시설을 삭제하시겠습니까?")) return;
+
+        try {
+            await http.delete(`${FACILITIES_ENDPOINT}/${facilityId}`);
+
+            // 목록에서 제거
+            setList(prev => prev.filter(f => f.facilityId !== facilityId));
+        } catch (e) {
+            console.error("삭제 실패:", e);
+            alert("삭제 중 오류가 발생했습니다.");
+        }
     };
 
     const handleCreateFacility = () => {
@@ -190,12 +185,9 @@ function FacilityPage() {
             const matchStatus =
                 statusFilter === "ALL" ? true : row.status === statusFilter;
 
-            const matchType =
-                typeFilter === "ALL" ? true : row.facilityType === typeFilter;
-
-            return matchKeyword && matchStatus && matchType;
+            return matchKeyword && matchStatus;
         });
-    }, [list, keyword, statusFilter, typeFilter]);
+    }, [list, keyword, statusFilter]);
 
     const pagedList = useMemo(() => {
         const start = (page - 1) * rowsPerPage;
@@ -206,14 +198,7 @@ function FacilityPage() {
 
     useEffect(() => {
         setPage(1);
-    }, [keyword, statusFilter, typeFilter, list]);
-
-    const activeCount = filteredList.filter(
-        (f) => f.status === "ACTIVE"
-    ).length;
-    const recruitingCount = filteredList.filter(
-        (f) => f.status === "RECRUITING"
-    ).length;
+    }, [keyword, statusFilter, list]);
 
     const DetailRow = ({ label, value }) => (
         <Stack
@@ -279,127 +264,175 @@ function FacilityPage() {
 
                 {/* 옵션 영역 */}
                 <Box
-                    sx={{
-                        display: "flex",
-                        flexDirection: { xs: "column", md: "row" },
-                        justifyContent: "space-between",
-                        rowGap: 2,
-                        columnGap: 2,
-                        p: 2,
-                        mb: 2,
-                        borderRadius: 2,
-                        border: "1px solid",
-                        borderColor: "divider",
-                    }}
-                >
-                    {/* 필터 영역 */}
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            alignItems: "center",
-                            rowGap: 1.5,
-                            columnGap: 1.5,
-                        }}
-                    >
-                        <TextField
-                            select
-                            size="small"
-                            label="상태"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            sx={{ minWidth: 130 }}
-                        >
-                            <MenuItem value="ALL">전체</MenuItem>
-                            <MenuItem value="ACTIVE">운영 중</MenuItem>
-                            <MenuItem value="RECRUITING">신규 모집 중</MenuItem>
-                            <MenuItem value="PAUSED">일시 중단</MenuItem>
-                        </TextField>
+					sx={{
+						display: "flex",
+						flexDirection: { xs: "column", md: "row" },
+						flexWrap: "wrap",
+						alignItems: { xs: "stretch", md: "center" },
+						justifyContent: "space-between",
+						rowGap: 2,
+						columnGap: 2,
+						p: 2,
+						mb: 2,
+						border: "1px solid",
+						borderColor: "divider",
+						borderRadius: 2,
+						boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+						bgcolor: (t) =>
+							t.palette.mode === "dark"
+								? t.palette.background.default
+								: t.palette.grey[50],
+					}}
+				>
+					{/* 왼쪽 검색/필터 그룹 */}
+					<Box
+						sx={{
+							display: "flex",
+							flexWrap: "wrap",
+							alignItems: "center",
+							rowGap: 1.5,
+							columnGap: 1.5,
+							minWidth: 0,
+						}}
+					>
+						
+						{/* 상태 */}
+						<TextField
+							select
+							label="운영 상태"
+							size="small"
+							value={statusFilter}
+							onChange={(e) => setStatusFilter(e.target.value)}
+							sx={{
+								minWidth: 110,
+								"& .MuiOutlinedInput-root": {
+									borderRadius: 2,
+									backgroundColor: "background.paper",
+									"& fieldset": { borderColor: "divider" },
+									"&:hover fieldset": {
+										borderColor: "primary.light",
+									},
+									"&.Mui-focused fieldset": {
+										borderColor: "primary.main",
+									},
+								},
+								"& .MuiInputLabel-root": {
+									fontSize: "0.75rem",
+								},
+							}}
+						>
+							<MenuItem value="ALL">전체</MenuItem>
+							<MenuItem value="ACTIVE">운영 중</MenuItem>
+							<MenuItem value="SUSPENDED">휴업</MenuItem>
+							<MenuItem value="CLOSED">폐업</MenuItem>
+							<MenuItem value="INVALID">등록말소</MenuItem>
+							<MenuItem value="UNKNOWN">미등록/불명</MenuItem>
+						</TextField>
 
-                        <TextField
-                            select
-                            size="small"
-                            label="시설 타입"
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            sx={{ minWidth: 150 }}
-                        >
-                            <MenuItem value="ALL">전체</MenuItem>
-                            <MenuItem value="REHAB_CENTER">재활 센터</MenuItem>
-                            <MenuItem value="AQUA_THERAPY">수중 재활</MenuItem>
-                            <MenuItem value="SPORTS_GYM">
-                                장애인 체육관
-                            </MenuItem>
-                        </TextField>
+						{/* 검색창 */}
+						<TextField
+							size="small"
+							placeholder="시설명 / 시설ID / 주소 검색"
+							value={keyword}
+							onChange={(e) => setKeyword(e.target.value)}
+							sx={{
+								minWidth: { xs: "100%", md: 280 },
+								"& .MuiOutlinedInput-root": {
+									borderRadius: 5,
+									backgroundColor: "background.paper",
+									boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+									"& fieldset": {
+										borderColor: "transparent",
+									},
+									"&:hover fieldset": {
+										borderColor: "primary.light",
+									},
+									"&.Mui-focused fieldset": {
+										borderColor: "primary.main",
+									},
+								},
+							}}
+							InputProps={{
+								startAdornment: (
+									<InputAdornment position="start">
+										<SearchIcon
+											sx={{ color: "text.disabled", fontSize: 20 }}
+										/>
+									</InputAdornment>
+								),
+							}}
+						/>
+					</Box>
 
-                        <TextField
-                            size="small"
-                            placeholder="시설명 / 시설ID / 주소 검색"
-                            value={keyword}
-                            onChange={(e) => setKeyword(e.target.value)}
-                            sx={{ minWidth: { xs: "100%", md: 260 } }}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon
-                                            sx={{ color: "text.disabled" }}
-                                        />
-                                    </InputAdornment>
-                                ),
-                            }}
-                        />
-                    </Box>
+					{/* 오른쪽 버튼 그룹 */}
+					<Stack
+						direction="row"
+						alignItems="center"
+						flexWrap="wrap"
+						spacing={1.5}
+						sx={{
+							width: { xs: "100%", md: "auto" },
+							justifyContent: { xs: "space-between", md: "flex-end" },
+						}}
+					>
+						<Box sx={{ textAlign: "right", mr: 1 }}>
+							<Typography
+								sx={{
+									fontSize: "0.8rem",
+									color: "text.secondary",
+								}}
+							>
+								총 {filteredList.length}곳
+							</Typography>
+							<Typography
+								sx={{
+									fontSize: "0.8rem",
+									fontWeight: 600,
+								}}
+							>
+								페이지 {page} / {pageCount}
+							</Typography>
+						</Box>
 
-                    {/* 오른쪽 버튼/통계 */}
-                    <Stack
-                        direction="row"
-                        spacing={1.5}
-                        alignItems="center"
-                        flexWrap="wrap"
-                    >
-                        <Box sx={{ textAlign: "right" }}>
-                            <Typography
-                                sx={{
-                                    fontSize: "0.8rem",
-                                    color: "text.secondary",
-                                }}
-                            >
-                                총 {filteredList.length}곳
-                            </Typography>
-                            <Typography
-                                sx={{
-                                    fontSize: "0.8rem",
-                                    fontWeight: 600,
-                                }}
-                            >
-                                운영 중 {activeCount}곳 · 모집 중{" "}
-                                {recruitingCount}곳
-                            </Typography>
-                        </Box>
+						<Button
+							size="small"
+							variant="contained"
+							startIcon={<AddIcon />}
+							sx={{
+								borderRadius: 2,
+								textTransform: "none",
+								fontWeight: 600,
+								fontSize: "0.8rem",
+								px: 1.5,
+								py: 1,
+							}}
+							onClick={handleCreateFacility}
+						>
+							새 시설 등록
+						</Button>
 
-                        <Button
-                            size="small"
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            onClick={handleCreateFacility}
-                            sx={{ textTransform: "none" }}
-                        >
-                            새 시설 등록
-                        </Button>
-
-                        <Tooltip title="새로고침">
-                            <IconButton size="small" onClick={handleRefresh}>
-                                <RefreshIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="내보내기">
-                            <IconButton size="small" onClick={handleExport}>
-                                <DownloadIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    </Stack>
-                </Box>
+						<Tooltip title="새로고침">
+							<IconButton
+								size="small"
+								onClick={handleRefresh}
+								sx={{
+									borderRadius: 2,
+									border: "1px solid",
+									borderColor: "divider",
+									"&:hover": {
+										bgcolor: "primary.main",
+										color: "#fff",
+										borderColor: "primary.main",
+									},
+									width: 32,
+									height: 32,
+								}}
+							>
+								<RefreshIcon fontSize="small" />
+							</IconButton>
+						</Tooltip>
+					</Stack>
+				</Box>
 
                 {/* 테이블 */}
                 <Box
@@ -486,13 +519,20 @@ function FacilityPage() {
                                             <Tooltip title="상세 보기">
                                                 <IconButton
                                                     size="small"
-                                                    onClick={() =>
-                                                        handleView(
-                                                            row.facilityId
-                                                        )
-                                                    }
+                                                    onClick={() => handleView(row.facilityId)}
                                                 >
                                                     <VisibilityIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+
+                                            <Tooltip title="삭제">
+                                                <IconButton
+                                                    size="small"
+                                                    color="error"
+                                                    onClick={() => handleDelete(row.facilityId)}
+                                                    sx={{ ml: 0.5 }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
                                                 </IconButton>
                                             </Tooltip>
                                         </TableCell>
@@ -561,22 +601,6 @@ function FacilityPage() {
                             <DetailRow
                                 label="접근성"
                                 value={selected.accessibilityFeatures}
-                            />
-                            <DetailRow
-                                label="위도"
-                                value={
-                                    selected.geoLat != null
-                                        ? String(selected.geoLat)
-                                        : "-"
-                                }
-                            />
-                            <DetailRow
-                                label="경도"
-                                value={
-                                    selected.geoLng != null
-                                        ? String(selected.geoLng)
-                                        : "-"
-                                }
                             />
                             <DetailRow
                                 label="상태"

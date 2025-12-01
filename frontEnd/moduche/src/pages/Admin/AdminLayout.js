@@ -1,4 +1,3 @@
-// src/pages/Admin/AdminLayout.js
 import React, { useMemo } from "react";
 import {
     Box,
@@ -11,7 +10,7 @@ import {
     Divider,
 } from "@mui/material";
 
-import InsightsIcon from "@mui/icons-material/Insights"; // 대시보드용
+import InsightsIcon from "@mui/icons-material/Insights";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import PaidIcon from "@mui/icons-material/Paid";
@@ -25,14 +24,12 @@ import ReportGmailerrorredIcon from "@mui/icons-material/ReportGmailerrorred";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 
 import Paper from "../../component/common/Paper";
-import {
-    CenterTitle,
-    SmallerSubTitle,
-} from "../../component/common/Text";
+import { CenterTitle, SmallerSubTitle } from "../../component/common/Text";
+
+import { getRoleFromToken } from "../../utils/auth";
 
 const DRAWER_WIDTH = 240;
 
-// ✅ 메뉴 정의
 const MENU_ITEMS = [
     {
         key: "dashboard",
@@ -72,7 +69,7 @@ const MENU_ITEMS = [
     },
     {
         key: "club-approval",
-        label: "동호회 승인",
+        label: "동아리 승인",
         icon: <GroupsIcon />,
         path: "/admin/club-approval",
     },
@@ -100,8 +97,11 @@ export default function AdminLayout() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    const role = getRoleFromToken(localStorage.getItem("accessToken"));
+    const isSuperAdmin = role === "SUPER_ADMIN";
+
     const currentKey = useMemo(() => {
-        const found = MENU_ITEMS.find(item =>
+        const found = MENU_ITEMS.find((item) =>
             location.pathname.startsWith(item.path)
         );
         return found ? found.key : null;
@@ -116,7 +116,6 @@ export default function AdminLayout() {
                 bgcolor: "background.default",
             }}
         >
-            {/* 왼쪽 사이드바 */}
             <Drawer
                 variant="permanent"
                 sx={{
@@ -141,6 +140,11 @@ export default function AdminLayout() {
 
                 <List sx={{ py: 0 }}>
                     {MENU_ITEMS.map((item) => {
+                        // 관리자 계정 메뉴는 SUPER_ADMIN만 표시
+                        if (item.key === "administrator" && !isSuperAdmin) {
+                            return null;
+                        }
+
                         const selected = currentKey === item.key;
 
                         return (
@@ -189,7 +193,6 @@ export default function AdminLayout() {
                 </List>
             </Drawer>
 
-            {/* 오른쪽 영역 */}
             <Box
                 component="main"
                 sx={{
@@ -201,8 +204,6 @@ export default function AdminLayout() {
                     overflow: "auto",
                 }}
             >
-
-                {/* 각 하위 페이지가 여기에 렌더 */}
                 <Box
                     sx={{
                         flexGrow: 1,

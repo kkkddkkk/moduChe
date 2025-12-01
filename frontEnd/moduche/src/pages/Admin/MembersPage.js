@@ -1,3 +1,4 @@
+// src/pages/Admin/MembersPage.js
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
     Box,
@@ -33,41 +34,16 @@ import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/DeleteForever";
 
 import Paper from "../../component/common/Paper";
+import {
+    fetchUsers as apiFetchUsers,
+    fetchUserDetail as apiFetchUserDetail,
+    updateUser as apiUpdateUser,
+    deleteUser as apiDeleteUser,
+} from "../../api/admin/user";
 
-// ★ 추가: axios + 공통 변수
-import axios from "axios";
-import { API_SERVER_HOST, AUTH } from "../../component/common/Variables";
-
-// axios http 인스턴스
-const http = axios.create({
-    baseURL: API_SERVER_HOST,
-    withCredentials: false,
-});
-
-// JWT 자동 첨부
-http.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem(AUTH.TOKEN_KEY);
-        if (token) {
-            config.headers[AUTH.HEADER_KEY] = AUTH.SCHEME + token;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-// endpoint
-const USERS_ENDPOINT = "/api/users";
-
-const STATUS_COLOR = {
-    ACTIVE: "success",
-    SUSPENDED: "error",
-};
-
-const ROLE_LABEL = {
-    USER: "일반",
-    ADMIN: "관리자",
-};
+const STATUS_COLOR = { ACTIVE: "success", SUSPENDED: "default" };
+const STATUS_LABEL = { ACTIVE: "정상", SUSPENDED: "정지" };
+const ROLE_LABEL = { USER: "일반회원", FACILITY: "시설회원" };
 
 export default function MembersPage() {
     const [members, setMembers] = useState([]);
@@ -77,9 +53,7 @@ export default function MembersPage() {
     const [page, setPage] = useState(1);
     const rowsPerPage = 5;
 
-    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
-
     const [detailOpen, setDetailOpen] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
 
@@ -96,28 +70,23 @@ export default function MembersPage() {
     const initialFetchRef = useRef(false);
     const fetchingRef = useRef(false);
 
-    // --- API: list ---
     const fetchUsers = async (p = page) => {
         if (fetchingRef.current) return;
         fetchingRef.current = true;
-
         setLoading(true);
+
         try {
-            const resp = await http.get(USERS_ENDPOINT, {
-                params: {
-                    page: Math.max(0, p - 1),
-                    size: rowsPerPage,
-                    search: keyword || undefined,
-                    role: roleFilter === "ALL" ? undefined : roleFilter,
-                    status: statusFilter === "ALL" ? undefined : statusFilter,
-                },
+            const resp = await apiFetchUsers({
+                page: p - 1,
+                size: rowsPerPage,
+                search: keyword.trim(),
+                role: roleFilter === "ALL" ? undefined : roleFilter,
+                status: statusFilter === "ALL" ? undefined : statusFilter,
             });
 
-            const data = resp.data;
-            const list = data.content || data;
+            const list = resp.content ?? [];
 
-            const mapped = (list || []).map((u) => ({
-                uid: u.userId, // ⭕ UID 대신 userId 그대로 사용
+            const mapped = list.map((u) => ({
                 userId: u.userId,
                 username: u.username,
                 name: u.name,
@@ -129,26 +98,19 @@ export default function MembersPage() {
                     u.roleCode ||
                     (u.role && u.role.roleCode) ||
                     "USER",
-                roleId: u.roleId || (u.role && u.role.roleId) || null,
+                roleId: u.roleId || (u.role && u.role.roleId),
                 status: u.status || "ACTIVE",
                 joinedAt: u.createdAt
                     ? new Date(u.createdAt).toLocaleString()
-                    : u.joinedAt || "",
+                    : "",
                 raw: u,
             }));
+
             setMembers(mapped);
-
-            const computedTotalPages =
-                data && data.totalPages != null
-                    ? data.totalPages
-                    : Math.max(1, Math.ceil(mapped.length / rowsPerPage));
-
-            setTotalPages(computedTotalPages);
-        } catch (e) {
-            console.error("회원 목록 로드 실패", e);
+        } catch {
             setToast({
                 open: true,
-                message: "회원 목록을 불러오지 못했습니다.",
+                message: "회원 목록 불러오기 실패",
                 severity: "error",
             });
         } finally {
@@ -157,84 +119,57 @@ export default function MembersPage() {
         }
     };
 
-    // --- API: detail ---
     const fetchUserDetail = async (userId) => {
         try {
-            const resp = await http.get(`${USERS_ENDPOINT}/${userId}`);
-            const u = resp.data;
-            const mapped = {
-                uid: u.userId,
+            const u = await apiFetchUserDetail(userId);
+            setSelectedMember({
                 userId: u.userId,
                 username: u.username,
                 name: u.name,
                 email: u.email,
                 phone: u.phone,
-                birth: u.birth || null,
-                role: u.roleName || (u.role && u.role.roleCode) || "USER",
-                roleId: u.roleId || (u.role && u.role.roleId) || null,
+                birth: u.birth || "-",
+                role: u.roleCode || (u.role && u.role.roleCode),
+                roleId: u.roleId,
                 status: u.status || "ACTIVE",
                 joinedAt: u.createdAt
                     ? new Date(u.createdAt).toLocaleString()
                     : "",
-                raw: u,
-            };
-
-            setSelectedMember(mapped);
+            });
             setDetailOpen(true);
-        } catch (e) {
-            console.error("상세조회 실패", e);
+        } catch {
             setToast({
                 open: true,
-                message: "회원 상세 정보를 불러오지 못했습니다.",
+                message: "회원 상세정보 불러오기 실패",
                 severity: "error",
             });
         }
     };
 
-    // initial load
     useEffect(() => {
-        if (initialFetchRef.current) return;
-        initialFetchRef.current = true;
-        fetchUsers(1);
+        if (!initialFetchRef.current) {
+            initialFetchRef.current = true;
+            fetchUsers(1);
+        }
     }, []);
 
-    // refresh on filter/page change
     useEffect(() => {
         fetchUsers(page);
     }, [page, keyword, roleFilter, statusFilter]);
-
-    // actions
-    const handleRefresh = () => {
-        setPage(1);
-        fetchUsers(1);
-    };
-
-    const handleView = (userId) => {
-        fetchUserDetail(userId);
-    };
 
     const handleToggleBlock = async (userId, currentStatus) => {
         const newStatus =
             currentStatus === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
 
         try {
-            const existingResp = await http.get(`${USERS_ENDPOINT}/${userId}`);
-            const existing = existingResp.data;
-
-            const payload = {
-                userId: existing.userId,
-                username: existing.username,
-                name: existing.name,
-                email: existing.email,
-                phone: existing.phone,
+            const exist = await apiFetchUserDetail(userId);
+            await apiUpdateUser(userId, {
+                name: exist.name,
+                email: exist.email,
+                phone: exist.phone,
+                roleId: exist.roleId,
                 status: newStatus,
-                roleId:
-                    existing.roleId ||
-                    (existing.role && existing.role.roleId) ||
-                    null,
-            };
-
-            await http.put(`${USERS_ENDPOINT}/${userId}`, payload);
+            });
 
             await fetchUsers(page);
 
@@ -244,78 +179,59 @@ export default function MembersPage() {
 
             setToast({
                 open: true,
-                message: "상태 변경이 적용되었습니다.",
+                message: "상태 변경 완료",
                 severity: "success",
             });
-        } catch (e) {
-            console.error("상태 변경 실패", e);
+        } catch {
             setToast({
                 open: true,
-                message: "상태 변경에 실패했습니다.",
+                message: "상태 변경 실패",
                 severity: "error",
             });
         }
     };
 
-    const openDeleteDialog = (member) => {
-        setTargetMember(member);
+    const openDeleteDialog = (m) => {
+        setTargetMember(m);
         setConfirmText("");
         setDeleteOpen(true);
     };
-
-    const closeDeleteDialog = () => {
-        setDeleteOpen(false);
-        setTargetMember(null);
-        setConfirmText("");
-    };
+    const closeDeleteDialog = () => setDeleteOpen(false);
 
     const handleConfirmDelete = async () => {
         if (!targetMember) return;
 
-        if (targetMember.role === "ADMIN") {
-            setToast({
-                open: true,
-                message: "관리자 계정은 삭제할 수 없습니다.",
-                severity: "warning",
-            });
-            return;
-        }
-
-        const userId = targetMember.userId;
-
         try {
-            await http.delete(`${USERS_ENDPOINT}/${userId}`);
-            await fetchUsers(Math.max(1, page));
+            await apiDeleteUser(targetMember.userId);
+            await fetchUsers(page);
 
-            if (selectedMember?.userId === userId) {
+            if (selectedMember?.userId === targetMember.userId)
                 setDetailOpen(false);
-            }
 
-            closeDeleteDialog();
             setToast({
                 open: true,
-                message: "회원이 삭제되었습니다.",
+                message: "삭제 완료",
                 severity: "success",
             });
-        } catch (e) {
-            console.error("삭제 실패", e);
+        } catch {
             setToast({
                 open: true,
-                message: "회원 삭제에 실패했습니다.",
+                message: "삭제 실패",
                 severity: "error",
             });
+        } finally {
+            closeDeleteDialog();
         }
     };
 
-    // filtering
     const filteredList = useMemo(() => {
         const kw = keyword.trim().toLowerCase();
 
         return members.filter((m) => {
             const matchKeyword =
                 kw === "" ||
-                (m.name && m.name.toLowerCase().includes(kw)) ||
-                (m.email && m.email.toLowerCase().includes(kw)) ||
+                m.name?.toLowerCase().includes(kw) ||
+                m.email?.toLowerCase().includes(kw) ||
                 String(m.userId).includes(kw);
 
             const matchRole =
@@ -333,57 +249,26 @@ export default function MembersPage() {
         return filteredList.slice(start, start + rowsPerPage);
     }, [filteredList, page]);
 
-    const pageCount = Math.ceil(filteredList.length / rowsPerPage) || 1;
+    const pageCount = Math.max(1, Math.ceil(filteredList.length / rowsPerPage));
 
-    useEffect(() => {
-        setPage(1);
-    }, [keyword, roleFilter, statusFilter, members]);
+    useEffect(() => setPage(1), [keyword, roleFilter, statusFilter]);
 
-    const DetailRow = ({ label, children, verticalAlign = "center" }) => (
+    const DetailRow = ({ label, value }) => (
         <Stack
             direction="row"
-            alignItems={verticalAlign}
             spacing={2}
             sx={{ py: 1, borderBottom: "1px solid", borderColor: "divider" }}
         >
-            <Typography
-                variant="body2"
-                sx={{
-                    width: 90,
-                    minWidth: 90,
-                    color: "text.secondary",
-                    fontWeight: 500,
-                    lineHeight: 1.4,
-                }}
-            >
+            <Typography sx={{ width: 90, color: "text.secondary" }}>
                 {label}
             </Typography>
-            <Box
-                sx={{
-                    flexGrow: 1,
-                    minWidth: 0,
-                    wordBreak: "break-word",
-                    lineHeight: 1.5,
-                }}
-            >
-                {children}
-            </Box>
+            <Box sx={{ flexGrow: 1 }}>{value}</Box>
         </Stack>
     );
 
-    // ---------- RENDER ----------
     return (
         <>
-            <Paper
-                sx={{
-                    p: 3,
-                    display: "flex",
-                    flexDirection: "column",
-                    borderRadius: 2,
-                    boxShadow: 1,
-                }}
-            >
-                {/* Header */}
+            <Paper sx={{ p: 3, borderRadius: 2, boxShadow: 1 }}>
                 <Box sx={{ mb: 3 }}>
                     <Typography
                         variant="h5"
@@ -397,14 +282,10 @@ export default function MembersPage() {
                     >
                         회원 관리
                     </Typography>
-
                     <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{
-                            lineHeight: 1.5,
-                            textAlign: { xs: "left", sm: "center" },
-                        }}
+                        sx={{ textAlign: "center" }}
                     >
                         가입된 사용자 목록을 확인하고 관리할 수 있습니다.
                     </Typography>
@@ -412,7 +293,6 @@ export default function MembersPage() {
 
                 <Divider sx={{ mb: 3 }} />
 
-                {/* Option Bar */}
                 <Box
                     sx={{
                         display: "flex",
@@ -428,9 +308,13 @@ export default function MembersPage() {
                         borderColor: "divider",
                         borderRadius: 2,
                         boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        bgcolor: (t) =>
+                            t.palette.mode === "dark"
+                                ? t.palette.background.default
+                                : t.palette.grey[50],
                     }}
                 >
-                    {/* Left filters */}
+                    {/* left */}
                     <Box
                         sx={{
                             display: "flex",
@@ -443,24 +327,56 @@ export default function MembersPage() {
                     >
                         <TextField
                             select
-                            label="권한"
                             size="small"
+                            label="권한"
                             value={roleFilter}
                             onChange={(e) => setRoleFilter(e.target.value)}
-                            sx={{ minWidth: 110 }}
+                            sx={{
+                                minWidth: 110,
+                                "& .MuiOutlinedInput-root": {
+                                    borderRadius: 2,
+                                    backgroundColor: "background.paper",
+                                    "& fieldset": { borderColor: "divider" },
+                                    "&:hover fieldset": {
+                                        borderColor: "primary.light",
+                                    },
+                                    "&.Mui-focused fieldset": {
+                                        borderColor: "primary.main",
+                                    },
+                                },
+                                "& .MuiInputLabel-root": {
+                                    fontSize: "0.75rem",
+                                },
+                            }}
                         >
                             <MenuItem value="ALL">전체</MenuItem>
-                            <MenuItem value="USER">일반</MenuItem>
-                            <MenuItem value="ADMIN">관리자</MenuItem>
+                            <MenuItem value="USER">일반회원</MenuItem>
+                            <MenuItem value="FACILITY">시설회원</MenuItem>
                         </TextField>
 
                         <TextField
                             select
-                            label="상태"
                             size="small"
+                            label="상태"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            sx={{ minWidth: 110 }}
+                            sx={{
+                                minWidth: 110,
+                                "& .MuiOutlinedInput-root": {
+                                    borderRadius: 2,
+                                    backgroundColor: "background.paper",
+                                    "& fieldset": { borderColor: "divider" },
+                                    "&:hover fieldset": {
+                                        borderColor: "primary.light",
+                                    },
+                                    "&.Mui-focused fieldset": {
+                                        borderColor: "primary.main",
+                                    },
+                                },
+                                "& .MuiInputLabel-root": {
+                                    fontSize: "0.75rem",
+                                },
+                            }}
                         >
                             <MenuItem value="ALL">전체</MenuItem>
                             <MenuItem value="ACTIVE">정상</MenuItem>
@@ -472,7 +388,23 @@ export default function MembersPage() {
                             placeholder="이름 / 이메일 / userId 검색"
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
-                            sx={{ minWidth: { xs: "100%", md: 260 } }}
+                            sx={{
+                                minWidth: { xs: "100%", md: 280 },
+                                "& .MuiOutlinedInput-root": {
+                                    borderRadius: 5,
+                                    backgroundColor: "background.paper",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                                    "& fieldset": {
+                                        borderColor: "transparent",
+                                    },
+                                    "&:hover fieldset": {
+                                        borderColor: "primary.light",
+                                    },
+                                    "&.Mui-focused fieldset": {
+                                        borderColor: "primary.main",
+                                    },
+                                },
+                            }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -488,13 +420,8 @@ export default function MembersPage() {
                         />
                     </Box>
 
-                    {/* Right summary */}
-                    <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={1.5}
-                        flexWrap="wrap"
-                    >
+                    {/* right summary */}
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
                         <Box sx={{ textAlign: "right", mr: 1 }}>
                             <Typography
                                 sx={{
@@ -505,24 +432,36 @@ export default function MembersPage() {
                                 총 {filteredList.length}명
                             </Typography>
                             <Typography
-                                sx={{
-                                    fontSize: "0.8rem",
-                                    fontWeight: 600,
-                                }}
+                                sx={{ fontSize: "0.8rem", fontWeight: 600 }}
                             >
                                 페이지 {page} / {pageCount}
                             </Typography>
                         </Box>
 
                         <Tooltip title="새로고침">
-                            <IconButton size="small" onClick={handleRefresh}>
+                            <IconButton
+                                size="small"
+                                onClick={() => fetchUsers(1)}
+                                sx={{
+                                    borderRadius: 2,
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    "&:hover": {
+                                        bgcolor: "primary.main",
+                                        color: "#fff",
+                                        borderColor: "primary.main",
+                                    },
+                                    width: 32,
+                                    height: 32,
+                                }}
+                            >
                                 <RefreshIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
                     </Stack>
                 </Box>
+                {/* ----------------------------------------------------- */}
 
-                {/* Table */}
                 <Box
                     sx={{
                         borderRadius: 2,
@@ -534,7 +473,16 @@ export default function MembersPage() {
                 >
                     <Table stickyHeader size="small">
                         <TableHead>
-                            <TableRow>
+                            <TableRow
+                                sx={{
+                                    "& th": {
+                                        fontWeight: 600,
+                                        whiteSpace: "nowrap",
+                                        fontSize: "0.8rem",
+                                        color: "text.primary",
+                                    },
+                                }}
+                            >
                                 <TableCell>User ID</TableCell>
                                 <TableCell>이름</TableCell>
                                 <TableCell>이메일</TableCell>
@@ -559,34 +507,31 @@ export default function MembersPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                pagedList.map((member) => {
-                                    const isAdmin = member.role === "ADMIN";
-
+                                pagedList.map((m) => {
+                                    const disabled = m.status === "SUSPENDED";
                                     return (
-                                        <TableRow key={member.userId} hover>
-                                            <TableCell>
-                                                {member.userId}
-                                            </TableCell>
-
-                                            <TableCell>{member.name}</TableCell>
-
-                                            <TableCell>
-                                                {member.email}
-                                            </TableCell>
-
+                                        <TableRow
+                                            key={m.userId}
+                                            hover
+                                            sx={{
+                                                backgroundColor: disabled
+                                                    ? "rgba(0,0,0,0.04)"
+                                                    : "transparent",
+                                                color: disabled
+                                                    ? "text.disabled"
+                                                    : "inherit",
+                                            }}
+                                        >
+                                            <TableCell>{m.userId}</TableCell>
+                                            <TableCell>{m.name}</TableCell>
+                                            <TableCell>{m.email}</TableCell>
                                             <TableCell>
                                                 <Chip
                                                     label={
-                                                        ROLE_LABEL[
-                                                            member.role
-                                                        ] || member.role
+                                                        ROLE_LABEL[m.role] ||
+                                                        m.role
                                                     }
                                                     size="small"
-                                                    color={
-                                                        isAdmin
-                                                            ? "primary"
-                                                            : "default"
-                                                    }
                                                 />
                                             </TableCell>
 
@@ -594,18 +539,13 @@ export default function MembersPage() {
                                                 <Chip
                                                     size="small"
                                                     label={
-                                                        member.status ===
-                                                        "ACTIVE"
-                                                            ? "정상"
-                                                            : "정지"
+                                                        STATUS_LABEL[m.status]
                                                     }
                                                     color={
-                                                        STATUS_COLOR[
-                                                            member.status
-                                                        ]
+                                                        STATUS_COLOR[m.status]
                                                     }
                                                     icon={
-                                                        member.status ===
+                                                        m.status ===
                                                         "ACTIVE" ? (
                                                             <CheckCircleIcon
                                                                 sx={{
@@ -623,19 +563,22 @@ export default function MembersPage() {
                                                 />
                                             </TableCell>
 
-                                            <TableCell>
-                                                {member.joinedAt}
-                                            </TableCell>
+                                            <TableCell>{m.joinedAt}</TableCell>
 
                                             <TableCell align="right">
                                                 <Tooltip title="상세 보기">
                                                     <IconButton
                                                         size="small"
                                                         onClick={() =>
-                                                            handleView(
-                                                                member.userId
+                                                            fetchUserDetail(
+                                                                m.userId
                                                             )
                                                         }
+                                                        sx={{
+                                                            color: disabled
+                                                                ? "text.disabled"
+                                                                : "",
+                                                        }}
                                                     >
                                                         <VisibilityIcon fontSize="small" />
                                                     </IconButton>
@@ -643,8 +586,7 @@ export default function MembersPage() {
 
                                                 <Tooltip
                                                     title={
-                                                        member.status ===
-                                                        "SUSPENDED"
+                                                        m.status === "SUSPENDED"
                                                             ? "정지 해제"
                                                             : "계정 정지"
                                                     }
@@ -652,43 +594,34 @@ export default function MembersPage() {
                                                     <IconButton
                                                         size="small"
                                                         color={
-                                                            member.status ===
+                                                            m.status ===
                                                             "SUSPENDED"
                                                                 ? "success"
                                                                 : "error"
                                                         }
                                                         onClick={() =>
                                                             handleToggleBlock(
-                                                                member.userId,
-                                                                member.status
+                                                                m.userId,
+                                                                m.status
                                                             )
                                                         }
+                                                        sx={{ ml: 0.5 }}
                                                     >
                                                         <BlockIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
 
-                                                <Tooltip
-                                                    title={
-                                                        isAdmin
-                                                            ? "관리자 계정은 삭제할 수 없습니다"
-                                                            : "삭제"
-                                                    }
-                                                >
-                                                    <span>
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            disabled={isAdmin}
-                                                            onClick={() =>
-                                                                openDeleteDialog(
-                                                                    member
-                                                                )
-                                                            }
-                                                        >
-                                                            <DeleteIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </span>
+                                                <Tooltip title="삭제">
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() =>
+                                                            openDeleteDialog(m)
+                                                        }
+                                                        sx={{ ml: 0.5 }}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
                                                 </Tooltip>
                                             </TableCell>
                                         </TableRow>
@@ -699,12 +632,11 @@ export default function MembersPage() {
                     </Table>
                 </Box>
 
-                {/* Pagination */}
                 <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
                     <Pagination
                         count={pageCount}
                         page={page}
-                        onChange={(_, value) => setPage(value)}
+                        onChange={(_, v) => setPage(v)}
                         color="primary"
                         size="small"
                         siblingCount={1}
@@ -716,72 +648,78 @@ export default function MembersPage() {
             </Paper>
 
             {/* Detail Dialog */}
-            <Dialog open={detailOpen} onClose={() => setDetailOpen(false)}>
+            <Dialog
+                open={detailOpen}
+                onClose={() => setDetailOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
                 <DialogTitle sx={{ fontWeight: 700 }}>
                     회원 상세 정보
                 </DialogTitle>
                 <DialogContent dividers>
-                    {selectedMember ? (
-                        <Box sx={{ px: 1 }}>
-                            <DetailRow label="User ID">
-                                {selectedMember.userId}
-                            </DetailRow>
-
-                            <DetailRow label="이름">
-                                {selectedMember.name}
-                            </DetailRow>
-
-                            <DetailRow label="권한">
-                                {ROLE_LABEL[selectedMember.role] ||
-                                    selectedMember.role}
-                            </DetailRow>
-
-                            <DetailRow label="이메일">
-                                {selectedMember.email}
-                            </DetailRow>
-
-                            <DetailRow label="전화번호">
-                                {selectedMember.phone || "-"}
-                            </DetailRow>
-
-                            <DetailRow label="생년월일">
-                                {selectedMember.birth || "-"}
-                            </DetailRow>
-
-                            <DetailRow label="상태">
-                                <Chip
-                                    size="small"
-                                    label={
-                                        selectedMember.status === "ACTIVE"
-                                            ? "정상"
-                                            : "정지"
-                                    }
-                                    color={STATUS_COLOR[selectedMember.status]}
-                                />
-                            </DetailRow>
-
-                            <DetailRow label="가입일">
-                                {selectedMember.joinedAt}
-                            </DetailRow>
-                        </Box>
-                    ) : (
-                        "선택된 회원이 없습니다."
+                    {selectedMember && (
+                        <Stack sx={{ px: 1 }}>
+                            <DetailRow
+                                label="User ID"
+                                value={selectedMember.userId}
+                            />
+                            <DetailRow
+                                label="이름"
+                                value={selectedMember.name}
+                            />
+                            <DetailRow
+                                label="권한"
+                                value={
+                                    ROLE_LABEL[selectedMember.role] ||
+                                    selectedMember.role
+                                }
+                            />
+                            <DetailRow
+                                label="이메일"
+                                value={selectedMember.email}
+                            />
+                            <DetailRow
+                                label="전화"
+                                value={selectedMember.phone}
+                            />
+                            <DetailRow
+                                label="생년월일"
+                                value={selectedMember.birth}
+                            />
+                            <DetailRow
+                                label="상태"
+                                value={
+                                    <Chip
+                                        size="small"
+                                        label={
+                                            STATUS_LABEL[selectedMember.status]
+                                        }
+                                        color={
+                                            STATUS_COLOR[selectedMember.status]
+                                        }
+                                    />
+                                }
+                            />
+                            <DetailRow
+                                label="가입일"
+                                value={selectedMember.joinedAt}
+                            />
+                        </Stack>
                     )}
                 </DialogContent>
-
                 <DialogActions>
                     <Button
                         variant="outlined"
                         color="error"
                         size="small"
                         startIcon={<BlockIcon fontSize="small" />}
-                        onClick={() => {
-                            if (!selectedMember) return;
+                        onClick={() =>
                             handleToggleBlock(
                                 selectedMember.userId,
                                 selectedMember.status
-                            );
-                        }}
+                            )
+                        }
                     >
                         {selectedMember?.status === "SUSPENDED"
                             ? "정지 해제"
@@ -793,18 +731,15 @@ export default function MembersPage() {
                         color="error"
                         size="small"
                         startIcon={<DeleteIcon fontSize="small" />}
-                        disabled={selectedMember?.role === "ADMIN"}
-                        onClick={() =>
-                            selectedMember && openDeleteDialog(selectedMember)
-                        }
+                        onClick={() => openDeleteDialog(selectedMember)}
                     >
                         삭제
                     </Button>
 
                     <Button
-                        onClick={() => setDetailOpen(false)}
                         variant="contained"
                         size="small"
+                        onClick={() => setDetailOpen(false)}
                     >
                         닫기
                     </Button>
@@ -821,7 +756,6 @@ export default function MembersPage() {
                                 아래 입력란에 <b>{targetMember.userId}</b> 를
                                 입력하면 삭제됩니다.
                             </Typography>
-
                             <TextField
                                 size="small"
                                 label="User ID 확인"
@@ -833,7 +767,6 @@ export default function MembersPage() {
                         </Stack>
                     )}
                 </DialogContent>
-
                 <DialogActions>
                     <Button onClick={closeDeleteDialog}>취소</Button>
                     <Button
@@ -850,7 +783,6 @@ export default function MembersPage() {
                 </DialogActions>
             </Dialog>
 
-            {/* Toast */}
             <Snackbar
                 open={toast.open}
                 autoHideDuration={2200}
@@ -858,10 +790,9 @@ export default function MembersPage() {
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
                 <Alert
-                    onClose={() => setToast((t) => ({ ...t, open: false }))}
                     severity={toast.severity}
                     variant="filled"
-                    sx={{ width: "100%" }}
+                    onClose={() => setToast((t) => ({ ...t, open: false }))}
                 >
                     {toast.message}
                 </Alert>
