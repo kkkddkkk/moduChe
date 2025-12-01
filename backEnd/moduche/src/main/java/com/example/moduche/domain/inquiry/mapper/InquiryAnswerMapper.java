@@ -7,26 +7,22 @@ import java.time.format.DateTimeFormatter;
 
 public class InquiryAnswerMapper {
 
-    private static final DateTimeFormatter FORMATTER =
+    private static final DateTimeFormatter F =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    public static InquiryDetailResponse.AnswerResponse toResponse(InquiryAnswer answer) {
+    public static InquiryDetailResponse.AnswerDto toDto(InquiryAnswer answer) {
 
         if (answer == null) return null;
 
-        InquiryDetailResponse.AnswerResponse dto = new InquiryDetailResponse.AnswerResponse();
+        InquiryDetailResponse.AnswerDto dto = new InquiryDetailResponse.AnswerDto();
 
         dto.setAnswerId(answer.getAnswerId());
         dto.setContent(answer.getContent());
-        dto.setCreatedAt(answer.getCreatedAt().format(FORMATTER));
+        dto.setAnsweredByUsername(answer.getAnsweredByUsername());
 
-        if (answer.getAnsweredByUsername() != null) {
-            dto.setAnsweredBy(answer.getAnsweredByUsername());
-        } else if (answer.getAnsweredBy() != null) {
-            dto.setAnsweredBy(answer.getAnsweredBy().getUsername());
-        } else {
-            dto.setAnsweredBy("unknown");
-        }
+        dto.setCreatedAt(
+                answer.getCreatedAt() != null ? answer.getCreatedAt().format(F) : null
+        );
 
         return dto;
     }

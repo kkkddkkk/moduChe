@@ -6,8 +6,6 @@ import com.example.moduche.domain.inquiry.dto.AnswerCreateRequest;
 import com.example.moduche.domain.inquiry.enums.InquiryStatus;
 import com.example.moduche.domain.inquiry.repository.InquiryAnswerRepository;
 import com.example.moduche.domain.inquiry.repository.InquiryRepository;
-import com.example.moduche.domain.login.User;
-import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,82 +13,69 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class InquiryAnswerService {
 
+    private final InquiryAnswerRepository answerRepository;
     private final InquiryRepository inquiryRepository;
-    private final InquiryAnswerRepository inquiryAnswerRepository;
-    private final UserRepository userRepository;
 
-    /** 1. 답변 생성 */
-    public InquiryAnswer createAnswer(Long inquiryId, String adminUsername, String role, AnswerCreateRequest req) {
+    /* -------------------------------------------------------
+       1) 답변 생성
+    -------------------------------------------------------- */
+    @Transactional
+    public InquiryAnswer createAnswer(Long inquiryId, String adminUsername, AnswerCreateRequest req) {
 
-        validateAdminRole(role);
+        Inquiry inq = inquiryRepository.findById(inquiryId)
+                .orElseThrow(() -> new RuntimeException("문의 없음"));
 
-        Inquiry inquiry = inquiryRepository.findById(inquiryId)
-                .orElseThrow(() -> new RuntimeException("해당 문의가 존재하지 않습니다."));
+        if (inq.getAnswer() != null)
+            throw new RuntimeException("이미 답변이 존재합니다.");
 
-        if (inquiry.getAnswer() != null) {
-            throw new RuntimeException("이미 답변이 등록된 문의입니다.");
+        InquiryAnswer ans = new InquiryAnswer();
+        ans.setInquiry(inq);
+        ans.setAnsweredByUsername(adminUsername);  // 👍 username만 저장
+        ans.setContent(req.getContent());
+
+        inq.setAnswer(ans);
+
+        return answerRepository.save(ans);
+    }
+
+    /* -------------------------------------------------------
+       2) 답변 수정
+    -------------------------------------------------------- */
+    @Transactional
+    public InquiryAnswer updateAnswer(Long answerId, String adminUsername, AnswerCreateRequest req) {
+
+        InquiryAnswer ans = answerRepository.findById(answerId)
+                .orElseThrow(() -> new RuntimeException("답변 없음"));
+
+        ans.setContent(req.getContent());
+        ans.setAnsweredByUsername(adminUsername);
+
+        // 연결된 문의 상태는 ANSWERED 유지
+        Inquiry inq = ans.getInquiry();
+        if (inq.getStatus() != InquiryStatus.ANSWERED) {
+            inq.setStatus(InquiryStatus.ANSWERED);
         }
 
-        User admin = userRepository.findByUserName(adminUsername)
-                .orElseThrow(() -> new RuntimeException("관리자 정보를 찾을 수 없습니다."));
-
-        InquiryAnswer answer = new InquiryAnswer();
-        answer.setInquiry(inquiry);
-        answer.setAnsweredBy(admin);
-        answer.setAnsweredByUsername(admin.getUsername());
-        answer.setContent(req.getContent());
-
-        // 상태 변경
-        inquiry.setStatus(InquiryStatus.ANSWERED);
-
-        // 양방향 연관관계 설정
-        inquiry.setAnswer(answer);
-
-        return inquiryAnswerRepository.save(answer);
+        return ans; // @Transactional 이므로 flush 자동 수행됨
     }
 
-    /** 2. 답변 수정 */
-    public InquiryAnswer updateAnswer(Long answerId, String adminUsername, String role, AnswerCreateRequest req) {
+    /* -------------------------------------------------------
+       3) 답변 삭제
+    -------------------------------------------------------- */
+    @Transactional
+    public void deleteAnswer(Long answerId) {
 
-        validateAdminRole(role);
+        InquiryAnswer ans = answerRepository.findById(answerId)
+                .orElseThrow(() -> new RuntimeException("답변 없음"));
 
-        InquiryAnswer answer = inquiryAnswerRepository.findById(answerId)
-                .orElseThrow(() -> new RuntimeException("답변이 존재하지 않습니다."));
+        Inquiry inq = ans.getInquiry();
 
-        answer.setContent(req.getContent());
+        // 연결 끊기
+        inq.setAnswer(null);
+        inq.setStatus(InquiryStatus.WAIT); // 다시 '답변 대기'로 변경
 
-        return inquiryAnswerRepository.save(answer);
-    }
-
-    /** 3. 답변 삭제 */
-    public void deleteAnswer(Long answerId, String role) {
-
-        validateAdminRole(role);
-
-        InquiryAnswer answer = inquiryAnswerRepository.findById(answerId)
-                .orElseThrow(() -> new RuntimeException("답변이 존재하지 않습니다."));
-
-        Inquiry inquiry = answer.getInquiry();
-
-        // 상태 되돌리기
-        inquiry.setStatus(InquiryStatus.WAIT);
-
-        // 양방향 제거
-        inquiry.setAnswer(null);
-
-        inquiryAnswerRepository.delete(answer);
-    }
-
-    /** 관리자 권한 체크 */
-    private void validateAdminRole(String role) {
-        if (role == null ||
-                !(role.equals("SUPER_ADMIN") ||
-                        role.equals("ADMIN") ||
-                        role.equals("CS_MANAGER"))) {
-            throw new RuntimeException("관리자 권한이 없습니다.");
-        }
+        answerRepository.delete(ans);
     }
 }
