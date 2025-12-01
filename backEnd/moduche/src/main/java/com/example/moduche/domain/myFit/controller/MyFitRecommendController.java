@@ -26,13 +26,22 @@ public class MyFitRecommendController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MyFitRecommendResponseDTO> getRecommendById(@PathVariable Long id) {
+    public ResponseEntity<MyFitRecommendResponseDTO> getRecommendById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(recommendService.getRecommendById(id));
     }
 
     @GetMapping("/disability")
     public ResponseEntity<List<MyFitRecommendResponseDTO>> getRecommendationsByDisability(
-            @RequestParam("disability") String disabilityType) {
-        return ResponseEntity.ok(recommendService.getRecommendationsByDisability(disabilityType));
+            @RequestParam("disability") String troblTyNm) {
+        return ResponseEntity.ok(recommendService.getRecommendationsByDisability(troblTyNm));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<MyFitRecommendResponseDTO>> getRecommendationsByCriteria(
+            @RequestParam(value = "age", required = false) String agrdeFlagNm,
+            @RequestParam(value = "gender", required = false) String sexdstnFlagCd,
+            @RequestParam(value = "disabilityType", required = false) String troblTyNm,
+            @RequestParam(value = "disabilityGrade", required = false) String troblGradNm) {
+        return ResponseEntity.ok(recommendService.getRecommendationsByCriteria(agrdeFlagNm, sexdstnFlagCd, troblTyNm, troblGradNm));
     }
 }
