@@ -46,5 +46,14 @@ public interface FacilityRepository extends JpaRepository<Facility, Long>{
     	                                  @Param("lng") double lng,
     	                                  @Param("limit") int limit);
     
-
+    @Query("""
+    	    SELECT f
+    	    FROM Facility f
+    	    WHERE (:keyword IS NULL OR 
+    	           LOWER(f.facilityName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    	        OR LOWER(f.facilityAddress) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    	        OR LOWER(f.facilityType) LIKE LOWER(CONCAT('%', :keyword, '%')))
+    	""")
+    	List<Facility> searchFacilities(@Param("keyword") String keyword);
+    
 }

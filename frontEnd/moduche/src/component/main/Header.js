@@ -156,8 +156,8 @@ const Header = () => {
                   공지사항
                 </HeaderMenu>
                 <MenuBar />
-                <HeaderMenu onClick={() => navigate(`/community/home`)}>
-                  문의하기(경로수정 필요)
+                <HeaderMenu onClick={() => navigate(`/inquiry/list`)}>
+                  문의하기
                 </HeaderMenu>
                 <MenuBar />
                 <HeaderMenu onClick={() => navigate(`/community/home`)}>

@@ -44,23 +44,50 @@ public class Security {
 
 				// ✅ URL별 접근 권한 설정
 				.authorizeHttpRequests(auth -> auth
-						// Preflight 요청 허용
-						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-						.requestMatchers(
+
+    /* ================================
+     * 🔓 1) 누구나 접근 가능한 공개 API (permitAll)
+     * ================================ */
+    .requestMatchers(
         "/", 
-        "/api/auth/**", 
-        "/api/signIn/**", 
-        "/api/email/**", 
-        "/api/find/**",      
-        "/api/noticeForAll/**", 
+        "/api/auth/**",
+        "/api/signIn/**",
+        "/api/email/**",
+        "/api/find/**",
+        "/api/noticeForAll/**",
         "/api/main/**",
-        "/api/course/**",      
+        "/api/course/**",
         "/api/search/**",
-        "/api/reissue",      
         "/api/payment/**",
         "/api/banner/**",
-        "/api/redis/**"
-).permitAll().anyRequest().authenticated())
+        "/api/redis/**",
+        "/api/users/**",
+        "/api/reports/**",
+        "/api/admin/reports/**",
+        "/api/admin/inquiries/**",     // 관리자 문의 관련 (권한은 컨트롤러 내부에서 체크)
+        "/api/admins/**",
+        "/api/admin/dashboard/**",
+        "/api/facilities/**"           // 시설 관리자 API → 내부에서 권한 체크
+    ).permitAll()
+
+    /* ================================
+     * 🔓 2) Inquiry GET 전체 공개
+     * ================================ */
+    .requestMatchers(HttpMethod.GET, "/api/inquiries/**").permitAll()
+
+    /* ================================
+     * 🔐 3) Inquiry 작성/수정/삭제 = 로그인 필요
+     * ================================ */
+    .requestMatchers(HttpMethod.POST, "/api/inquiries/**").authenticated()
+    .requestMatchers(HttpMethod.PUT, "/api/inquiries/**").authenticated()
+    .requestMatchers(HttpMethod.DELETE, "/api/inquiries/**").authenticated()
+
+    /* ================================
+     * 🔐 4) 그 외 모든 요청 → 인증 필요
+     * ================================ */
+    .anyRequest().authenticated()
+)
+
 
 				// ✅ JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -82,7 +109,7 @@ public class Security {
 		configuration.setAllowedOrigins(List.of("http://localhost:3000"));
 
 		// 허용할 HTTP 메서드
-		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
 		// 모든 헤더 허용
 		configuration.setAllowedHeaders(List.of("*"));

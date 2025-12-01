@@ -1,29 +1,29 @@
 package com.example.moduche.domain.inquiry.dto;
 
-import com.example.moduche.domain.inquiry.enums.InquiryCategory;
-import com.example.moduche.domain.inquiry.enums.InquiryStatus;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter @Setter
+@Getter
+@Setter
 public class InquiryDetailResponse {
 
     private Long inquiryId;
     private String username;
     private String title;
     private String content;
-    private InquiryCategory category;
+    private String category;
+    private String status;
     private boolean secret;
-    private InquiryStatus status;
     private String createdAt;
 
-    private AnswerResponse answer;
+    private AnswerDto answer;
 
-    @Getter @Setter
-    public static class AnswerResponse {
+    @Getter
+    @Setter
+    public static class AnswerDto {
         private Long answerId;
-        private String answeredBy;
         private String content;
+        private String answeredByUsername;
         private String createdAt;
     }
 }

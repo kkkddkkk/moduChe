@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
+import RequireRole from "../component/auth/RequireRole";
 
 // 공통 레이아웃
 const Loading = <div>Loading...</div>;
@@ -56,9 +57,11 @@ export default function adminRouter() {
                 {
                     path: "administrator",
                     element: (
-                        <Suspense fallback={Loading}>
-                            <AdministratorPage />
-                        </Suspense>
+                        <RequireRole role="SUPER_ADMIN">
+                            <Suspense fallback={Loading}>
+                                <AdministratorPage />
+                            </Suspense>
+                        </RequireRole>
                     ),
                 },
                 {

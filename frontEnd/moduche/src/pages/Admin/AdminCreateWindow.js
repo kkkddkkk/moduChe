@@ -7,29 +7,32 @@ import {
     Snackbar,
     Alert,
     Fade,
+    TextField,
     InputAdornment,
+    IconButton,
 } from "@mui/material";
 
-import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
+import PhoneIphoneIcon from "@mui/icons-material/PhoneIphone";
 import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
-import PhoneAndroidOutlinedIcon from "@mui/icons-material/PhoneAndroidOutlined";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import PasswordOutlinedIcon from "@mui/icons-material/PasswordOutlined";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-import CustomTextField from "../../component/common/CustomTextField";
 import {
     StartTitle,
     SmallerSubTitle,
     Contents100,
 } from "../../component/common/Text";
 
-import { createAdmin } from "../../api/admin"; // ★ 백엔드 관리자 생성 API
+import { createAdmin } from "../../api/admin";
 
-export default function AdminCreateWindow() {
-    const [id, setId] = useState("");
-    const [password, setPassword] = useState("");
+export default function AdminCreateWindowPage() {
+    const [username, setUsername] = useState("");
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const [toast, setToast] = useState({
         open: false,
@@ -37,74 +40,65 @@ export default function AdminCreateWindow() {
         severity: "info",
     });
 
-    // 정규식
-    const regId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,16}$/;
-    const regPassword =
-        /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!~@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{6,}$/;
-    const regPhone = /^01[016789]-?\d{3,4}-?\d{4}$/;
-
-    const idError = id.length > 0 && !regId.test(id);
-    const pwError = password.length > 0 && !regPassword.test(password);
-    const phoneError = phone.length > 0 && !regPhone.test(phone);
+    // 기본값
+    const roleId = 2;
+    const status = "ACTIVE";
 
     const disabled = useMemo(
         () =>
-            !id ||
-            !password ||
-            !name ||
-            !phone ||
-            idError ||
-            pwError ||
-            phoneError,
-        [id, password, name, phone, idError, pwError, phoneError]
+            !username.trim() ||
+            !name.trim() ||
+            !password.trim() ||
+            password.trim().length < 6,
+        [username, name, password]
     );
 
-    // ★ 관리자 생성 실행
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (disabled) return;
 
-        const payload = {
-            username: id,
-            password: password,
-            name: name,
-            phone: phone,
-            email: "",
-            roleId: 2, // ★ 일반 관리자 역할 ID = 2
-        };
-
         try {
-            const saved = await createAdmin(payload); // ★ DB 저장
+            const newAdmin = await createAdmin({
+                username: username.trim(),
+                name: name.trim(),
+                password: password.trim(),
+                phone: phone.trim() || null,
+                email: null,
+            });
 
-            // ★ 결과를 부모창으로 전송 → 목록 즉시 반영
+            // 부모 창으로 전달 (백엔드가 생성한 실제 AdminResponse)
             window.opener?.postMessage(
-                { type: "ADMIN_CREATED", payload: saved },
-                window.origin
+                { type: "ADMIN_CREATED", payload: newAdmin },
+                window.location.origin
             );
 
             setToast({
                 open: true,
-                message: "관리자가 생성되었습니다.",
+                message: "관리자 계정이 생성되었습니다.",
                 severity: "success",
             });
 
             setTimeout(() => window.close(), 700);
         } catch (err) {
-            console.error("관리자 생성 실패:", err);
+            console.error(err);
+
+            const msg =
+                err?.response?.data?.message ||
+                "생성에 실패했습니다. 입력값을 확인하세요.";
+
             setToast({
                 open: true,
-                message: "생성 실패. 관리자에게 문의하세요.",
+                message: msg,
                 severity: "error",
             });
         }
     };
 
-    // ESC 닫기 + 팝업 크기 고정
     useEffect(() => {
         const onKey = (e) => e.key === "Escape" && window.close();
         window.addEventListener("keydown", onKey);
         try {
-            window.resizeTo(520, 640);
+            window.resizeTo(520, 620);
         } catch {}
         document.title = "새 관리자 추가";
         return () => window.removeEventListener("keydown", onKey);
@@ -125,121 +119,106 @@ export default function AdminCreateWindow() {
         >
             <Paper
                 elevation={4}
-                sx={{ width: 520, maxWidth: "100%", borderRadius: 3, p: 3 }}
+                sx={{
+                    width: 520,
+                    maxWidth: "100%",
+                    borderRadius: 3,
+                    p: 3,
+                }}
             >
                 <Stack spacing={2}>
                     <StartTitle
                         sx={{ display: "flex", alignItems: "center", gap: 1 }}
                     >
-                        <PersonAddAlt1Icon fontSize="small" /> 새 관리자 추가
+                        <PersonAddAltIcon fontSize="small" /> 새 관리자 추가
                     </StartTitle>
 
                     <SmallerSubTitle>
-                        관리자 로그인에 사용할 기본 정보를 입력하세요.
+                        관리자 계정을 생성합니다.
                     </SmallerSubTitle>
 
-                    {/* 아이디 */}
-                    <Contents100 bold>아이디</Contents100>
-                    <CustomTextField
-                        data={id}
-                        setData={() => {}}
-                        onChange={(e) => setId(e.target.value)}
-                        placeholder="영문+숫자 5~16자"
-                        fontSize={15}
-                        padding={10}
-                        rest={{
-                            error: idError,
-                            helperText: idError
-                                ? "형식: 영문+숫자 5~16자"
-                                : " ",
-                            InputProps: {
-                                startAdornment: (
-                                    <InputAdornment
-                                        position="start"
-                                        sx={{ pl: 1 }}
-                                    >
-                                        <PersonOutlineIcon fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                            },
-                        }}
-                    />
-
-                    {/* 비밀번호 */}
-                    <Contents100 bold>비밀번호</Contents100>
-                    <CustomTextField
-                        data={password}
-                        setData={() => {}}
-                        onChange={(e) => setPassword(e.target.value)}
-                        show={false}
-                        placeholder="영문+숫자+특수문자 6자 이상"
-                        fontSize={15}
-                        padding={10}
-                        rest={{
-                            error: pwError,
-                            helperText: pwError
-                                ? "형식: 영문+숫자+특수문자 6자 이상"
-                                : " ",
-                            InputProps: {
-                                startAdornment: (
-                                    <InputAdornment
-                                        position="start"
-                                        sx={{ pl: 1 }}
-                                    >
-                                        <LockOutlinedIcon fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                            },
+                    {/* UID */}
+                    <Contents100 bold>계정명(UID)</Contents100>
+                    <TextField
+                        size="small"
+                        fullWidth
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="예: admin001"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <BadgeOutlinedIcon fontSize="small" />
+                                </InputAdornment>
+                            ),
                         }}
                     />
 
                     {/* 이름 */}
                     <Contents100 bold>이름</Contents100>
-                    <CustomTextField
-                        data={name}
-                        setData={() => {}}
+                    <TextField
+                        size="small"
+                        fullWidth
+                        value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="이름을 입력하세요."
-                        fontSize={15}
-                        padding={10}
-                        rest={{
-                            InputProps: {
-                                startAdornment: (
-                                    <InputAdornment
-                                        position="start"
-                                        sx={{ pl: 1 }}
-                                    >
-                                        <BadgeOutlinedIcon fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                            },
+                        placeholder="예: 홍길동"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <PersonAddAltIcon fontSize="small" />
+                                </InputAdornment>
+                            ),
                         }}
                     />
 
                     {/* 전화번호 */}
                     <Contents100 bold>전화번호</Contents100>
-                    <CustomTextField
-                        data={phone}
-                        setData={() => {}}
+                    <TextField
+                        size="small"
+                        fullWidth
+                        value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="010-1234-5678"
-                        fontSize={15}
-                        padding={10}
-                        rest={{
-                            error: phoneError,
-                            helperText: phoneError
-                                ? "형식: 010-1234-5678"
-                                : " ",
-                            InputProps: {
-                                startAdornment: (
-                                    <InputAdornment
-                                        position="start"
-                                        sx={{ pl: 1 }}
+                        placeholder="예: 01012341234"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <PhoneIphoneIcon fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+
+                    {/* 비밀번호 */}
+                    <Contents100 bold>비밀번호</Contents100>
+                    <TextField
+                        size="small"
+                        fullWidth
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="비밀번호 (6자 이상)"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <PasswordOutlinedIcon fontSize="small" />
+                                </InputAdornment>
+                            ),
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                            setShowPassword((v) => !v)
+                                        }
                                     >
-                                        <PhoneAndroidOutlinedIcon fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                            },
+                                        {showPassword ? (
+                                            <VisibilityOffIcon />
+                                        ) : (
+                                            <VisibilityIcon />
+                                        )}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
                         }}
                     />
 
@@ -258,7 +237,7 @@ export default function AdminCreateWindow() {
                             disabled={disabled}
                             onClick={handleSubmit}
                         >
-                            생성
+                            등록
                         </Button>
                     </Stack>
                 </Stack>
@@ -267,7 +246,7 @@ export default function AdminCreateWindow() {
             {/* 토스트 */}
             <Snackbar
                 open={toast.open}
-                autoHideDuration={2000}
+                autoHideDuration={2200}
                 onClose={() => setToast((t) => ({ ...t, open: false }))}
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >

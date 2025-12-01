@@ -1,6 +1,6 @@
 // src/pages/Inquiry/InquiryWritePage.js
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Box,
     Typography,
@@ -16,7 +16,11 @@ import {
 } from "@mui/material";
 
 import { useNavigate } from "react-router-dom";
-import { createInquiry } from "../../api/inquiryApi/inquiryApi";
+
+// 🔥 Inquiry API (axiosInstance로 토큰 자동 첨부됨)
+import { createInquiry } from "../../api/inquiryApi/inquiryUserApi";
+
+import { isLoggedIn, isTokenExpired } from "../../utils/auth";
 
 export default function InquiryWritePage() {
     const theme = useTheme();
@@ -27,68 +31,56 @@ export default function InquiryWritePage() {
     const [content, setContent] = useState("");
     const [isSecret, setIsSecret] = useState(false);
 
-    // 🔐 선택: 로그인한 사용자만 작성하도록 체크 가능
-    // const token = localStorage.getItem("accessToken");
-    // if (!token) {
-    //     alert("로그인 후 이용해주세요.");
-    //     navigate("/login");
-    // }
+    /** 🔐 로그인 체크 */
+    useEffect(() => {
+        if (!isLoggedIn()) {
+            alert("로그인 후 이용 가능합니다.");
+            navigate("/account/login");
+        }
+    }, [navigate]); // ← navigate 의존성 추가
 
+    /** 🔥 저장 */
     const handleSubmit = async () => {
-        if (!title.trim()) {
-            alert("제목을 입력해주세요.");
-            return;
-        }
-        if (!content.trim()) {
-            alert("내용을 입력해주세요.");
-            return;
-        }
+        if (!title.trim()) return alert("제목을 입력해주세요.");
+        if (!content.trim()) return alert("내용을 입력해주세요.");
 
         try {
-            const body = {
+            await createInquiry({
                 title,
                 category,
                 content,
-                secret: isSecret,
-            };
+                secret: isSecret, // 🔥 백엔드와 필드명 일치
+            });
 
-            await createInquiry(body);
+            alert("문의가 성공적으로 등록되었습니다.");
 
-            alert("문의가 등록되었습니다.");
-            navigate("/inquiry/list");
-        } catch (e) {
-            console.error("문의 등록 실패:", e);
+            // 🔥 tab=my 기능을 실제로 반영하려면 InquiryListPage도 수정해야 함
+            navigate("/inquiry/list?tab=my");
+
+        } catch (err) {
+            console.error("문의 등록 실패:", err);
+
+            if (err.response?.status === 401) {
+                alert("로그인 정보가 만료되었습니다. 다시 로그인해주세요.");
+                navigate("/account/login");
+                return;
+            }
+
             alert("문의 등록 중 오류가 발생했습니다.");
         }
     };
 
     return (
         <Box sx={{ width: "100%", px: 2, mt: 4, mb: 10 }}>
-            <Typography
-                variant="h4"
-                fontWeight={700}
-                textAlign="center"
-                sx={{ mb: 1 }}
-            >
+            <Typography variant="h4" fontWeight={700} textAlign="center" sx={{ mb: 1 }}>
                 문의 작성
             </Typography>
 
-            <Typography
-                variant="body1"
-                textAlign="center"
-                color="text.secondary"
-                sx={{ mb: 4 }}
-            >
+            <Typography variant="body1" color="text.secondary" textAlign="center" sx={{ mb: 4 }}>
                 문의 내용을 자세히 작성해주세요.
             </Typography>
 
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    width: "100%",
-                }}
-            >
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
                 <MuiPaper
                     elevation={3}
                     sx={{
@@ -100,8 +92,7 @@ export default function InquiryWritePage() {
                         backgroundColor: theme.palette.background.paper,
                     }}
                 >
-                    <Stack spacing={2.5}>
-                        {/* 제목 */}
+                    <Stack spacing={3}>
                         <TextField
                             label="제목"
                             fullWidth
@@ -109,7 +100,6 @@ export default function InquiryWritePage() {
                             onChange={(e) => setTitle(e.target.value)}
                         />
 
-                        {/* 카테고리 */}
                         <TextField
                             select
                             label="카테고리"
@@ -122,21 +112,16 @@ export default function InquiryWritePage() {
                             <MenuItem value="SUGGEST">기능 제안</MenuItem>
                         </TextField>
 
-                        {/* 비밀글 옵션 */}
                         <FormControlLabel
                             control={
                                 <Checkbox
                                     checked={isSecret}
-                                    onChange={(e) =>
-                                        setIsSecret(e.target.checked)
-                                    }
+                                    onChange={(e) => setIsSecret(e.target.checked)}
                                 />
                             }
                             label="비밀글로 작성하기"
-                            sx={{ mt: 1, mb: 1, pl: 0.5 }}
                         />
 
-                        {/* 내용 */}
                         <TextField
                             label="내용"
                             fullWidth
@@ -146,23 +131,11 @@ export default function InquiryWritePage() {
                             onChange={(e) => setContent(e.target.value)}
                         />
 
-                        {/* 버튼 */}
-                        <Box
-                            sx={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                                pt: 1,
-                            }}
-                        >
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 1 }}>
                             <Button
                                 variant="contained"
                                 size="large"
-                                sx={{
-                                    textTransform: "none",
-                                    fontWeight: 600,
-                                    width: 160,
-                                    py: 1.2,
-                                }}
+                                sx={{ width: 160, py: 1.2 }}
                                 onClick={handleSubmit}
                             >
                                 등록하기

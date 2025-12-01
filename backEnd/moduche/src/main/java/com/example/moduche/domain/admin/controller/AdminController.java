@@ -6,15 +6,12 @@ import com.example.moduche.domain.admin.service.AdminAccountService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/api/admins")
-@PreAuthorize("hasRole('SUPER_ADMIN')") // 이 클래스의 모든 메서드는 SUPER_ADMIN만
 public class AdminController {
 
     private final AdminAccountService service;
@@ -23,35 +20,50 @@ public class AdminController {
         this.service = service;
     }
 
+    private Authentication auth() {
+        return SecurityContextHolder.getContext().getAuthentication();
+    }
+
+    private void requireAdmin() {
+        boolean ok = auth().getAuthorities()
+                .stream().anyMatch(a -> a.getAuthority().contains("ADMIN"));
+        if (!ok) throw new RuntimeException("관리자만 접근 가능");
+    }
+
+    private void requireSuperAdmin() {
+        boolean ok = auth().getAuthorities()
+                .stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (!ok) throw new RuntimeException("SUPER_ADMIN만 접근 가능");
+    }
+
     @GetMapping
     public Page<AdminResponse> listAdmins(
             @RequestParam(value = "q", required = false) String q,
             @RequestParam(value = "status", required = false) String status,
-            @RequestParam(value = "createdFrom", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdFrom,
-            @RequestParam(value = "createdTo", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdTo,
             Pageable pageable
     ) {
-        return service.list(q, status, createdFrom, createdTo, pageable);
+        requireAdmin(); // SUPER_ADMIN, ADMIN 모두 허용
+        return service.list(q, status, null, null, pageable);
     }
 
     @PostMapping
     public AdminResponse createAdmin(@RequestBody @Valid CreateAdminRequest request) {
-    	System.out.println(">>> /api/admins createAdmin called, username=" + request.username());
+        requireSuperAdmin(); 
         return service.createAdmin(request);
     }
 
     @PatchMapping("/{id}")
     public AdminResponse updateStatus(
             @PathVariable("id") Long id,
-            @RequestParam(value = "status") String status
+            @RequestParam("status") String status
     ) {
+        requireSuperAdmin();
         return service.updateStatus(id, status);
     }
 
     @DeleteMapping("/{id}")
     public void deleteAdmin(@PathVariable("id") Long id) {
+        requireSuperAdmin();
         service.deleteAdmin(id);
     }
 }

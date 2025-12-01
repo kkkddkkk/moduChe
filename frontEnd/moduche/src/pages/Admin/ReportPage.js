@@ -1,4 +1,3 @@
-// src/pages/Admin/ReportPage.js
 import React, { useState, useEffect, useMemo } from "react";
 import {
     Box,
@@ -33,52 +32,31 @@ import GavelIcon from "@mui/icons-material/Gavel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 
-import axios from "axios";
-import { API_SERVER_HOST, AUTH } from "../../component/common/Variables";
+import { useNavigate } from "react-router-dom";
+import api from "../../api/axiosInstance";
 import Paper from "../../component/common/Paper";
 
-// axios + JWT
-const http = axios.create({
-    baseURL: API_SERVER_HOST,
-    withCredentials: false,
-});
-
-http.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem(AUTH.TOKEN_KEY);
-        if (token) {
-            config.headers[AUTH.HEADER_KEY] = AUTH.SCHEME + token;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
-
-const REPORTS_ENDPOINT = "/api/reports";
+const REPORTS_ENDPOINT = "/reports"; // baseURL/api/reports
 
 const REPORT_STATUS_LABEL = {
     PENDING: "처리 대기",
-    REVIEWING: "검토 중",
     RESOLVED: "처리 완료",
     REJECTED: "기각",
 };
 
 const REPORT_STATUS_COLOR = {
     PENDING: "warning",
-    REVIEWING: "info",
     RESOLVED: "success",
     REJECTED: "default",
 };
 
 const TARGET_TYPE_LABEL = {
-    USER: "사용자",
-    MESSAGE: "채팅 메시지",
     POST: "게시글",
+    COMMENT: "댓글",
 };
 
 function ReportPage() {
     const [list, setList] = useState([]);
-
     const [keyword, setKeyword] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [targetTypeFilter, setTargetTypeFilter] = useState("ALL");
@@ -97,28 +75,41 @@ function ReportPage() {
         severity: "info",
     });
 
+    const navigate = useNavigate();
+
+    // 신고 대상으로 이동 (리스트 & 모달에서 공통 사용)
+    const gotoTarget = (row) => {
+        if (!row) return;
+
+        switch (row.targetType) {
+            case "POST":
+                navigate(`/community/post/${row.targetId}`);
+                break;
+
+            case "COMMENT":
+                navigate(`/community/post/${row.targetId}?focus=comment`);
+                break;
+
+            case "USER":
+                navigate(`/admin/users/${row.targetId}`);
+                break;
+
+            default:
+                alert("이동할 수 없는 신고 대상입니다.");
+        }
+    };
+
+    /** 신고 목록 로드 */
     const fetchReports = async () => {
         try {
             setLoading(true);
-            const resp = await http.get(REPORTS_ENDPOINT, {
-                params: {
-                    // status: statusFilter === "ALL" ? undefined : statusFilter,
-                    // targetType: targetTypeFilter === "ALL" ? undefined : targetTypeFilter,
-                    // q: keyword || undefined,
-                },
-            });
+            const resp = await api.get(REPORTS_ENDPOINT);
 
             const data = resp.data;
             const reports = data?.content ?? data ?? [];
             setList(Array.isArray(reports) ? reports : []);
         } catch (e) {
-            console.error(
-                "신고 목록 로드 실패",
-                e.response?.status,
-                (e.response?.config?.baseURL || "") +
-                    (e.response?.config?.url || ""),
-                e.response?.data || e.message
-            );
+            console.error("신고 목록 로드 실패:", e);
             setToast({
                 open: true,
                 message: "신고 목록을 불러오지 못했습니다.",
@@ -131,12 +122,9 @@ function ReportPage() {
 
     useEffect(() => {
         fetchReports();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleRefresh = () => {
-        fetchReports();
-    };
+    const handleRefresh = () => fetchReports();
 
     const handleView = (reportId) => {
         const found = list.find((r) => String(r.reportId) === String(reportId));
@@ -145,13 +133,15 @@ function ReportPage() {
         setDetailOpen(true);
     };
 
-    // 상태 변경 예시: POST /api/reports/{id}/status
+    /** 상태 변경 */
     const updateStatus = async (newStatus) => {
         if (!selected) return;
+
         try {
-            await http.post(`${REPORTS_ENDPOINT}/${selected.reportId}/status`, {
+            await api.post(`${REPORTS_ENDPOINT}/${selected.reportId}/status`, {
                 status: newStatus,
             });
+
             setToast({
                 open: true,
                 message: "신고 상태가 변경되었습니다.",
@@ -160,27 +150,22 @@ function ReportPage() {
             setDetailOpen(false);
             fetchReports();
         } catch (e) {
-            console.error(
-                "상태 변경 실패",
-                e.response?.status,
-                (e.response?.config?.baseURL || "") +
-                    (e.response?.config?.url || ""),
-                e.response?.data || e.message
-            );
+            console.error("상태 변경 실패:", e);
             setToast({
                 open: true,
-                message: "신고 상태 변경에 실패했습니다.",
+                message: "상태 변경 실패",
                 severity: "error",
             });
         }
     };
 
+    /** 리스트 필터링 */
     const filteredList = useMemo(() => {
         const kw = keyword.trim().toLowerCase();
 
         return (list || []).filter((row) => {
             const reporterName = row.reporterName || "";
-            const targetSummary = row.targetSummary || ""; // 예: 신고 대상 요약
+            const targetSummary = row.targetSummary || "";
             const reason = row.reason || "";
 
             const matchKeyword =
@@ -192,15 +177,16 @@ function ReportPage() {
             const matchStatus =
                 statusFilter === "ALL" ? true : row.status === statusFilter;
 
-            const matchTargetType =
+            const matchType =
                 targetTypeFilter === "ALL"
                     ? true
                     : row.targetType === targetTypeFilter;
 
-            return matchKeyword && matchStatus && matchTargetType;
+            return matchKeyword && matchStatus && matchType;
         });
     }, [list, keyword, statusFilter, targetTypeFilter]);
 
+    /** 페이지 처리 */
     const pagedList = useMemo(() => {
         const start = (page - 1) * rowsPerPage;
         return filteredList.slice(start, start + rowsPerPage);
@@ -208,18 +194,13 @@ function ReportPage() {
 
     const pageCount = Math.ceil(filteredList.length / rowsPerPage) || 1;
 
-    useEffect(() => {
-        setPage(1);
-    }, [keyword, statusFilter, targetTypeFilter, list]);
+    useEffect(
+        () => setPage(1),
+        [keyword, statusFilter, targetTypeFilter, list]
+    );
 
-    const pendingCount = useMemo(
-        () => filteredList.filter((r) => r.status === "PENDING").length,
-        [filteredList]
-    );
-    const resolvedCount = useMemo(
-        () => filteredList.filter((r) => r.status === "RESOLVED").length,
-        [filteredList]
-    );
+    const pendingCount = filteredList.filter((r) => r.status === "PENDING").length;
+    const resolvedCount = filteredList.filter((r) => r.status === "RESOLVED").length;
 
     const DetailRow = ({ label, value }) => (
         <Stack
@@ -227,25 +208,10 @@ function ReportPage() {
             spacing={2}
             sx={{ py: 0.75, borderBottom: "1px solid", borderColor: "divider" }}
         >
-            <Typography
-                sx={{
-                    width: 90,
-                    minWidth: 90,
-                    fontSize: "0.85rem",
-                    color: "text.secondary",
-                    fontWeight: 600,
-                }}
-            >
+            <Typography sx={{ width: 90, fontSize: "0.85rem", fontWeight: 600 }}>
                 {label}
             </Typography>
-            <Typography
-                sx={{
-                    flexGrow: 1,
-                    fontSize: "0.9rem",
-                    wordBreak: "break-word",
-                    whiteSpace: "pre-wrap",
-                }}
-            >
+            <Typography sx={{ flexGrow: 1, fontSize: "0.9rem", whiteSpace: "pre-wrap" }}>
                 {value || "-"}
             </Typography>
         </Stack>
@@ -253,6 +219,7 @@ function ReportPage() {
 
     return (
         <>
+            {/* 상단 컨테이너 */}
             <Paper
                 sx={{
                     p: 3,
@@ -262,12 +229,12 @@ function ReportPage() {
                     boxShadow: 1,
                 }}
             >
+                {/* 제목 */}
                 <Box sx={{ mb: 3 }}>
                     <Typography
                         variant="h5"
                         fontWeight={700}
                         sx={{
-                            lineHeight: 1.3,
                             color: "primary.main",
                             mb: 1,
                             textAlign: { xs: "left", sm: "center" },
@@ -278,13 +245,9 @@ function ReportPage() {
                     <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{
-                            lineHeight: 1.5,
-                            textAlign: { xs: "left", sm: "center" },
-                        }}
+                        sx={{ textAlign: { xs: "left", sm: "center" } }}
                     >
-                        사용자 신고 내역을 확인하고 처리 상태를 관리할 수
-                        있습니다.
+                        사용자 신고 내역을 확인하고 처리 상태를 관리할 수 있습니다.
                     </Typography>
                 </Box>
 
@@ -306,10 +269,10 @@ function ReportPage() {
                         borderColor: "divider",
                         borderRadius: 2,
                         boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                        bgcolor: (theme) =>
-                            theme.palette.mode === "dark"
-                                ? theme.palette.background.default
-                                : theme.palette.grey[50],
+                        bgcolor: (t) =>
+                            t.palette.mode === "dark"
+                                ? t.palette.background.default
+                                : t.palette.grey[50],
                     }}
                 >
                     <Box
@@ -322,6 +285,7 @@ function ReportPage() {
                             minWidth: 0,
                         }}
                     >
+                        {/* 상태 필터 */}
                         <TextField
                             select
                             label="상태"
@@ -329,7 +293,7 @@ function ReportPage() {
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                             sx={{
-                                minWidth: 130,
+                                minWidth: 110,
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: 2,
                                     backgroundColor: "background.paper",
@@ -348,21 +312,19 @@ function ReportPage() {
                         >
                             <MenuItem value="ALL">전체</MenuItem>
                             <MenuItem value="PENDING">처리 대기</MenuItem>
-                            <MenuItem value="REVIEWING">검토 중</MenuItem>
                             <MenuItem value="RESOLVED">처리 완료</MenuItem>
                             <MenuItem value="REJECTED">기각</MenuItem>
                         </TextField>
 
+                        {/* 대상 타입 필터 */}
                         <TextField
                             select
                             label="대상 타입"
                             size="small"
                             value={targetTypeFilter}
-                            onChange={(e) =>
-                                setTargetTypeFilter(e.target.value)
-                            }
+                            onChange={(e) => setTargetTypeFilter(e.target.value)}
                             sx={{
-                                minWidth: 150,
+                                minWidth: 110,
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: 2,
                                     backgroundColor: "background.paper",
@@ -380,18 +342,25 @@ function ReportPage() {
                             }}
                         >
                             <MenuItem value="ALL">전체</MenuItem>
-                            <MenuItem value="USER">사용자</MenuItem>
-                            <MenuItem value="MESSAGE">채팅 메시지</MenuItem>
                             <MenuItem value="POST">게시글</MenuItem>
+                            <MenuItem value="COMMENT">댓글</MenuItem>
                         </TextField>
 
+                        {/* 검색창 */}
                         <TextField
                             size="small"
                             placeholder="신고자 / 대상 / 사유 검색"
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon fontSize="small" />
+                                    </InputAdornment>
+                                ),
+                            }}
                             sx={{
-                                minWidth: { xs: "100%", md: 260 },
+                                minWidth: { xs: "100%", md: 280 },
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: 5,
                                     backgroundColor: "background.paper",
@@ -407,75 +376,22 @@ function ReportPage() {
                                     },
                                 },
                             }}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon
-                                            sx={{
-                                                color: "text.disabled",
-                                                fontSize: 20,
-                                            }}
-                                        />
-                                    </InputAdornment>
-                                ),
-                            }}
                         />
                     </Box>
 
-                    <Stack
-                        direction="row"
-                        alignItems="center"
-                        flexWrap="wrap"
-                        spacing={1.5}
-                        sx={{
-                            width: { xs: "100%", md: "auto" },
-                            justifyContent: {
-                                xs: "space-between",
-                                md: "flex-end",
-                            },
-                        }}
-                    >
-                        <Box sx={{ textAlign: "right", mr: 1 }}>
-                            <Typography
-                                sx={{
-                                    fontSize: "0.8rem",
-                                    color: "text.secondary",
-                                    fontWeight: 400,
-                                    whiteSpace: "nowrap",
-                                }}
-                            >
+                    {/* 우측 정보 */}
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <Box sx={{ textAlign: "right" }}>
+                            <Typography sx={{ fontSize: "0.8rem", color: "text.secondary" }}>
                                 총 {filteredList.length}건
                             </Typography>
-                            <Typography
-                                sx={{
-                                    fontSize: "0.8rem",
-                                    fontWeight: 600,
-                                    whiteSpace: "nowrap",
-                                    color: "text.primary",
-                                }}
-                            >
-                                대기 {pendingCount}건 · 처리 완료{" "}
-                                {resolvedCount}건
+                            <Typography sx={{ fontSize: "0.8rem", fontWeight: 600 }}>
+                                대기 {pendingCount}건 · 완료 {resolvedCount}건
                             </Typography>
                         </Box>
 
                         <Tooltip title="새로고침">
-                            <IconButton
-                                size="small"
-                                onClick={handleRefresh}
-                                sx={{
-                                    borderRadius: 2,
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                    "&:hover": {
-                                        bgcolor: "primary.main",
-                                        color: "#fff",
-                                        borderColor: "primary.main",
-                                    },
-                                    width: 32,
-                                    height: 32,
-                                }}
-                            >
+                            <IconButton size="small" onClick={handleRefresh}>
                                 <RefreshIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
@@ -488,223 +404,88 @@ function ReportPage() {
                         borderRadius: 2,
                         border: "1px solid",
                         borderColor: "divider",
-                        boxShadow: 0,
                         maxHeight: 480,
                         overflow: "auto",
-                        "&::-webkit-scrollbar": { width: 6, height: 6 },
-                        "&::-webkit-scrollbar-thumb": {
-                            bgcolor: "rgba(0,0,0,0.2)",
-                            borderRadius: 3,
-                        },
                     }}
                 >
                     <Table stickyHeader size="small">
                         <TableHead>
-                            <TableRow
-                                sx={{
-                                    backgroundColor: (theme) =>
-                                        theme.palette.mode === "dark"
-                                            ? theme.palette.grey[900]
-                                            : theme.palette.grey[100],
-                                    "& th": {
-                                        fontWeight: 600,
-                                        whiteSpace: "nowrap",
-                                        fontSize: "0.8rem",
-                                        color: "text.primary",
-                                    },
-                                }}
-                            >
-                                <TableCell sx={{ minWidth: 80 }}>
-                                    신고ID
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 130 }}>
-                                    신고자
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 120 }}>
-                                    대상 타입
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 180 }}>
-                                    대상 요약
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 130 }}>
-                                    상태
-                                </TableCell>
-                                <TableCell sx={{ minWidth: 150 }}>
-                                    신고일
-                                </TableCell>
-                                <TableCell align="right" sx={{ minWidth: 100 }}>
-                                    액션
-                                </TableCell>
+                            <TableRow>
+                                <TableCell>신고ID</TableCell>
+                                <TableCell>신고자</TableCell>
+                                <TableCell>대상 타입</TableCell>
+                                <TableCell>대상 요약</TableCell>
+                                <TableCell>상태</TableCell>
+                                <TableCell>신고일</TableCell>
+                                <TableCell align="right">액션</TableCell>
                             </TableRow>
                         </TableHead>
 
                         <TableBody>
                             {pagedList.length === 0 ? (
                                 <TableRow>
-                                    <TableCell
-                                        colSpan={7}
-                                        align="center"
-                                        sx={{
-                                            py: 6,
-                                            color: "text.secondary",
-                                        }}
-                                    >
-                                        {loading
-                                            ? "불러오는 중..."
-                                            : "조건에 맞는 신고가 없습니다."}
+                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                                        {loading ? "불러오는 중..." : "조건에 맞는 신고가 없습니다."}
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 pagedList.map((row) => (
-                                    <TableRow
-                                        key={row.reportId}
-                                        hover
-                                        sx={{
-                                            "&:last-of-type td": {
-                                                borderBottom: 0,
-                                            },
-                                            transition:
-                                                "background-color 0.15s ease-in-out",
-                                            "&:hover": {
-                                                backgroundColor:
-                                                    "rgba(0,0,0,0.03)",
-                                            },
-                                        }}
-                                    >
-                                        <TableCell
-                                            sx={{
-                                                fontFamily: "monospace",
-                                                fontSize: "0.8rem",
-                                            }}
-                                        >
-                                            {row.reportId}
-                                        </TableCell>
+                                    <TableRow key={row.reportId} hover>
+                                        <TableCell>{row.reportId}</TableCell>
 
-                                        <TableCell sx={{ fontSize: "0.85rem" }}>
-                                            {row.reporterName} (
-                                            <span
-                                                style={{
-                                                    fontSize: "0.75rem",
-                                                    color: "gray",
-                                                }}
-                                            >
-                                                {row.reporterEmail}
-                                            </span>
-                                            )
+                                        <TableCell>
+                                            {row.reporterName} ({row.reporterEmail})
                                         </TableCell>
 
                                         <TableCell>
                                             <Chip
-                                                label={
-                                                    TARGET_TYPE_LABEL[
-                                                        row.targetType
-                                                    ] || row.targetType
-                                                }
+                                                label={TARGET_TYPE_LABEL[row.targetType] || row.targetType}
                                                 size="small"
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    fontSize: "0.7rem",
-                                                    px: 1,
-                                                }}
                                             />
                                         </TableCell>
 
+                                        {/* ★ 클리커블: 대상 이동 */}
                                         <TableCell
                                             sx={{
+                                                cursor: "pointer",
                                                 maxWidth: 220,
-                                                fontSize: "0.8rem",
                                                 whiteSpace: "nowrap",
                                                 overflow: "hidden",
                                                 textOverflow: "ellipsis",
+                                                color: "primary.main",
+                                                textDecoration: "underline",
                                             }}
+                                            onClick={() => gotoTarget(row)}
                                         >
                                             {row.targetSummary}
                                         </TableCell>
 
                                         <TableCell>
                                             <Chip
-                                                label={
-                                                    REPORT_STATUS_LABEL[
-                                                        row.status
-                                                    ] || row.status
-                                                }
+                                                label={REPORT_STATUS_LABEL[row.status] || row.status}
                                                 size="small"
-                                                color={
-                                                    REPORT_STATUS_COLOR[
-                                                        row.status
-                                                    ] || "default"
-                                                }
+                                                color={REPORT_STATUS_COLOR[row.status] || "default"}
                                                 icon={
-                                                    row.status ===
-                                                    "RESOLVED" ? (
-                                                        <CheckCircleIcon
-                                                            sx={{
-                                                                fontSize: 16,
-                                                            }}
-                                                        />
-                                                    ) : row.status ===
-                                                      "REJECTED" ? (
-                                                        <CancelIcon
-                                                            sx={{
-                                                                fontSize: 16,
-                                                            }}
-                                                        />
+                                                    row.status === "RESOLVED" ? (
+                                                        <CheckCircleIcon sx={{ fontSize: 16 }} />
+                                                    ) : row.status === "REJECTED" ? (
+                                                        <CancelIcon sx={{ fontSize: 16 }} />
                                                     ) : undefined
                                                 }
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    fontSize: "0.7rem",
-                                                    px: 1,
-                                                }}
                                             />
                                         </TableCell>
 
-                                        <TableCell
-                                            sx={{
-                                                fontSize: "0.8rem",
-                                                whiteSpace: "nowrap",
-                                            }}
-                                        >
+                                        <TableCell>
                                             {row.reportedAt
-                                                ? new Date(
-                                                      row.reportedAt
-                                                  ).toLocaleString()
+                                                ? new Date(row.reportedAt).toLocaleString()
                                                 : "-"}
                                         </TableCell>
 
                                         <TableCell align="right">
                                             <Tooltip title="상세 보기">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() =>
-                                                        handleView(row.reportId)
-                                                    }
-                                                >
+                                                <IconButton size="small" onClick={() => handleView(row.reportId)}>
                                                     <VisibilityIcon fontSize="small" />
                                                 </IconButton>
-                                            </Tooltip>
-
-                                            <Tooltip title="처리 완료">
-                                                <span>
-                                                    <IconButton
-                                                        size="small"
-                                                        sx={{ ml: 0.5 }}
-                                                        onClick={() => {
-                                                            setSelected(row);
-                                                            updateStatus(
-                                                                "RESOLVED"
-                                                            );
-                                                        }}
-                                                        disabled={
-                                                            row.status ===
-                                                                "RESOLVED" ||
-                                                            row.status ===
-                                                                "REJECTED"
-                                                        }
-                                                    >
-                                                        <GavelIcon fontSize="small" />
-                                                    </IconButton>
-                                                </span>
                                             </Tooltip>
                                         </TableCell>
                                     </TableRow>
@@ -714,6 +495,9 @@ function ReportPage() {
                     </Table>
                 </Box>
 
+                {/* ===========================
+                    페이지네이션
+                ============================ */}
                 <Stack direction="row" justifyContent="center" sx={{ mt: 2 }}>
                     <Pagination
                         count={pageCount}
@@ -721,65 +505,42 @@ function ReportPage() {
                         onChange={(_, value) => setPage(value)}
                         color="primary"
                         size="small"
-                        siblingCount={1}
-                        boundaryCount={1}
                         showFirstButton
                         showLastButton
                     />
                 </Stack>
             </Paper>
 
-            {/* 상세 다이얼로그 */}
-            <Dialog
-                open={detailOpen}
-                onClose={() => setDetailOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle sx={{ fontWeight: 700, pb: 1.5 }}>
-                    신고 상세
-                </DialogTitle>
+            {/* ===========================
+                상세 모달
+            ============================ */}
+            <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ fontWeight: 700 }}>신고 상세</DialogTitle>
+
                 <DialogContent dividers sx={{ px: 3 }}>
                     {selected ? (
                         <Box sx={{ pt: 1 }}>
-                            <DetailRow
-                                label="신고ID"
-                                value={selected.reportId}
-                            />
+                            <DetailRow label="신고ID" value={selected.reportId} />
                             <DetailRow
                                 label="신고자"
                                 value={`${selected.reporterName} (${selected.reporterEmail})`}
                             />
                             <DetailRow
                                 label="대상 타입"
-                                value={
-                                    TARGET_TYPE_LABEL[selected.targetType] ||
-                                    selected.targetType
-                                }
+                                value={TARGET_TYPE_LABEL[selected.targetType] || selected.targetType}
                             />
-                            <DetailRow
-                                label="대상 ID"
-                                value={selected.targetId}
-                            />
-                            <DetailRow
-                                label="대상 요약"
-                                value={selected.targetSummary}
-                            />
+                            <DetailRow label="대상 ID" value={selected.targetId} />
+                            <DetailRow label="대상 요약" value={selected.targetSummary} />
                             <DetailRow label="사유" value={selected.reason} />
                             <DetailRow
                                 label="상태"
-                                value={
-                                    REPORT_STATUS_LABEL[selected.status] ||
-                                    selected.status
-                                }
+                                value={REPORT_STATUS_LABEL[selected.status] || selected.status}
                             />
                             <DetailRow
                                 label="신고일"
                                 value={
                                     selected.reportedAt
-                                        ? new Date(
-                                              selected.reportedAt
-                                          ).toLocaleString()
+                                        ? new Date(selected.reportedAt).toLocaleString()
                                         : "-"
                                 }
                             />
@@ -787,55 +548,55 @@ function ReportPage() {
                                 label="처리일"
                                 value={
                                     selected.resolvedAt
-                                        ? new Date(
-                                              selected.resolvedAt
-                                          ).toLocaleString()
+                                        ? new Date(selected.resolvedAt).toLocaleString()
                                         : "-"
                                 }
                             />
-                            <DetailRow
-                                label="처리 메모"
-                                value={selected.adminMemo}
-                            />
+                            <DetailRow label="메모" value={selected.adminMemo} />
                         </Box>
                     ) : (
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ py: 2 }}
-                        >
-                            선택된 신고가 없습니다.
-                        </Typography>
+                        <Typography sx={{ py: 2 }}>선택된 신고 없음</Typography>
                     )}
                 </DialogContent>
-                <DialogActions
-                    sx={{ px: 3, py: 1.5, justifyContent: "space-between" }}
-                >
+
+                <DialogActions sx={{ px: 3, py: 1.5, justifyContent: "space-between" }}>
                     <Stack direction="row" spacing={1}>
+                        {/* ★ 상세 페이지 바로가기 버튼 */}
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                            disabled={!selected || !selected.targetId}
+                            onClick={() => gotoTarget(selected)}
+                        >
+                            대상 페이지 이동
+                        </Button>
+
                         <Button
                             variant="outlined"
                             size="small"
                             startIcon={<GavelIcon fontSize="small" />}
-                            onClick={() => updateStatus("RESOLVED")}
                             disabled={
                                 !selected ||
                                 selected.status === "RESOLVED" ||
                                 selected.status === "REJECTED"
                             }
+                            onClick={() => updateStatus("RESOLVED")}
                         >
                             처리 완료
                         </Button>
+
                         <Button
                             variant="outlined"
                             size="small"
                             color="error"
                             startIcon={<CancelIcon fontSize="small" />}
-                            onClick={() => updateStatus("REJECTED")}
                             disabled={
                                 !selected ||
                                 selected.status === "RESOLVED" ||
                                 selected.status === "REJECTED"
                             }
+                            onClick={() => updateStatus("REJECTED")}
                         >
                             기각
                         </Button>
@@ -851,7 +612,9 @@ function ReportPage() {
                 </DialogActions>
             </Dialog>
 
-            {/* 토스트 */}
+            {/* ===========================
+                토스트 알림
+            ============================ */}
             <Snackbar
                 open={toast.open}
                 autoHideDuration={2200}
