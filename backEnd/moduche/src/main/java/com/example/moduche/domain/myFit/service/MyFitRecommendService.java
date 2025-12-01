@@ -12,4 +12,6 @@ public interface MyFitRecommendService {
     
     List<MyFitRecommendResponseDTO> getRecommendationsByDisability(String disabilityType);
 
+    List<MyFitRecommendResponseDTO> getRecommendationsByCriteria(String agrdeFlagNm, String sexdstnFlagCd, String troblTyNm, String troblGradNm);
+
 }

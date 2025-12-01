@@ -19,7 +19,10 @@ import lombok.Setter;
 public class MyFitRecommendResponseDTO {
 	
 	private Long recommendId;
-    private String ageFlagNm;
+    private String agrdeFlagNm;
+    private String sexdstnFlagCd;
+    private String troblTyNm;
+    private String troblGradNm;
     private String recommendMvmNm;
     private Integer rank;
     private String intensity;
@@ -28,13 +31,16 @@ public class MyFitRecommendResponseDTO {
     private List<MyFitMvmContentResponseDTO> contents;
 
     public static MyFitRecommendResponseDTO fromEntity(MyFitRecommend entity) {
-        List<MyFitMvmContentResponseDTO> contentDTOs = entity.getContents().stream()
+        List<MyFitMvmContentResponseDTO> contentDTOs = entity.getContents() == null ? null : entity.getContents().stream()
                 .map(MyFitMvmContentResponseDTO::fromEntity)
                 .collect(Collectors.toList());
 
     	return MyFitRecommendResponseDTO.builder()
                 .recommendId(entity.getRecommendId())
-                .ageFlagNm(entity.getAgeFlagNm())
+                .agrdeFlagNm(entity.getAgrdeFlagNm())
+                .sexdstnFlagCd(entity.getSexdstnFlagCd())
+                .troblTyNm(entity.getTroblTyNm())
+                .troblGradNm(entity.getTroblGradNm())
                 .recommendMvmNm(entity.getRecommendMvmNm())
                 .rank(entity.getRank())
                 .intensity(entity.getIntensity())

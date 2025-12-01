@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -106,15 +107,28 @@ public class MyFitDataInitializer {
 
         for (MyFitRecommendJson data : dataList) {
             MyFitRecommend recommend = new MyFitRecommend();
-            recommend.setDisabilityType(data.getDisabilityType());
-            recommend.setAgeFlagNm(data.getAgeFlagNm());
+            recommend.setAgrdeFlagNm(data.getAgrdeFlagNm());
+            recommend.setSexdstnFlagCd(data.getSexdstnFlagCd());
+            recommend.setTroblTyNm(data.getTroblTyNm());
+            recommend.setTroblGradNm(data.getTroblGradNm());
             recommend.setRecommendMvmNm(data.getRecommendMvmNm());
-            recommend.setRank(data.getRank());
+            
+            if (StringUtils.hasText(data.getRank())) {
+                try {
+                    Double rankAsDouble = Double.parseDouble(data.getRank());
+                    recommend.setRank(rankAsDouble.intValue());
+                } catch (NumberFormatException e) {
+                    log.warn("Could not parse rank string: '{}'", data.getRank());
+                    recommend.setRank(null);
+                }
+            }
+
             recommend.setIntensity(data.getIntensity());
             recommend.setFrequency(data.getFrequency());
             recommend.setDuration(data.getDuration());
             recommendRepository.save(recommend);
 
+            // MvmContent is not part of the search, so leaving it as is.
             if (data.getMvmList() != null) {
                 for (MyFitMvmContentJson c : data.getMvmList()) {
                     MyFitMvmContent content = new MyFitMvmContent();
@@ -162,25 +176,31 @@ public class MyFitDataInitializer {
     @Getter
     @Setter
     private static class MyFitRecommendJson {
-        @JsonProperty("DSPSN_TY_NM")
-        private String disabilityType;
-
         @JsonProperty("AGRDE_FLAG_NM")
-        private String ageFlagNm;
+        private String agrdeFlagNm;
+
+        @JsonProperty("SEXDSTN_FLAG_CD")
+        private String sexdstnFlagCd;
+        
+        @JsonProperty("TROBL_TY_NM")
+        private String troblTyNm;
+
+        @JsonProperty("TROBL_GRAD_NM")
+        private String troblGradNm;
 
         @JsonProperty("RECOMEND_MVM_NM")
         private String recommendMvmNm;
 
         @JsonProperty("FLAG_ACCTO_RECOMEND_MVM_RANK_CO")
-        private Integer rank;
+        private String rank;
 
-        @JsonProperty("MVM_INTEN_FLAG_NM")
+        @JsonProperty("intensity")
         private String intensity;
 
-        @JsonProperty("MVM_FRQNC_FLAG_NM")
+        @JsonProperty("frequency")
         private String frequency;
 
-        @JsonProperty("MVM_TIME_FLAG_NM")
+        @JsonProperty("duration")
         private String duration;
 
         @JsonProperty("MVM_LIST")

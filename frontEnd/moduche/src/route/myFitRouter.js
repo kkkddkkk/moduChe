@@ -44,6 +44,14 @@ export default function myFitRouter() {
             ),
         },
         {
+            path: "recommend",
+            element: (
+                <Suspense fallback={Loading}>
+                    <Recommend />
+                </Suspense>
+            ),
+        },
+        {
             path: "content",
             element: (
                 <Suspense fallback={Loading}>

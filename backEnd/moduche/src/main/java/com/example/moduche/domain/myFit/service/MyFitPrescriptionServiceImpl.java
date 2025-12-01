@@ -64,8 +64,8 @@ public class MyFitPrescriptionServiceImpl implements MyFitPrescriptionService {
 
                 // 3. 처방에 따른 추천(Recommend) 객체 생성
                 MyFitRecommend recommend = new MyFitRecommend();
-                recommend.setDisabilityType(accessibilityProfile.getDisability().getDisabilityCode()); // 장애 유형 설정
-                recommend.setAgeFlagNm(String.valueOf(measure.getMeasureAge())); // 측정 당시 연령 설정
+                recommend.setTroblTyNm(accessibilityProfile.getDisability().getDisabilityCode()); // 장애 유형 설정
+                recommend.setAgrdeFlagNm(String.valueOf(measure.getMeasureAge())); // 측정 당시 연령 설정
                 
                 // 등급(grade) 문자열에서 숫자만 추출하여 rank로 설정 (예: "1등급" -> 1)
                 try {

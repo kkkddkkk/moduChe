@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -28,11 +29,24 @@ public class MyFitRecommend extends MyFitBaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long recommendId;
     
-    private String disabilityType;
+    @Column(name = "TROBL_TY_NM")
+    private String troblTyNm;
 
-    private String ageFlagNm;
+    @Column(name = "TROBL_GRAD_NM")
+    private String troblGradNm;
+
+    @Column(name = "SEXDSTN_FLAG_CD")
+    private String sexdstnFlagCd;
+
+    @Column(name = "AGRDE_FLAG_NM")
+    private String agrdeFlagNm;
+
+    @Column(name = "RECOMEND_MVM_NM")
     private String recommendMvmNm;
+    
+    @Column(name = "FLAG_ACCTO_RECOMEND_MVM_RANK_CO")
     private Integer rank;
+
     private String intensity;
     private String frequency;
     private String duration;
