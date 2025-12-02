@@ -1,32 +1,32 @@
-import { Box, Grid, useMediaQuery, useTheme } from "@mui/material";
-import Layout from "../../component/common/Layout";
-import Slides from "../../component/common/Slides";
-import Paper from "../../component/common/Paper";
-import { SubTitle } from "../../component/common/Text";
-import { Handshake, MapPinned, Weight } from "lucide-react";
-import MapSearch from "../../component/main/MapSearch";
-import { useEffect, useState } from "react";
-import SafeMap from "../../component/main/SafeMap";
-import { MyPageText } from "../../component/myPage/MyPageTexts";
-import CustomTable from "../../component/common/CustomTable";
-import { getList } from "../../api/DistanceAPI";
-import { useApi } from "../../hook/useAPI";
-import { useNavigate } from "react-router-dom";
-import { fetchMainBanners } from "../../api/bannerAPI/bannerAPI";
+import { Box, Grid, useMediaQuery, useTheme } from '@mui/material';
+import Layout from '../../component/common/Layout';
+import Slides from '../../component/common/Slides';
+import Paper from '../../component/common/Paper';
+import { SubTitle } from '../../component/common/Text';
+import { Handshake, MapPinned, Weight } from 'lucide-react';
+import MapSearch from '../../component/main/MapSearch';
+import { useEffect, useState } from 'react';
+import SafeMap from '../../component/main/SafeMap';
+import { MyPageText } from '../../component/myPage/MyPageTexts';
+import CustomTable from '../../component/common/CustomTable';
+import { getList } from '../../api/DistanceAPI';
+import { useApi } from '../../hook/useAPI';
+import { useNavigate } from 'react-router-dom';
+import { fetchMainBanners } from '../../api/bannerAPI/bannerAPI';
 
 const Main = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isNotDeskTop = useMediaQuery(theme.breakpoints.down("lg"));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isNotDeskTop = useMediaQuery(theme.breakpoints.down('lg'));
   const navigate = useNavigate();
 
   const testBannerImg = [
-    { src: "/forTest/TEST_BANNER_1.png", url: "/account/login" },
-    { src: "/forTest/TEST_BANNER_2.png", url: "/account/joinUs" },
-    { src: "/forTest/TEST_BANNER_3.png", url: "" },
+    { src: '/forTest/TEST_BANNER_1.png', url: '/account/login' },
+    { src: '/forTest/TEST_BANNER_2.png', url: '/account/joinUs' },
+    { src: '/forTest/TEST_BANNER_3.png', url: '' },
   ];
 
-  const [loca, setLoca] = useState("");
+  const [loca, setLoca] = useState('');
   const [lat, setLat] = useState(37.5665);
   const [lng, setLng] = useState(126.978);
 
@@ -46,14 +46,14 @@ const Main = () => {
   };
 
   function phoneFormat(numbers) {
-    numbers = numbers?.replace(/\D/g, "");
+    numbers = numbers?.replace(/\D/g, '');
 
-    if (numbers?.startsWith("01")) {
-      return numbers?.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
-    } else if (numbers?.startsWith("02")) {
-      return numbers?.replace(/^(\d{2})(\d{3,4})(\d{4})$/, "$1-$2-$3");
+    if (numbers?.startsWith('01')) {
+      return numbers?.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
+    } else if (numbers?.startsWith('02')) {
+      return numbers?.replace(/^(\d{2})(\d{3,4})(\d{4})$/, '$1-$2-$3');
     } else {
-      return numbers?.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
+      return numbers?.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
     }
   }
 
@@ -62,37 +62,41 @@ const Main = () => {
   useEffect(() => {
     const fetch = async () => {
       const res = await getListAPI(lat, lng);
-      const data = res.data;
+      const data = res?.data;
 
-      const communities = data.communities.map((c) => ({
-        communityId: c.communityId,
-        동아리명: c.name,
-        목적: c.purpose,
-        거리: distanceFormat(c.distance),
-        담당기관: c.founder,
-        활동일: c.scheduleDetail,
-      }));
-      const markC = data.communities.map((c) => ({
-        lat: c.geoLat,
-        lng: c.geoLng,
-        name: c.name,
-      }));
+      const communities =
+        data?.communities?.map((c) => ({
+          communityId: c.communityId,
+          동아리명: c.name,
+          목적: c.purpose,
+          거리: distanceFormat(c.distance),
+          담당기관: c.founder,
+          활동일: c.scheduleDetail,
+        })) || [];
+      const markC =
+        data?.communities?.map((c) => ({
+          lat: c.geoLat,
+          lng: c.geoLng,
+          name: c.name,
+        })) || [];
 
-      const facilities = data.facilities.map((f) => ({
-        facilityId: f.facilityId,
-        기관명: f.facilityName,
-        종목: f.facilityType,
-        거리: distanceFormat(f.distance),
-        영업시간: f.openHours || "전화 문의",
-        연락처: phoneFormat(f.facilityPhone),
-        lat: f.geoLat,
-        lng: f.geoLng,
-      }));
-      const markF = data.facilities.map((f) => ({
-        lat: f.geoLat,
-        lng: f.geoLng,
-        name: f.facilityName,
-      }));
+      const facilities =
+        data?.facilities?.map((f) => ({
+          facilityId: f.facilityId,
+          기관명: f.facilityName,
+          종목: f.facilityType,
+          거리: distanceFormat(f.distance),
+          영업시간: f.openHours || '전화 문의',
+          연락처: phoneFormat(f.facilityPhone),
+          lat: f.geoLat,
+          lng: f.geoLng,
+        })) || [];
+      const markF =
+        data?.facilities?.map((f) => ({
+          lat: f.geoLat,
+          lng: f.geoLng,
+          name: f.facilityName,
+        })) || [];
 
       setCommunity(communities);
       setFacility(facilities);
@@ -107,17 +111,17 @@ const Main = () => {
   useEffect(() => {
     (async () => {
       const data = await fetchMainBanners();
-      setBanners(data);
+      setBanners(data || []);
     })();
   }, []);
 
   const handleFacilityClick = () => {
-    navigate("/course");
+    navigate('/course');
   };
 
   /** ✅ 동아리 테이블: 아무 셀이나 클릭하면 동아리 게시판으로 이동 */
   const handleCommunityClick = () => {
-    navigate("/community/home");
+    navigate('/community/home');
   };
 
   return (
@@ -131,10 +135,10 @@ const Main = () => {
         <Grid
           size={12}
           padding={2}
-          display={"flex"}
-          alignContent={"center"}
+          display={'flex'}
+          alignContent={'center'}
           gap={1}
-          marginTop={"5%"}
+          marginTop={'5%'}
         >
           <MapPinned />
           <SubTitle>내 근처에 있는...</SubTitle>
@@ -149,7 +153,7 @@ const Main = () => {
                 setLat={setLat}
                 setLng={setLng}
               />
-              <Grid size={12} marginTop={"5%"}>
+              <Grid size={12} marginTop={'5%'}>
                 <SafeMap
                   lat={lat}
                   lng={lng}
@@ -165,35 +169,35 @@ const Main = () => {
         </Grid>
 
         <Grid size={isMobile ? 12 : isNotDeskTop ? 6 : 8}>
-          <Paper sx={{ marginBottom: "5%" }}>
+          <Paper sx={{ marginBottom: '5%' }}>
             <Layout space={2}>
               {/* 체육 시설 */}
               <Grid size={12}>
                 <MyPageText icon={<Weight />}>체육 시설</MyPageText>
-                <Box marginTop={"2%"} />
+                <Box marginTop={'2%'} />
                 <CustomTable
                   datas={facility}
-                  columns={["기관명", "종목", "거리", "영업시간", "연락처"]}
+                  columns={['기관명', '종목', '거리', '영업시간', '연락처']}
                   id="facilityId"
                   padding={1}
-                  hover={["기관명", "종목", "거리", "영업시간", "연락처"]}
+                  hover={['기관명', '종목', '거리', '영업시간', '연락처']}
                   hoverColor={theme.palette.text.primary}
                   clickEvent={handleFacilityClick}
                 />
               </Grid>
 
-              <Box marginTop={"5%"} />
+              <Box marginTop={'5%'} />
 
               {/* 모집 중 동아리 */}
               <Grid size={12}>
                 <MyPageText icon={<Handshake />}>모집 중 동아리</MyPageText>
-                <Box marginTop={"2%"} />
+                <Box marginTop={'2%'} />
                 <CustomTable
                   datas={community}
-                  columns={["동아리명", "목적", "거리", "담당기관", "활동일"]}
+                  columns={['동아리명', '목적', '거리', '담당기관', '활동일']}
                   id="communityId"
                   padding={1}
-                  hover={["동아리명", "목적", "거리", "담당기관", "활동일"]}
+                  hover={['동아리명', '목적', '거리', '담당기관', '활동일']}
                   hoverColor={theme.palette.text.primary}
                   clickEvent={handleCommunityClick}
                 />
