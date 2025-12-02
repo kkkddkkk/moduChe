@@ -76,7 +76,11 @@ public class Security {
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of(
+        	    "http://localhost:3000",
+        	    "https://moduche.vercel.app",
+        	    "https://moduche-vqlbv7vw0-teamgpts-projects.vercel.app"
+        	));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
