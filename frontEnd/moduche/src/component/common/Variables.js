@@ -1,4 +1,5 @@
-export const API_SERVER_HOST = "http://localhost:8080";
+// export const API_SERVER_HOST = "http://localhost:8080";
+export const API_SERVER_HOST = "https://moduche.onrender.com"
 export const FRONT_SERVERHOST = "http://localhost:3000";
 
 export const AUTH = {
