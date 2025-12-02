@@ -189,7 +189,7 @@ const Header = () => {
                             justifyContent={"center"}
                             alignItems={"center"}
                         >
-                            <HeaderMenu onClick={clickSearchButton}>
+                            {/* <HeaderMenu onClick={clickSearchButton}>
                                 검색하기
                             </HeaderMenu>
                             <HeaderIcon onClick={clickSearchButton}>
@@ -199,7 +199,7 @@ const Header = () => {
                                         fontWeight: "bold",
                                     }}
                                 />
-                            </HeaderIcon>
+                            </HeaderIcon> */}
                             {!isMdUp ? (
                                 <>
                                     <HeaderIcon
