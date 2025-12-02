@@ -3,7 +3,6 @@ import { lazy, Suspense } from "react";
 const Loading = <div>Loading...</div>;
 const CourseBoard = lazy(() => import("../pages/Course/CourseBoard"));
 const CourseDetail = lazy(() => import("../pages/Course/CourseDetail"));
-const ClubDetail = lazy(() => import("../pages/Club/ClubDetail"));
 const CourseRegisterPage = lazy(() =>
   import("../pages/Course/CourseRegisterPage")
 );
@@ -24,14 +23,6 @@ export default function courseRouter() {
       element: (
         <Suspense fallback={Loading}>
           <CourseDetail />
-        </Suspense>
-      ),
-    },
-    {
-      path: "ClubDetail",
-      element: (
-        <Suspense fallback={Loading}>
-          <ClubDetail />
         </Suspense>
       ),
     },

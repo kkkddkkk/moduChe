@@ -18,10 +18,8 @@ import LockIcon from "@mui/icons-material/Lock";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-import {
-    fetchInquiryDetail,
-    deleteInquiry,
-} from "../../api/inquiryApi/inquiryApi";
+import { fetchInquiryDetail } from "../../api/inquiryApi/inquiryPublicApi";
+import { deleteInquiry } from "../../api/inquiryApi/inquiryUserApi";
 
 import { getUsernameFromToken, getRoleFromToken } from "../../utils/auth";
 
@@ -33,27 +31,36 @@ export default function InquiryDetailCard({ id }) {
     const [isAdmin, setIsAdmin] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
 
+    /** ▼ 콘솔: 어떤 id가 전달됐는지 확인 (이게 아주 중요함!) */
+    console.log("DETAIL CARD RECEIVED ID:", id);
+
     /** ▼ 토큰 정보 */
     const token = localStorage.getItem("accessToken");
     const username = getUsernameFromToken(token);
     const role = getRoleFromToken(token);
 
-    /** ▼ role 반영(관리자 판별) */
+    /** ▼ 관리자 판별 */
     useEffect(() => {
-        if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "OPERATOR") {
+        if (role && (role.includes("ADMIN") || role.includes("SUPER_ADMIN"))) {
             setIsAdmin(true);
         }
     }, [role]);
 
-    /** ▼ isAdmin 확정 후 조회 */
+    /** ▼ 상세 조회 */
     useEffect(() => {
         load();
-    }, [isAdmin]);
+    }, [id]); // ★ id가 변경될 때마다 다시 조회해야 함
 
-    /** ▼ 문의 상세 조회 (단일 API) */
     const load = async () => {
         try {
             const res = await fetchInquiryDetail(id);
+
+            /** ▼ 상세 API 응답 찍기 */
+            console.log(
+                "DETAIL API RESPONSE:",
+                JSON.stringify(res, null, 2)
+            );
+
             setData(res);
 
             if (res.username === username) {
@@ -62,15 +69,14 @@ export default function InquiryDetailCard({ id }) {
         } catch (e) {
             console.error("문의 조회 실패:", e);
 
-            // 백엔드 비밀글 권한 거부 → 403 반환
             if (e.response?.status === 403) {
-                alert("비밀글을 볼 수 있는 권한이 없습니다.");
+                alert("비밀글입니다. 접근 권한이 없습니다.");
                 window.location.href = "/inquiry/list";
             }
         }
     };
 
-    /** ▼ 삭제 처리 */
+    /** ▼ 삭제 */
     const handleDelete = async () => {
         try {
             await deleteInquiry(id);
@@ -85,6 +91,7 @@ export default function InquiryDetailCard({ id }) {
 
     const inquiry = data;
 
+    /** ▼ label 매핑 */
     const CATEGORY_LABEL = {
         SERVICE: "서비스 문의",
         BUG: "오류 신고",
@@ -93,17 +100,15 @@ export default function InquiryDetailCard({ id }) {
 
     const STATUS_TEXT = {
         WAIT: "답변 대기",
-        WAITING: "답변 대기",
         ANSWERED: "답변 완료",
     };
 
     const STATUS_COLOR = {
         WAIT: "warning",
-        WAITING: "warning",
         ANSWERED: "success",
     };
 
-    /** ▼ 내용 볼 권한(백엔드 보안 유지, 프론트는 UI용) */
+    /** ▼ 비밀글 열람 가능 여부 */
     const canView = !inquiry.secret || isOwner || isAdmin;
 
     return (
@@ -142,7 +147,7 @@ export default function InquiryDetailCard({ id }) {
                             size="small"
                         />
                         <Typography variant="body2" color="text.secondary">
-                            {inquiry.createdAt}
+                            {inquiry.createdAt?.replace("T", " ").slice(0, 16)}
                         </Typography>
                     </Stack>
                 </Box>
@@ -161,25 +166,40 @@ export default function InquiryDetailCard({ id }) {
                         <Typography>{inquiry.content}</Typography>
                     ) : (
                         <Typography color="text.secondary">
-                            🔒 비밀글입니다. 작성자 또는 관리자만 열람
-                            가능합니다.
+                            🔒 비밀글입니다. 작성자 또는 관리자만 열람 가능합니다.
                         </Typography>
                     )}
                 </Box>
 
-                {/* 수정 / 삭제 */}
-                {(isOwner || isAdmin) && (
-                    <Stack
-                        direction="row"
-                        justifyContent="flex-end"
-                        spacing={1}
+                {/* 답변 */}
+                {inquiry.answer && (
+                    <MuiPaper
+                        elevation={0}
+                        sx={{
+                            borderRadius: 2,
+                            border: `1px solid ${alpha("#000", 0.15)}`,
+                            p: 3,
+                        }}
                     >
+                        <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
+                            📌 관리자 답변
+                        </Typography>
+                        <Typography sx={{ whiteSpace: "pre-line" }}>
+                            {inquiry.answer.content}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            {inquiry.answer.createdAt?.replace("T", " ").slice(0, 16)} ·{" "}
+                            {inquiry.answer.answeredByUsername}
+                        </Typography>
+                    </MuiPaper>
+                )}
+
+                {(isOwner || isAdmin) && (
+                    <Stack direction="row" justifyContent="flex-end" spacing={1}>
                         <Button
                             variant="contained"
                             startIcon={<EditIcon />}
-                            onClick={() =>
-                                (window.location.href = `/inquiry/${id}/edit`)
-                            }
+                            onClick={() => (window.location.href = `/inquiry/${id}/edit`)}
                         >
                             수정하기
                         </Button>

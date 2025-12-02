@@ -41,6 +41,11 @@ public interface FacilityUserRepository extends JpaRepository<FacilityUser, Long
 	Optional<MyFacilityDTO> findMyFacilityDtoByUserName(@Param("username") String username);
 	
 	//김도경: username으로 FacilityUser 찾기
-	@Query("SELECT fu FROM FacilityUser fu JOIN fu.user u WHERE u.username = :username")
-	Optional<FacilityUser> findByUsername(@Param("username") String username);
-}
+	@Query("""
+	        SELECT fu
+	        FROM FacilityUser fu
+	        JOIN FETCH fu.user u
+	        JOIN FETCH fu.facility f
+	        WHERE u.username = :username
+	        """)
+	    Optional<FacilityUser> findByUsername(@Param("username") String username);}

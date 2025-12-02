@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
+import RequireRole from "../component/auth/RequireRole";
 
 // 공통 레이아웃
 const Loading = <div>Loading...</div>;
@@ -12,7 +13,8 @@ const AdministratorPage = lazy(() =>
     import("../pages/Admin/AdministratorPage")
 );
 const CalculatePage = lazy(() => import("../pages/Admin/CalculatePage"));
-const BannersPage = lazy(() => import("../pages/Admin/BannersPage"));
+const BannersPage = lazy(() => import("../pages/Admin/BannerOnPage"));
+const BannersApplyPage = lazy(() => import("../pages/Admin/BannersApplyPage"));
 const FacilityPage = lazy(() => import("../pages/Admin/FacilityPage"));
 const NoticePage = lazy(() => import("../pages/Admin/NoticePage"));
 const ClubApproval = lazy(() => import("../pages/Admin/ClubApproval"));
@@ -55,9 +57,11 @@ export default function adminRouter() {
                 {
                     path: "administrator",
                     element: (
-                        <Suspense fallback={Loading}>
-                            <AdministratorPage />
-                        </Suspense>
+                        <RequireRole role="SUPER_ADMIN">
+                            <Suspense fallback={Loading}>
+                                <AdministratorPage />
+                            </Suspense>
+                        </RequireRole>
                     ),
                 },
                 {
@@ -73,6 +77,14 @@ export default function adminRouter() {
                     element: (
                         <Suspense fallback={Loading}>
                             <BannersPage />
+                        </Suspense>
+                    ),
+                },
+                {
+                    path: "banners-apply",
+                    element: (
+                        <Suspense fallback={Loading}>
+                            <BannersApplyPage />
                         </Suspense>
                     ),
                 },

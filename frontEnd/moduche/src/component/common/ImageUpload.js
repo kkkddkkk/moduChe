@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { X as XIcon, Star as StarIcon } from "lucide-react";
 
-export const ImageUpload = ({ form, setForm }) => {
+export const ImageUpload = ({ form, setForm, maxCount = 3 }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
     const isTablet = useMediaQuery(theme.breakpoints.between("sm", "lg"));
@@ -32,11 +32,11 @@ export const ImageUpload = ({ form, setForm }) => {
         const files = Array.from(e.target.files);
         if (!files.length) return;
 
-        const newImages = files.slice(0, 3 - images.length).map((file) => ({
+        const available = maxCount - images.length;
+        const newImages = files.slice(0, available).map((file) => ({
             file,
             url: URL.createObjectURL(file),
         }));
-
         const updatedImages = [...images, ...newImages];
 
         setImages(updatedImages);
@@ -60,7 +60,7 @@ export const ImageUpload = ({ form, setForm }) => {
             images: updatedImages,
         }));
     };
-    const isMax = images.length >= 3;
+    const isMax = images.length >= maxCount;
 
     return (
         <Grid container size={12}>
@@ -84,7 +84,7 @@ export const ImageUpload = ({ form, setForm }) => {
                     }}
                     disabled={isMax}
                 >
-                    {isMax ? "최대 3장 업로드됨" : "이미지 업로드"}
+                    {isMax ? `최대 ${maxCount}장 업로드됨` : "이미지 업로드"}
                     <input
                         type="file"
                         hidden
@@ -211,8 +211,7 @@ export const ImageUpload = ({ form, setForm }) => {
                                 opacity: 0.6,
                             }}
                         >
-                            업로드된 이미지가 없습니다. <br />첫 번째로 업로드한
-                            이미지가 대표로 지정됩니다.
+                            업로드된 이미지가 없습니다.
                         </Typography>
                     )}
                 </Box>

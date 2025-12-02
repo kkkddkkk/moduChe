@@ -1,32 +1,42 @@
 package com.example.moduche.domain.inquiry;
 
-import com.example.moduche.domain.login.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
 @Entity
-@Getter @Setter
+@Table(name = "inquiry_answer")
 public class InquiryAnswer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long answerId;
 
-    @OneToOne
-    @JoinColumn(name = "inquiry_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inquiry_id", nullable = false)
     private Inquiry inquiry;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "answered_by")
-    private User answeredBy;
-
-    private String answeredByUsername;
-
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+    
+    @Column(nullable = false)
+    private String answeredByUsername;   // 관리자 로그인 아이디
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

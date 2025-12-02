@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.example.moduche.domain.community.dto.MetaInfoEditRequestDTO;
 import com.example.moduche.domain.community.enums.CommunityScheduleType;
@@ -51,6 +53,10 @@ public class Community {
 	private BigDecimal geoLat;
 	@Column(precision = 38, scale = 15)
 	private BigDecimal geoLng;
+	
+	//검색 조건에 필요한 join
+	@OneToMany(mappedBy = "community", fetch = FetchType.LAZY)
+	private List<CommunityPost> posts = new ArrayList<>();
 	
 
 }

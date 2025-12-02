@@ -4,6 +4,7 @@ import com.example.moduche.domain.enrollment.Enrollment;
 import com.example.moduche.domain.enrollment.EnrollmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
@@ -22,5 +23,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
         and e.session.sessionId = :sessionId
         and e.status = com.example.moduche.domain.enrollment.EnrollmentStatus.ENROLLED
     """)
-    long countSessionEnrolled(Long courseId, Long sessionId);
+    long countSessionEnrolled(
+            @Param("courseId") Long courseId,   // ✅ JPQL 이름과 일치
+            @Param("sessionId") Long sessionId  // ✅
+    );
 }

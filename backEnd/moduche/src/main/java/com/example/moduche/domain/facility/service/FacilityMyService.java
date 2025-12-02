@@ -6,9 +6,11 @@ import com.example.moduche.domain.facility.dto.FacilityDto;
 import com.example.moduche.domain.facility.repository.FacilityUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class FacilityMyService {
 
     private final FacilityUserRepository facilityUserRepository;

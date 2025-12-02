@@ -21,173 +21,173 @@ const LayoutForAdmin = lazy(() => import("../pages/LayoutForAdmin"));
 
 const AdminPopupLayout = lazy(() => import("../pages/AdminPopupLayout"));
 const AdminCreateWindow = lazy(() =>
-    import("../pages/Admin/AdminCreateWindow")
+  import("../pages/Admin/AdminCreateWindow")
 );
 const BannerCreateWindow = lazy(() =>
-    import("../pages/Admin/BannerCreateWindow")
+  import("../pages/Admin/BannerCreateWindow")
 );
 const FacilityCreateWindow = lazy(() =>
-    import("../pages/Admin/FacilityCreateWindow")
+  import("../pages/Admin/FacilityCreateWindow")
 );
 
 const NoticeCreateWindow = lazy(() =>
-    import("../pages/Admin/NoticeCreateWindow")
+  import("../pages/Admin/NoticeCreateWindow")
 );
 
 const root = createBrowserRouter([
-    {
-        path: "/",
-        element: <ScrollShell />, // ✅ 여기서 모든 자식 라우트에 대해 스크롤 맨 위 처리
+  {
+    path: "/",
+    element: <ScrollShell />, // ✅ 여기서 모든 자식 라우트에 대해 스크롤 맨 위 처리
+    children: [
+      {
+        path: "test",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: testCommonRouter(),
+      },
+      {
+        path: "",
+        element: (
+          <Suspense fallback={Loading}>
+            <Main />
+          </Suspense>
+        ),
+      },
+      {
+        path: "notice",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: noticeRouter(),
+      },
+      {
+        path: "account",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: accountRouter(),
+      },
+      {
+        path: "community",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: communityRouter(),
+      },
+      {
+        path: "banner",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: bannerRouter(),
+      },
+      {
+        path: "course",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: courseRouter(),
+      },
+      {
+        path: "admin",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAdmin />
+          </Suspense>
+        ),
+        children: adminRouter(),
+      },
+      {
+        path: "myFit",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: myFitRouter(),
+      },
+      {
+        path: "myPage",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAdmin />
+          </Suspense>
+        ),
+        children: myPageRouter(),
+      },
+      {
+        path: "inquiry",
+        element: (
+          <Suspense fallback={Loading}>
+            <LayoutForAll />
+          </Suspense>
+        ),
+        children: inquiryRouter(),
+      },
+      {
+        path: "admin-window",
+        element: (
+          <Suspense fallback={Loading}>
+            <AdminPopupLayout />
+          </Suspense>
+        ),
         children: [
-            {
-                path: "test",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAll />
-                    </Suspense>
-                ),
-                children: testCommonRouter(),
-            },
-            {
-                path: "",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <Main />
-                    </Suspense>
-                ),
-            },
-            {
-                path: "notice",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAll />
-                    </Suspense>
-                ),
-                children: noticeRouter(),
-            },
-            {
-                path: "account",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAll />
-                    </Suspense>
-                ),
-                children: accountRouter(),
-            },
-            {
-                path: "community",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAll />
-                    </Suspense>
-                ),
-                children: communityRouter(),
-            },
-            {
-                path: "banner",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAll />
-                    </Suspense>
-                ),
-                children: bannerRouter(),
-            },
-            {
-                path: "course",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAll />
-                    </Suspense>
-                ),
-                children: courseRouter(),
-            },
-            {
-                path: "admin",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAdmin />
-                    </Suspense>
-                ),
-                children: adminRouter(),
-            },
-            {
-                path: "myFit",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAll />
-                    </Suspense>
-                ),
-                children: myFitRouter(),
-            },
-            {
-                path: "myPage",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAdmin />
-                    </Suspense>
-                ),
-                children: myPageRouter(),
-            },
-            {
-                path: "inquiry",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <LayoutForAll />
-                    </Suspense>
-                ),
-                children: inquiryRouter(),
-            },
-            {
-                path: "admin-window",
-                element: (
-                    <Suspense fallback={Loading}>
-                        <AdminPopupLayout />
-                    </Suspense>
-                ),
-                children: [
-                    {
-                        path: "admins/new",
-                        element: (
-                            <Suspense fallback={Loading}>
-                                <AdminCreateWindow />
-                            </Suspense>
-                        ),
-                    },
-                    {
-                        path: "banners/new",
-                        element: (
-                            <Suspense fallback={Loading}>
-                                <BannerCreateWindow />
-                            </Suspense>
-                        ),
-                    },
-                    {
-                        path: "facilities/new",
-                        element: (
-                            <Suspense fallback={Loading}>
-                                <FacilityCreateWindow />
-                            </Suspense>
-                        ),
-                    },
-                    {
-                        path: "notices/new",
-                        element: (
-                            <Suspense fallback={Loading}>
-                                <NoticeCreateWindow />
-                            </Suspense>
-                        ),
-                    },
-                    {
-                        path: "notices/update/:noticeId",
-                        element: (
-                            <Suspense fallback={Loading}>
-                                <NoticeCreateWindow />
-                            </Suspense>
-                        ),
-                    },
-                ],
-            },
+          {
+            path: "admins/new",
+            element: (
+              <Suspense fallback={Loading}>
+                <AdminCreateWindow />
+              </Suspense>
+            ),
+          },
+          {
+            path: "banners/new",
+            element: (
+              <Suspense fallback={Loading}>
+                <BannerCreateWindow />
+              </Suspense>
+            ),
+          },
+          {
+            path: "facilities/new",
+            element: (
+              <Suspense fallback={Loading}>
+                <FacilityCreateWindow />
+              </Suspense>
+            ),
+          },
+          {
+            path: "notices/new",
+            element: (
+              <Suspense fallback={Loading}>
+                <NoticeCreateWindow />
+              </Suspense>
+            ),
+          },
+          {
+            path: "notices/update/:noticeId",
+            element: (
+              <Suspense fallback={Loading}>
+                <NoticeCreateWindow />
+              </Suspense>
+            ),
+          },
         ],
-    },
+      },
+    ],
+  },
 ]);
 export default root;

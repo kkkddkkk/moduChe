@@ -1,10 +1,5 @@
 package com.example.moduche.domain.inquiry.dto;
 
-import java.time.LocalDateTime;
-
-import com.example.moduche.domain.inquiry.enums.InquiryCategory;
-import com.example.moduche.domain.inquiry.enums.InquiryStatus;
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,8 +10,8 @@ public class InquiryListItemResponse {
     private Long inquiryId;
     private String title;
     private String previewContent;
-    private InquiryCategory category;   
-    private InquiryStatus status;       
-    private boolean secret;
-    private LocalDateTime createdAt;
+    private String category;
+    private String status;
+    private boolean secret;   // ← 엔티티의 secret 그대로
+    private String createdAt;
 }

@@ -1,8 +1,10 @@
 package com.example.moduche.domain.banner.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +21,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.moduche.domain.banner.DTO.BannerApplyCardDTO;
 import com.example.moduche.domain.banner.DTO.BannerApplyRequestDTO;
 import com.example.moduche.domain.banner.DTO.BannerDurationDTO;
+import com.example.moduche.domain.banner.DTO.BannerOnPrintCardDTO;
 import com.example.moduche.domain.banner.DTO.BannerPriorityDTO;
 import com.example.moduche.domain.banner.DTO.BannerTypeDTO;
+import com.example.moduche.domain.banner.DTO.MainBannerListDTO;
 import com.example.moduche.domain.banner.service.BannerApplyService;
 import com.example.moduche.domain.banner.service.BannerDurationService;
 import com.example.moduche.domain.banner.service.BannerPriorityService;
@@ -93,7 +97,7 @@ public class BannerController {
 	@PutMapping("/api/banner-apply/{bannerApplyId}/accept")
 	public ResponseEntity<?> acceptBannerApply(@PathVariable("bannerApplyId") Long bannerApplyId,
 			@RequestHeader("Authorization") String authorizationHeader) {
-		
+
 		try {
 			Long adminId = extractUserId(authorizationHeader);
 			User admin = userRepository.findById(adminId)
@@ -108,7 +112,37 @@ public class BannerController {
 
 			bannerApplyService.acceptBanner(bannerApplyId, admin);
 			return ResponseEntity.ok("accepted");
-			
+
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류: " + e.getMessage());
+		}
+	}
+	
+	@PutMapping("/api/banner-apply/{bannerApplyId}/decline")
+	public ResponseEntity<?> declineBannerApply(@PathVariable("bannerApplyId") Long bannerApplyId,
+			@RequestHeader("Authorization") String authorizationHeader,
+			@RequestParam(value = "rejectReason") String rejectReason) {
+
+		try {
+			Long adminId = extractUserId(authorizationHeader);
+			User admin = userRepository.findById(adminId)
+					.orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+			String token = authorizationHeader.replace("Bearer ", "").trim();
+			String role = jwtTokenProvider.getRole(token);
+
+			if (!role.contains("ADMIN")) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body("관리자만 거절할 수 있습니다.");
+			}
+
+			bannerApplyService.declineBanner(bannerApplyId, admin, rejectReason);
+			return ResponseEntity.ok("declined");
+
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -123,7 +157,8 @@ public class BannerController {
 	public ResponseEntity<?> getApplyList(@RequestHeader("Authorization") String authorizationHeader,
 			@RequestParam(value = "page", defaultValue = "0") int page,
 			@RequestParam(value = "size", defaultValue = "10") int size,
-			@RequestParam(value = "search", required = false, defaultValue = "") String search) {
+			@RequestParam(value = "search", required = false, defaultValue = "") String search,
+			@RequestParam(value = "type", required = false, defaultValue = "") String bannerType) {
 
 		try {
 			Long userId = extractUserId(authorizationHeader);
@@ -137,7 +172,7 @@ public class BannerController {
 				return ResponseEntity.status(HttpStatus.FORBIDDEN).body("관리자만 조회할 수 있습니다.");
 			}
 
-			Page<BannerApplyCardDTO> result = bannerApplyService.getPendingApplies(page, size, search);
+			Page<BannerApplyCardDTO> result = bannerApplyService.getPendingApplies(page, size, search, bannerType);
 
 			return ResponseEntity.ok(result);
 
@@ -150,4 +185,88 @@ public class BannerController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류: " + e.getMessage());
 		}
 	}
+	
+	//현재 출력중인 배너 관리.
+	@GetMapping("/api/banner/on-list")
+	public ResponseEntity<?> getPrintBannerList(
+	        @RequestHeader("Authorization") String authorizationHeader,
+	        @RequestParam(value = "page", defaultValue = "0") int page,
+	        @RequestParam(value = "size", defaultValue = "10") int size,
+	        @RequestParam(value = "type", defaultValue = "ALL") String type,
+	        @RequestParam(value = "status", defaultValue = "ALL") String status,
+	        @RequestParam(value = "search", defaultValue = "") String search
+	) {
+	    try {
+	        Long adminId = extractUserId(authorizationHeader);
+	        User admin = userRepository.findById(adminId)
+	                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+	        // 권한 체크
+	        String token = authorizationHeader.replace("Bearer ", "").trim();
+	        String role = jwtTokenProvider.getRole(token);
+	        if (!role.contains("ADMIN")) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body("관리자만 조회할 수 있습니다.");
+	        }
+
+	        Page<BannerOnPrintCardDTO> result =
+	                bannerService.getBannerOnList(page, size, type, status, search);
+
+	        return ResponseEntity.ok(result);
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("서버 오류: " + e.getMessage());
+	    }
+	}
+	
+	//작성자: 고은설.
+	//기능: 강제 만료 처리 => 관리자 온리.
+	@PutMapping("/api/banner/{id}/expire")
+	public ResponseEntity<?> forceExpire(
+	        @PathVariable("id")  Long id,
+	        @RequestHeader("Authorization") String authorizationHeader
+	) {
+	    try {
+	        String token = authorizationHeader.replace("Bearer ", "").trim();
+	        String role = jwtTokenProvider.getRole(token);
+	        if (!role.contains("ADMIN")) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("관리자 권한 필요");
+	        }
+
+	        bannerService.forceExpire(id);
+	        return ResponseEntity.ok("expired");
+
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("서버 오류: " + e.getMessage());
+	    }
+	}
+	
+
+	// 작성자: 고은설.
+	// 기능: 메인배너 3개 리턴.
+	@GetMapping("/api/banner/show-main")
+	public ResponseEntity<List<MainBannerListDTO>> getMainBanners() {
+		List<MainBannerListDTO> result = bannerService.getMainBanners();
+		return ResponseEntity.ok(result);
+	}
+
+	// 작성자: 고은설.
+	// 기능: 단일 사이드 배너 리턴.
+	@GetMapping("/api/banner/show-side")
+	public ResponseEntity<MainBannerListDTO> getSideBanner() {
+		MainBannerListDTO result = bannerService.getSingleBanner("SIDE");
+		return ResponseEntity.ok(result);
+	}
+
+	// 작성자: 고은설.
+	// 기능: 단일 상단 배너 리턴.
+	@GetMapping("/api/banner/show-header")
+	public ResponseEntity<MainBannerListDTO> getHeaderBanner() {
+		MainBannerListDTO result = bannerService.getSingleBanner("HEADER");
+		return ResponseEntity.ok(result);
+	}
+
 }

@@ -4,26 +4,18 @@ import { Users } from "lucide-react";
 import { OneAlignedButton } from "../../component/common/Button";
 import Paper from "../../component/common/Paper";
 import SectionBox from "./SectionBox";
+import { StandardSelect } from "../../component/common/CustomSelect";
 
-/**
- * 서버 데이터 바인딩 가이드
- * props:
- * - hasSidebar: boolean
- * - sessions: [{ id, label, remaining? }]   // ← header.sessions 그대로 사용
- * - sessionId: string
- * - date: string
- * - price?: number | string                  // 없으면 표시 안 함
- * - capacity?: number                        // header.maxParticipants 전달 권장
- * - refundPolicy?: string                    // 기본 문구 제공
- * - onEnroll?: (payload) => void             // 수강신청 클릭 시 콜백 (선택)
- */
 export default function CourseSidebar({
   hasSidebar,
-  sessions,
+  sessions = [],
+  datesBySession = {},
   sessionId,
+  setSessionId,
   date,
+  setDate,
 
-  // 선택 props
+  spotsLeft,
   price,
   capacity,
   refundPolicy = "첫 수업 24시간 전 100% 환불",
@@ -39,27 +31,50 @@ export default function CourseSidebar({
     );
   }
 
-  // 현재 선택된 세션
-  const selected = sessions?.find((s) => s.id === sessionId);
-  const remaining = selected?.remaining; // number | undefined
+  const selected = sessions?.find((s) => s.id === sessionId) ?? null;
 
-  // 정원/잔여 표기 계산
-  // capacity와 remaining 둘 다 있으면 "enrolled/capacity" 계산해서 노출
-  const enrolled =
-    typeof capacity === "number" && typeof remaining === "number"
-      ? Math.max(0, capacity - remaining)
+  const clientSessionId = selected?.id;
+
+  // 실제 DB에 저장할 sessionId (PK)
+  const dbSessionId = selected?.sessionDbId;
+
+  // ✅ 남은 자리: props > 선택된 세션
+  const remaining =
+    typeof spotsLeft === "number"
+      ? spotsLeft
+      : typeof selected?.remaining === "number"
+      ? selected.remaining
       : undefined;
 
-  const capacityLine =
-    typeof capacity === "number" && typeof enrolled === "number"
-      ? `${enrolled}/${capacity}`
+  // ✅ 정원: 선택된 세션 > props
+  const effectiveCapacity =
+    typeof selected?.capacity === "number"
+      ? selected.capacity
       : typeof capacity === "number"
-      ? `0/${capacity}`
+      ? capacity
+      : undefined;
+
+  // ✅ 현재 수강 인원: 선택된 세션 > (정원 - remaining)
+  const enrolled =
+    typeof selected?.enrolled === "number"
+      ? selected.enrolled
+      : typeof effectiveCapacity === "number" && typeof remaining === "number"
+      ? Math.max(0, effectiveCapacity - remaining)
+      : undefined;
+
+  // ✅ "0/20" 이런 라인
+  const capacityLine =
+    typeof effectiveCapacity === "number" && typeof enrolled === "number"
+      ? `${enrolled}/${effectiveCapacity}`
+      : typeof effectiveCapacity === "number"
+      ? `0/${effectiveCapacity}`
       : "—";
 
   const spotsLeftLine =
     typeof remaining === "number"
-      ? `${remaining} spots left`
+      ? remaining > 0
+        ? `잔여 ${remaining}석`
+        : "마감"
       : "좌석 정보 없음";
 
   const priceLine =
@@ -69,14 +84,129 @@ export default function CourseSidebar({
       ? price
       : null;
 
+  /* ---------- 세션/날짜 셀렉트용 옵션 ---------- */
+
+  // 날짜 포맷 간단히 YYYY.MM.DD 로 바꾸는 헬퍼
+  const formatDate = (iso) => {
+    if (!iso) return "";
+    return iso.replaceAll("-", ".");
+  };
+
+  // interval → "매주"/"격주"/"매월"
+  const intervalToText = (interval) => {
+    if (!interval || interval === 1) return "매주";
+    if (interval === 2) return "격주";
+    if (interval === 4) return "매월";
+    return "매주";
+  };
+
+  // dowMask → "월수목" 형식
+  const dowMaskToKorean = (mask) => {
+    if (!mask) return "";
+    const labels = ["월", "화", "수", "목", "금", "토", "일"];
+    const m = mask.padEnd(7, "0");
+    let out = "";
+    for (let i = 0; i < 7; i++) {
+      if (m[i] === "1") out += labels[i];
+    }
+    return out;
+  };
+
+  // ✅ 세션 옵션: value = "S1" / label = "1회차 · 2025.11.29 ~ 2025.11.30 · 매주 월수금 18:00 ~ 20:30"
+  const sessionOptions =
+    sessions?.map((s, idx) => {
+      const no = idx + 1;
+      const range =
+        s.startDate && s.endDate
+          ? `${formatDate(s.startDate)} ~ ${formatDate(s.endDate)}`
+          : "";
+      const freq = intervalToText(s.interval);
+      const days = dowMaskToKorean(s.dowMask);
+      const time =
+        s.startTime && s.endTime ? `${s.startTime} ~ ${s.endTime}` : "";
+
+      const detailParts = [];
+      if (range) detailParts.push(range);
+      if (freq || days || time) {
+        detailParts.push(
+          [freq, days, time].filter((x) => x && x.length > 0).join(" ")
+        );
+      }
+
+      const label =
+        detailParts.length > 0
+          ? `${no}회차 · ${detailParts.join(" · ")}`
+          : `${no}회차`;
+
+      return {
+        value: s.id,
+        label,
+      };
+    }) ?? [];
+
+  // 날짜 옵션 (지금은 백엔드에서 "Nov 03 18:00" 형식으로 주니까 그대로 씀)
+  const dateOptions =
+    (datesBySession?.[sessionId] ?? []).map((d) => ({
+      value: d,
+      label: d,
+    })) ?? [];
+
+  const handleSessionSelect = (optOrVal) => {
+    if (!optOrVal) {
+      setSessionId?.("");
+      setDate?.("");
+      return;
+    }
+
+    const newId =
+      typeof optOrVal === "object" && optOrVal !== null
+        ? optOrVal.value
+        : optOrVal;
+
+    setSessionId?.(newId);
+
+    const first = datesBySession?.[newId]?.[0] || "";
+    setDate?.(first);
+  };
+
+  const handleDateSelect = (optOrVal) => {
+    if (!optOrVal) {
+      setDate?.("");
+      return;
+    }
+
+    const newDate =
+      typeof optOrVal === "object" && optOrVal !== null
+        ? optOrVal.value
+        : optOrVal;
+
+    setDate?.(newDate);
+  };
+
   const handleEnroll = () => {
-    if (onEnroll) {
+    if (onEnroll && selected) {
       onEnroll({
-        sessionId,
+        sessionId: selected.sessionDbId, // 백엔드로 보낼 PK
         date,
+        label: selected.label ?? `${selected.id}회차`,
       });
     }
   };
+
+  const isSoldOut =
+    typeof remaining === "number" &&
+    Number.isFinite(remaining) &&
+    remaining <= 0;
+
+  // ✅ StandardSelect 가 기대하는 selected 형태: data 안에 있는 객체
+
+  const currentSession = sessions?.find((s) => s.id === sessionId) ?? null;
+
+  const selectedSessionOption =
+    sessionOptions.find((opt) => opt.value === sessionId) ?? "";
+
+  const selectedDateOption =
+    dateOptions.find((opt) => opt.value === date) ?? "";
 
   return (
     <Box
@@ -109,7 +239,7 @@ export default function CourseSidebar({
                 <Typography
                   variant="h5"
                   fontWeight="bold"
-                  sx={{ fontSize: "2rem" }}
+                  sx={{ fontSize: "1.8rem" }}
                 >
                   {priceLine}
                 </Typography>
@@ -117,7 +247,7 @@ export default function CourseSidebar({
               <Typography
                 variant="caption"
                 color="text.secondary"
-                sx={{ fontSize: "1rem" }}
+                sx={{ fontSize: "0.9rem" }}
               >
                 {refundPolicy}
               </Typography>
@@ -131,7 +261,7 @@ export default function CourseSidebar({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 0.5,
-                  fontSize: "2rem",
+                  fontSize: "1rem",
                 }}
               >
                 <Users style={{ width: 16, height: 16 }} /> {capacityLine}
@@ -139,14 +269,15 @@ export default function CourseSidebar({
               <Typography
                 variant="caption"
                 sx={{
-                  color:
-                    typeof remaining === "number" && remaining <= 3
-                      ? "error.main"
-                      : "success.main",
+                  color: isSoldOut
+                    ? "error.main"
+                    : typeof remaining === "number"
+                    ? "success.main"
+                    : "text.secondary",
                   fontWeight: 600,
                   display: "block",
                   mt: 0.5,
-                  fontSize: "1rem",
+                  fontSize: "0.95rem",
                 }}
               >
                 {spotsLeftLine}
@@ -154,7 +285,7 @@ export default function CourseSidebar({
             </Grid>
           </Grid>
 
-          {/* 세션/날짜 카드 */}
+          {/* 🔹 세션 / 날짜 선택 카드 */}
           <Paper
             sx={{
               m: 0,
@@ -165,35 +296,100 @@ export default function CourseSidebar({
               mb: 1.0,
             }}
           >
-            <Grid container justifyContent="space-between">
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ fontSize: "1.3rem" }}
-              >
-                Session
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 600, fontSize: "1.3rem" }}
-              >
-                {selected?.label ?? "—"}
-              </Typography>
+            {/* Session Select */}
+            <Grid container alignItems="center" sx={{ mb: 2 }}>
+              <Grid item xs={4}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.95rem" }}
+                >
+                  Session
+                </Typography>
+              </Grid>
+              <Grid item xs={8}>
+                <StandardSelect
+                  padding={8}
+                  size={14}
+                  data={sessionOptions}
+                  format={(opt) =>
+                    typeof opt === "object" ? opt.label : String(opt ?? "")
+                  }
+                  selected={selectedSessionOption}
+                  setSelected={handleSessionSelect}
+                  placeholder="회차 선택"
+                  // ✅ 닫힌 상태에서도 label 로 보여주기
+                  renderValue={(value) => {
+                    const opt =
+                      sessionOptions.find((o) => o.value === value) ?? null;
+
+                    return (
+                      <Box
+                        component="span"
+                        sx={{
+                          display: "block",
+                          // lg 이상에서는 한 줄 + ... 처리
+                          whiteSpace: { xs: "normal", sm: "nowrap" },
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          color: opt ? "black" : "gray",
+                        }}
+                      >
+                        {opt ? opt.label : "회차 선택"}
+                      </Box>
+                    );
+                  }}
+                />
+              </Grid>
             </Grid>
-            <Grid container justifyContent="space-between" sx={{ mt: 1 }}>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ fontSize: "1.3rem" }}
-              >
-                Date
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 600, fontSize: "1.3rem" }}
-              >
-                {date || "—"}
-              </Typography>
+
+            {/* Date Select */}
+            <Grid container alignItems="center">
+              <Grid item xs={4}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontSize: "0.95rem" }}
+                >
+                  Date
+                </Typography>
+              </Grid>
+              <Grid item xs={8}>
+                <StandardSelect
+                  padding={8}
+                  size={14}
+                  data={dateOptions}
+                  format={(opt) =>
+                    typeof opt === "object" ? opt.label : String(opt ?? "")
+                  }
+                  selected={selectedDateOption}
+                  setSelected={handleDateSelect}
+                  placeholder={
+                    sessionId ? "날짜 선택" : "먼저 회차를 선택해주세요"
+                  }
+                  disabled={!sessionId || dateOptions.length === 0}
+                  // 🔥 여기서 'Dec 01 18:00' 대신 기간으로 보여줌
+                  renderValue={(value) => {
+                    if (currentSession?.startDate && currentSession?.endDate) {
+                      const start = formatDate(currentSession.startDate);
+                      const end = formatDate(currentSession.endDate);
+                      return (
+                        <span style={{ color: "black" }}>
+                          {start} ~ {end}
+                        </span>
+                      );
+                    }
+
+                    const opt =
+                      dateOptions.find((o) => o.value === value) ?? null;
+                    return (
+                      <span style={{ color: opt ? "black" : "gray" }}>
+                        {opt ? opt.label : "날짜 선택"}
+                      </span>
+                    );
+                  }}
+                />
+              </Grid>
             </Grid>
           </Paper>
 
@@ -202,11 +398,13 @@ export default function CourseSidebar({
             <OneAlignedButton
               size="large"
               onClick={handleEnroll}
-              disabled={typeof remaining === "number" && remaining <= 0}
+              disabled={!sessionId || !date || isSoldOut}
               buttonSx={{ width: "100%", py: 1.3, fontWeight: 600 }}
               buttonWrapperSx={{ width: "100%" }}
             >
-              {typeof remaining === "number" && remaining <= 0
+              {!sessionId || !date
+                ? "회차/날짜를 선택해주세요"
+                : isSoldOut
                 ? "마감"
                 : "수강 신청"}
             </OneAlignedButton>
@@ -218,11 +416,11 @@ export default function CourseSidebar({
               sx={{
                 mt: 2,
                 textAlign: "center",
-                fontSize: "0.95rem",
+                fontSize: "0.85rem",
                 lineHeight: 1.45,
               }}
             >
-              신청 시 정책에 동의하게 됩니다.
+              신청 시 환불 및 운영 정책에 동의하게 됩니다.
             </Typography>
           </Box>
         </Box>

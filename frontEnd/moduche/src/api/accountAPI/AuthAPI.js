@@ -90,3 +90,14 @@ export const setPw = async (username, password) => {
     handleApiError(err);
   }
 };
+
+//탈퇴
+export const quit = async (username) => {
+  const dto = { username };
+  try {
+    const res = await api.put(`${AUTH_SERVER_HOST}/quit`, dto);
+    return res.data;
+  } catch (err) {
+    handleApiError(err);
+  }
+};

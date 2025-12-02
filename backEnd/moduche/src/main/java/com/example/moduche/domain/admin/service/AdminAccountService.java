@@ -3,12 +3,13 @@ package com.example.moduche.domain.admin.service;
 import com.example.moduche.domain.admin.dto.AdminRowDto;
 import com.example.moduche.domain.admin.dto.AdminResponse;
 import com.example.moduche.domain.admin.dto.CreateAdminRequest;
+import com.example.moduche.domain.login.enums.UserStatus;
 import com.example.moduche.domain.admin.repository.AdminUserRepository;
 import com.example.moduche.domain.login.Role;
 import com.example.moduche.domain.login.User;
-import com.example.moduche.domain.login.enums.UserStatus;
 import com.example.moduche.domain.login.repository.RoleRepository;
 import com.example.moduche.repository.UserRepository;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,6 @@ public class AdminAccountService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // 관리자 목록 조회 (읽기 전용)
     @Transactional(readOnly = true)
     public Page<AdminResponse> list(String q, String status,
                                     LocalDateTime createdFrom, LocalDateTime createdTo,
@@ -46,38 +46,32 @@ public class AdminAccountService {
     }
 
     private AdminRowDto toDto(User u) {
-        Long roleId = (u.getRole() != null) ? u.getRole().getRoleId() : null;
-        String s = (u.getStatus() != null) ? u.getStatus().name() : null;
-
         return new AdminRowDto(
                 u.getUserId(),
                 u.getUsername(),
                 u.getName(),
                 u.getEmail(),
                 u.getPhone(),
-                s,
-                roleId,
+                u.getStatus() != null ? u.getStatus().name() : null,
+                u.getRole() != null ? u.getRole().getRoleId() : null,
                 u.getCreatedAt(),
                 u.getUpdatedAt()
         );
     }
 
-    // 관리자 생성: 항상 role_id = 2 (일반 관리자)로 고정
     @Transactional
     public AdminResponse createAdmin(CreateAdminRequest request) {
         User user = new User();
         user.setUsername(request.username());
-        user.setPassword(passwordEncoder.encode(request.password())); // 암호화
+        user.setPassword(passwordEncoder.encode(request.password()));
         user.setName(request.name());
         user.setEmail(request.email());
         user.setPhone(request.phone());
 
-        // ★ role_id = 2 강제 지정
-        Long adminRoleId = 2L;
-        Role role = roleRepository.findById(adminRoleId)
-                .orElseThrow(() -> new IllegalStateException("roles 테이블에 role_id=2가 없습니다."));
-        user.setRole(role);
+        Role role = roleRepository.findById(2L) // ADMIN 고정
+                .orElseThrow(() -> new IllegalStateException("role_id=2(ADMIN)이 없습니다."));
 
+        user.setRole(role);
         user.setStatus(UserStatus.ACTIVE);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
@@ -86,7 +80,6 @@ public class AdminAccountService {
         return AdminResponse.fromDto(toDto(saved));
     }
 
-    // 관리자 상태 변경
     @Transactional
     public AdminResponse updateStatus(Long id, String status) {
         User user = userRepository.findById(id)
@@ -94,22 +87,21 @@ public class AdminAccountService {
 
         try {
             user.setStatus(UserStatus.valueOf(status.toUpperCase()));
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("잘못된 상태값입니다: " + status);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("잘못된 상태값: " + status);
         }
 
         user.setUpdatedAt(LocalDateTime.now());
-
         User saved = userRepository.save(user);
+
         return AdminResponse.fromDto(toDto(saved));
     }
 
-    // 관리자 삭제
     @Transactional
     public void deleteAdmin(Long id) {
-        if (!userRepository.existsById(id)) {
+        if (!userRepository.existsById(id))
             throw new IllegalArgumentException("관리자를 찾을 수 없습니다. id=" + id);
-        }
+
         userRepository.deleteById(id);
     }
 }

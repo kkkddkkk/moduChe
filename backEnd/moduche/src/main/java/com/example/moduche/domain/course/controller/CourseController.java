@@ -1,4 +1,4 @@
-// CourseController.java
+// src/main/java/com/example/moduche/domain/course/controller/CourseController.java
 package com.example.moduche.domain.course.controller;
 
 import com.example.moduche.domain.course.DTO.CourseCreateRequest;
@@ -9,12 +9,12 @@ import com.example.moduche.global.security.JwtTokenProvider;
 import com.example.moduche.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,7 +37,7 @@ public class CourseController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CourseCreateResponse> registerCourse(
             @RequestHeader("Authorization") String tokenHeader,
             @RequestPart("data") CourseCreateRequest dto,
@@ -48,4 +48,3 @@ public class CourseController {
         return ResponseEntity.ok(res);
     }
 }
-

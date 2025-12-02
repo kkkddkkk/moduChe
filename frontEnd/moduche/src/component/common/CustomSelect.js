@@ -5,15 +5,15 @@ import {
   MenuItem,
   Select,
   styled,
-} from '@mui/material';
+} from "@mui/material";
 const SelectController = styled(Select)(({ ownerState }) => ({
-  '& .MuiSelect-select': {
+  "& .MuiSelect-select": {
     padding: ownerState.padding, // 선택 영역 padding
     fontSize: ownerState.size,
-    display: 'flex',
-    alignItems: 'center', // vertical 중앙 정렬
+    display: "flex",
+    alignItems: "center", // vertical 중앙 정렬
   },
-  '& .MuiFormHelperText-root': {
+  "& .MuiFormHelperText-root": {
     margin: `0 !important`,
     fontSize: `${ownerState.size}px`,
   },
@@ -22,7 +22,7 @@ const SelectController = styled(Select)(({ ownerState }) => ({
 export const CustomSelect = ({
   padding,
   size,
-  data,
+  data = [],
   format = (d) => d,
   selected,
   setSelected,
@@ -33,25 +33,30 @@ export const CustomSelect = ({
   helperText,
   renderValue,
 }) => {
-  const black = 'black';
-  const gray = 'gray';
-  const mainColor = '#1976d2';
-  const white = 'white';
+  const black = "black";
+  const gray = "gray";
+  const mainColor = "#1976d2";
+  const white = "white";
+
+  const safeData = Array.isArray(data) ? data : [];
+
+  const selectedValue =
+    selected && typeof selected === "object" ? selected.value : selected ?? "";
   return (
     <FormControl fullWidth variant={variant}>
       <SelectController
         ownerState={{ padding: padding, size: size }}
         value={
           // selected가 객체면 selected.value, 아니면 selected 자체를 value로 사용
-          selected && typeof selected === 'object'
+          selected && typeof selected === "object"
             ? selected.value
-            : selected ?? ''
+            : selected ?? ""
         }
         onChange={(e) => {
           const val = e.target.value;
           // data에서 객체이면 value로 비교, primitive이면 그대로 비교
           const obj = data.find((d) =>
-            typeof d === 'object' ? d.value === val : d === val,
+            typeof d === "object" ? d.value === val : d === val
           );
           setSelected(obj ?? val); // 객체면 객체, 아니면 primitive
         }}
@@ -69,23 +74,23 @@ export const CustomSelect = ({
         error={error}
       >
         {data.map((d, idx) => {
-          const value = typeof d === 'object' ? d.value : d;
-          const label = typeof d === 'object' ? format(d) : format(d);
+          const value = typeof d === "object" ? d.value : d;
+          const label = typeof d === "object" ? format(d) : format(d);
           return (
             <MenuItem
               key={`option_${idx}`}
               value={value}
               sx={{
-                color: value === selected ? 'blue' : black, // 선택된 항목이면 파랑, 아니면 검정
-                '&.Mui-selected': {
+                color: value === selected ? "blue" : black, // 선택된 항목이면 파랑, 아니면 검정
+                "&.Mui-selected": {
                   backgroundColor: lighten(mainColor, 0.1), // 선택 시 배경색
                   color: white, // 선택 시 텍스트 색상
                 },
-                '&:hover': {
+                "&:hover": {
                   backgroundColor: lighten(mainColor, 0.5), // 마우스 오버 배경색
                   color: black, // 선택 시 텍스트 색상
                 },
-                '&.Mui-selected:hover': {
+                "&.Mui-selected:hover": {
                   backgroundColor: lighten(mainColor, 0.5), // 마우스 오버 배경색
                   color: black, // 선택 시 텍스트 색상
                 },
@@ -99,7 +104,7 @@ export const CustomSelect = ({
       {error && (
         <FormHelperText
           sx={{
-            color: 'red',
+            color: "red",
             marginLeft: `${padding / 4}px`,
           }}
         >
@@ -113,7 +118,7 @@ export const CustomSelect = ({
 export const StandardSelect = ({
   padding,
   size,
-  data,
+  data = [],
   format,
   selected,
   setSelected,
@@ -132,7 +137,7 @@ export const StandardSelect = ({
       selected={selected}
       setSelected={setSelected}
       placeholder={placeholder}
-      variant={'standard'}
+      variant={"standard"}
       error={error}
       helperText={helperText}
       disabled={disabled}
@@ -144,7 +149,7 @@ export const StandardSelect = ({
 export const OutlinedSelect = ({
   padding,
   size,
-  data,
+  data = [],
   format,
   selected,
   setSelected,
@@ -162,7 +167,7 @@ export const OutlinedSelect = ({
       selected={selected}
       setSelected={setSelected}
       placeholder={placeholder}
-      variant={'outlined'}
+      variant={"outlined"}
       error={error}
       helperText={helperText}
       disabled={disabled}

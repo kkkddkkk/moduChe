@@ -1,4 +1,4 @@
-import { ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 import {
   Book,
   BookOpen,
@@ -7,60 +7,60 @@ import {
   IdCard,
   User,
   Users,
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const individualList = [
   {
-    key: 'account',
-    label: '계정 관리',
+    key: "account",
+    label: "계정 관리",
     icon: <IdCard />,
-    path: '/myPage/account',
+    path: "/myPage/account",
   },
   {
-    key: 'disability',
-    label: '개인정보 관리',
+    key: "disability",
+    label: "개인정보 관리",
     icon: <Heart />,
-    path: '/myPage/health',
+    path: "/myPage/health",
   },
   {
-    key: 'course',
-    label: '이용 중인 강좌 관리',
+    key: "course",
+    label: "내 수강 강좌",
     icon: <Book />,
-    path: '/myPage/course',
+    path: "/myPage/course",
   },
   {
-    key: 'community',
-    label: '이용 중인 동호회 관리',
+    key: "community",
+    label: "이용 중인 동호회 관리",
     icon: <Users />,
-    path: '/myPage/communityI',
+    path: "/myPage/communityI",
   },
 ];
 
 export const facilityList = [
   {
-    key: 'account',
-    label: '계정 관리',
+    key: "account",
+    label: "계정 관리",
     icon: <IdCard />,
-    path: '/myPage/account',
+    path: "/myPage/account",
   },
   {
-    key: 'facility',
-    label: '기관 관리',
+    key: "facility",
+    label: "기관 관리",
     icon: <Building />,
-    path: '/myPage/facility',
+    path: "/myPage/facility",
   },
   {
-    key: 'course',
-    label: '강좌 관리',
+    key: "course",
+    label: "강좌 운영 관리",
     icon: <BookOpen />,
-    path: '/myPage/course',
+    path: "/myPage/facility/course",
   },
   {
-    key: 'community',
-    label: '동아리 관리',
+    key: "community",
+    label: "동아리 관리",
     icon: <Users />,
-    path: '/myPage/communityF',
+    path: "/myPage/communityF",
   },
 ];
 
@@ -83,14 +83,14 @@ export const MeunTemplate = ({
         borderRadius: 1.5,
         mx: 1,
         mb: 0.5,
-        '&.Mui-selected': {
-          backgroundColor: 'primary.main',
-          color: 'primary.contrastText',
-          '& .MuiSvgIcon-root': {
-            color: 'primary.contrastText',
+        "&.Mui-selected": {
+          backgroundColor: "primary.main",
+          color: "primary.contrastText",
+          "& .MuiSvgIcon-root": {
+            color: "primary.contrastText",
           },
-          '&:hover': {
-            backgroundColor: 'primary.main',
+          "&:hover": {
+            backgroundColor: "primary.main",
           },
         },
       }}
@@ -99,7 +99,7 @@ export const MeunTemplate = ({
         sx={{
           minWidth: 40,
           color:
-            selected && available ? 'primary.contrastText' : 'text.secondary',
+            selected && available ? "primary.contrastText" : "text.secondary",
         }}
       >
         {icon}
@@ -108,7 +108,7 @@ export const MeunTemplate = ({
       <ListItemText
         primary={label}
         primaryTypographyProps={{
-          fontSize: '0.9rem',
+          fontSize: "0.9rem",
           fontWeight: 600,
         }}
       />

@@ -1,28 +1,36 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense } from "react";
 
 const Loading = <div>Loading...</div>;
-const MyPage = lazy(() => import('../pages/MyPage/MyPage'));
-const ManageAccount = lazy(() => import('../pages/MyPage/ManageAccount'));
-const ManageDisability = lazy(() => import('../pages/MyPage/ManageDisability'));
-const ManageFacility = lazy(() => import('../pages/MyPage/ManageFacility'));
-const Test = lazy(() => import('../pages/MyPage/Test'));
+const MyPage = lazy(() => import("../pages/MyPage/MyPage"));
+const ManageAccount = lazy(() => import("../pages/MyPage/ManageAccount"));
+const ManageDisability = lazy(() => import("../pages/MyPage/ManageDisability"));
+const ManageFacility = lazy(() => import("../pages/MyPage/ManageFacility"));
+const Test = lazy(() => import("../pages/MyPage/Test"));
+
+const MyEnrolledCoursePage = lazy(() =>
+  import("../pages/Course/MyEnrolledCoursePage")
+);
+
+const FacilityCourseManagePage = lazy(() =>
+  import("../pages/Course/FacilityCourseManagePage")
+);
 
 const MyPageIndividual = lazy(() =>
-  import('../component/account/MyPageIndividual'),
+  import("../component/account/MyPageIndividual")
 );
 
 const CommunityManagePage = lazy(() =>
-  import('../pages/Community/CommunityManagePage'),
+  import("../pages/Community/CommunityManagePage")
 );
 
 const CommunityMemberPage = lazy(() =>
-  import('../pages/Community/CommunityMemberPage'),
+  import("../pages/Community/CommunityMemberPage")
 );
 
 export default function accoutRouter() {
   return [
     {
-      path: '',
+      path: "",
       element: (
         <Suspense fallback={Loading}>
           <MyPage />
@@ -30,7 +38,7 @@ export default function accoutRouter() {
       ),
       children: [
         {
-          path: 'account',
+          path: "account",
           element: (
             <Suspense fallback={Loading}>
               <ManageAccount />
@@ -38,7 +46,7 @@ export default function accoutRouter() {
           ),
         },
         {
-          path: 'health',
+          path: "health",
           element: (
             <Suspense fallback={Loading}>
               <ManageDisability />
@@ -46,7 +54,7 @@ export default function accoutRouter() {
           ),
         },
         {
-          path: 'facility',
+          path: "facility",
           element: (
             <Suspense fallback={Loading}>
               <ManageFacility />
@@ -54,7 +62,7 @@ export default function accoutRouter() {
           ),
         },
         {
-          path: 'communityI',
+          path: "communityI",
           element: (
             <Suspense fallback={Loading}>
               <CommunityMemberPage />
@@ -62,33 +70,48 @@ export default function accoutRouter() {
           ),
         },
         {
-          path: 'communityF',
+          path: "communityF",
           element: (
             <Suspense fallback={Loading}>
               <CommunityManagePage />
             </Suspense>
           ),
         },
+
+        // ✅ 추가 1: /myPage/course → 내 수강 강좌
+        {
+          path: "course",
+          element: (
+            <Suspense fallback={Loading}>
+              <MyEnrolledCoursePage />
+            </Suspense>
+          ),
+        },
+
+        // ✅ 추가 2: /myPage/facility/course → 시설 강좌 운영 관리
+        {
+          path: "facility/course",
+          element: (
+            <Suspense fallback={Loading}>
+              <FacilityCourseManagePage />
+            </Suspense>
+          ),
+        },
       ],
     },
+
     {
-      path: 'test',
+      path: "test",
       element: (
         <Suspense fallback={Loading}>
           <Test />
         </Suspense>
       ),
     },
+
+    // 기존 구조 유지 (제거하지 않음)
     {
-      path: 'disability',
-      element: (
-        <Suspense fallback={Loading}>
-          <MyPageIndividual />
-        </Suspense>
-      ),
-    },
-    {
-      path: 'course',
+      path: "disability",
       element: (
         <Suspense fallback={Loading}>
           <MyPageIndividual />
