@@ -57,10 +57,10 @@ const SearchMap = ({ loca, setLoca, lat, setLat, lng, setLng, disabled = true })
         script.async = true;
         document.body.appendChild(script);
     
-        const mapsScript = document.createElement('script');
-        mapsScript.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.REACT_APP_KAKAO_REST_API_KEY}&libraries=services`;
-        mapsScript.async = true;
-        document.body.appendChild(mapsScript);
+        // const mapsScript = document.createElement('script');
+        // mapsScript.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.REACT_APP_KAKAO_REST_API_KEY}&libraries=services`;
+        // mapsScript.async = true;
+        // document.body.appendChild(mapsScript);
 
       }, []);
   return (
