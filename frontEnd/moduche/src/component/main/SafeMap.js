@@ -19,50 +19,101 @@ const SafeMap = ({
 
   // 처음 지도 그리기
   useEffect(() => {
-    const container = document.getElementById('map');
-    const { kakao } = window;
-    const options = {
-      center: new kakao.maps.LatLng(lat, lng),
-      level: 5,
+    const script = document.createElement('script');
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.REACT_APP_KAKAO_JS_KEY}&autoload=false&libraries=services`;
+    script.async = true;
+
+    script.onload = () => {
+      window.kakao.maps.load(() => {
+        const container = document.getElementById('map');
+        const options = {
+          center: new window.kakao.maps.LatLng(lat, lng),
+          level: 5,
+        };
+
+        // 지도 생성
+        mapRef.current = new window.kakao.maps.Map(container, options);
+
+        // 메인 마커 생성
+        markerRef.current = new window.kakao.maps.Marker({
+          map: mapRef.current,
+          position: new window.kakao.maps.LatLng(lat, lng),
+        });
+
+        // 지도 클릭 이벤트
+        window.kakao.maps.event.addListener(
+          mapRef.current,
+          'click',
+          (mouseEvent) => {
+            const pos = mouseEvent.latLng;
+            const newLat = pos.getLat();
+            const newLng = pos.getLng();
+
+            setLat(newLat);
+            setLng(newLng);
+
+            markerRef.current.setPosition(pos);
+
+            const geocoder = new window.kakao.maps.services.Geocoder();
+            geocoder.coord2Address(newLng, newLat, (res, status) => {
+              if (status === window.kakao.maps.services.Status.OK) {
+                const road = res[0].road_address?.address_name;
+                const jibun = res[0].address?.address_name;
+                setLoca(road || jibun || '');
+              }
+            });
+          },
+        );
+      });
     };
 
-    // 지도 생성
-    mapRef.current = new kakao.maps.Map(container, options);
+    document.head.appendChild(script);
 
-    // 마커 생성
-    markerRef.current = new kakao.maps.Marker({
-      position: new kakao.maps.LatLng(lat, lng),
-      map: mapRef.current,
-    });
+    return () => script.remove();
+    // const container = document.getElementById('map');
+    // const { kakao } = window;
+    // const options = {
+    //   center: new kakao.maps.LatLng(lat, lng),
+    //   level: 5,
+    // };
 
-    /** ▼▼ 지도 클릭 이벤트 추가 ▼▼ */
-    kakao.maps.event.addListener(
-      mapRef.current,
-      'click',
-      function (mouseEvent) {
-        const pos = mouseEvent.latLng;
-        const lat = pos.getLat();
-        const lng = pos.getLng();
+    // // 지도 생성
+    // mapRef.current = new kakao.maps.Map(container, options);
 
-        // 상태 업데이트
-        setLat(lat);
-        setLng(lng);
+    // // 마커 생성
+    // markerRef.current = new kakao.maps.Marker({
+    //   position: new kakao.maps.LatLng(lat, lng),
+    //   map: mapRef.current,
+    // });
 
-        // 마커 이동
-        markerRef.current.setPosition(pos);
+    // /** ▼▼ 지도 클릭 이벤트 추가 ▼▼ */
+    // kakao.maps.event.addListener(
+    //   mapRef.current,
+    //   'click',
+    //   function (mouseEvent) {
+    //     const pos = mouseEvent.latLng;
+    //     const lat = pos.getLat();
+    //     const lng = pos.getLng();
 
-        // 역지오코딩 → 주소 조회
-        const geocoder = new kakao.maps.services.Geocoder();
-        geocoder.coord2Address(lng, lat, function (res, status) {
-          if (status === kakao.maps.services.Status.OK) {
-            const road = res[0].road_address?.address_name;
-            const jibun = res[0].address?.address_name;
+    //     // 상태 업데이트
+    //     setLat(lat);
+    //     setLng(lng);
 
-            setLoca(road || jibun || '');
-          }
-        });
-      },
-    );
+    //     // 마커 이동
+    //     markerRef.current.setPosition(pos);
+
+    //     // 역지오코딩 → 주소 조회
+    //     const geocoder = new kakao.maps.services.Geocoder();
+    //     geocoder.coord2Address(lng, lat, function (res, status) {
+    //       if (status === kakao.maps.services.Status.OK) {
+    //         const road = res[0].road_address?.address_name;
+    //         const jibun = res[0].address?.address_name;
+
+    //         setLoca(road || jibun || '');
+    //       }
+    //     });
+    //   },
+    // );
   }, []);
 
   // lat/lng가 바뀌면 지도 & 마커 위치 업데이트
