@@ -18,6 +18,8 @@ import {
   TextField,
   Typography,
   Pagination,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { Search, RefreshCcw } from "lucide-react";
 import { SubTitle } from "../../component/common/Text";
@@ -35,6 +37,9 @@ const STATUS_OPTIONS = [
 ];
 
 export default function FacilityCourseManagePage() {
+  const theme = useTheme();
+  const isNarrow = useMediaQuery(theme.breakpoints.down("md"));
+
   const [status, setStatus] = useState("ALL");
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1); // 1-based (UI)
@@ -208,7 +213,7 @@ export default function FacilityCourseManagePage() {
           }}
         >
           {/* 상태 셀렉트 */}
-          <Box sx={{ minWidth: 140 }}>
+          <Box sx={{ minWidth: 160 }}>
             <Typography variant="caption" color="text.secondary">
               상태
             </Typography>
@@ -227,7 +232,7 @@ export default function FacilityCourseManagePage() {
           </Box>
 
           {/* 검색 인풋 */}
-          <Box sx={{ flexGrow: 1, minWidth: 260 }}>
+          <Box sx={{ flexGrow: 1, minWidth: 300 }}>
             <Typography variant="caption" color="text.secondary">
               검색어
             </Typography>
@@ -248,7 +253,14 @@ export default function FacilityCourseManagePage() {
           </Box>
 
           {/* 검색 버튼 + 요약 + 새로고침 */}
-          <Box sx={{ display: "flex", alignItems: "flex-end", gap: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: 1,
+              minWidth: 180,
+            }}
+          >
             <Button
               variant="contained"
               size="medium"

@@ -35,8 +35,8 @@ const FILTERS = [
 
 export default function MyEnrolledCoursePage() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -106,15 +106,15 @@ export default function MyEnrolledCoursePage() {
               p: 2,
               borderRadius: 2,
               display: "flex",
-              flexDirection: isMobile ? "column" : "row",
               alignItems: isMobile ? "flex-start" : "center",
               justifyContent: "space-between",
               gap: 2,
+              flexWrap: "wrap", // wrap을 유지하되, 위의 isMobile 기준을 느리게 바꿈으로써 더 오래 가로 유지
               background:
                 "linear-gradient(135deg, rgba(25,118,210,0.06), rgba(25,118,210,0.02))",
             }}
           >
-            <Stack spacing={0.5}>
+            <Stack spacing={0.5} sx={{ minWidth: 260 }}>
               <Typography variant="subtitle2" color="text.secondary">
                 수강 현황 요약
               </Typography>
@@ -145,6 +145,7 @@ export default function MyEnrolledCoursePage() {
               indicatorColor="primary"
               sx={{
                 minHeight: 36,
+                minWidth: 240,
                 "& .MuiTab-root": {
                   minHeight: 36,
                   px: 2.5,
@@ -197,8 +198,8 @@ export default function MyEnrolledCoursePage() {
               overflow: "hidden",
             }}
           >
-            <TableContainer>
-              <Table size="small">
+            <TableContainer sx={{ overflowX: "auto" }}>
+              <Table size="small" sx={{ minWidth: 1000 }}>
                 <TableHead>
                   <TableRow
                     sx={{

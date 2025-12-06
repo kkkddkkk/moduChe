@@ -99,14 +99,6 @@ const CourseListArea = ({ items, total, onLoadingChange }) => {
         </Button>
       </Box>
 
-      {/* 가로 배너 중앙 정렬 */}
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-        <HorizontalBanner
-          adImage={AD_IMAGE}
-          clickURL={"https://namu.wiki/w/%ED%96%84%EC%8A%A4%ED%84%B0"}
-        />
-      </Box>
-
       {/* 강좌 카드 리스트 */}
       <Grid
         container
