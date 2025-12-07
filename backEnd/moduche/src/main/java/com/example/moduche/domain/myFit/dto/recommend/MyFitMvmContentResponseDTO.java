@@ -13,11 +13,19 @@ import lombok.NoArgsConstructor;
 public class MyFitMvmContentResponseDTO {
     private String sportsStepNm;
     private String videoUrl;
+    private String description;
+    private String repsAndDuration;
+    private String tips;
+    private Integer stepOrder;
 
     public static MyFitMvmContentResponseDTO fromEntity(MyFitMvmContent content) {
         return MyFitMvmContentResponseDTO.builder()
                 .sportsStepNm(content.getSportsStepNm())
                 .videoUrl(content.getVideoUrl())
+                .description(content.getDescription())
+                .repsAndDuration(content.getRepsAndDuration())
+                .tips(content.getTips())
+                .stepOrder(content.getStepOrder())
                 .build();
     }
 }

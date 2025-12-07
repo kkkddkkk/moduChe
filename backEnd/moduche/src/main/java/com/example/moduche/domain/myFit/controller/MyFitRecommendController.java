@@ -1,5 +1,6 @@
 package com.example.moduche.domain.myFit.controller;
 
+import com.example.moduche.domain.myFit.dto.recommend.MyFitMvmContentResponseDTO;
 import com.example.moduche.domain.myFit.dto.recommend.MyFitRecommendResponseDTO;
 import com.example.moduche.domain.myFit.service.MyFitRecommendService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,11 @@ public class MyFitRecommendController {
     @GetMapping("/{id}")
     public ResponseEntity<MyFitRecommendResponseDTO> getRecommendById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(recommendService.getRecommendById(id));
+    }
+
+    @GetMapping("/{id}/contents")
+    public ResponseEntity<List<MyFitMvmContentResponseDTO>> getContentsByRecommendId(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(recommendService.getContentsByRecommendId(id));
     }
 
     @GetMapping("/disability")

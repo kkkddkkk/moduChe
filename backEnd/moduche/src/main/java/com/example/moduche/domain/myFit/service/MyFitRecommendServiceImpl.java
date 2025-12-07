@@ -9,8 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // Import Transactional
 import org.springframework.util.StringUtils; // Import StringUtils
 
+import com.example.moduche.domain.myFit.dto.recommend.MyFitMvmContentResponseDTO;
 import com.example.moduche.domain.myFit.dto.recommend.MyFitRecommendResponseDTO;
+import com.example.moduche.domain.myFit.entity.MyFitMvmContent;
 import com.example.moduche.domain.myFit.entity.MyFitRecommend;
+import com.example.moduche.domain.myFit.repository.MyFitMvmContentRepository;
 import com.example.moduche.domain.myFit.repository.MyFitRecommendRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class MyFitRecommendServiceImpl implements MyFitRecommendService {
 	
 	private final MyFitRecommendRepository recommendRepository;
+	private final MyFitMvmContentRepository myFitMvmContentRepository;
     private static final Logger logger = LoggerFactory.getLogger(MyFitRecommendServiceImpl.class);
 
     @Override
@@ -69,4 +73,12 @@ public class MyFitRecommendServiceImpl implements MyFitRecommendService {
          .map(MyFitRecommendResponseDTO::fromEntity)
          .collect(Collectors.toList());
     }
+
+	@Override
+	public List<MyFitMvmContentResponseDTO> getContentsByRecommendId(Long recommendId) {
+		List<MyFitMvmContent> contents = myFitMvmContentRepository.findByRecommendRecommendIdOrderByStepOrderAsc(recommendId);
+        return contents.stream()
+                .map(MyFitMvmContentResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+	}
 }
